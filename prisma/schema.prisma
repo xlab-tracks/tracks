@@ -1,0 +1,144 @@
+// Postgres holds only user/stateful data. The content graph (tracks, modules,
+// lessons, exercises, assessments) is code-defined and referenced here by
+// string IDs.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  workosUserId String   @unique
+  email        String
+  name         String?
+  imageUrl     String?
+  createdAt    DateTime @default(now())
+
+  lessonProgress    LessonProgress[]
+  submissions       Submission[]
+  capstoneProjects  CapstoneProject[]
+  memberships       ClassroomMembership[]
+  createdClassrooms Classroom[]           @relation("ClassroomCreatedBy")
+}
+
+enum ProgressStatus {
+  not_started
+  in_progress
+  completed
+}
+
+model LessonProgress {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId     String
+  status       ProgressStatus @default(in_progress)
+  completedAt  DateTime?
+  lastViewedAt DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+}
+
+enum SubmissionKind {
+  exercise
+  assessment
+  capstone
+}
+
+enum SubmissionStatus {
+  draft
+  submitted
+  graded
+}
+
+model Submission {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId    String
+  kind         SubmissionKind
+  format       String?
+  // closed-ended answers (selected option ids) or sectioned writing values
+  responseJson Json?
+  responseText String?
+  status       SubmissionStatus @default(draft)
+  score        Float?
+  feedback     String?
+  version      Int              @default(1)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([userId, contentId, kind])
+  @@index([userId, contentId])
+}
+
+enum CapstoneStatus {
+  planning
+  in_progress
+  submitted
+}
+
+model CapstoneProject {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId   String
+  topic     String?
+  status    CapstoneStatus @default(planning)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  entries CapstoneEntry[]
+
+  @@unique([userId, trackId])
+}
+
+model CapstoneEntry {
+  id          String           @id @default(cuid())
+  capstoneId  String
+  capstone    CapstoneProject  @relation(fields: [capstoneId], references: [id], onDelete: Cascade)
+  // checkpoint module ID (progressive) or "final" (final-only)
+  moduleId    String
+  contentText String           @default("")
+  status      SubmissionStatus @default(draft)
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([capstoneId, moduleId])
+}
+
+enum ClassroomRole {
+  instructor
+  student
+}
+
+model Classroom {
+  id          String   @id @default(cuid())
+  name        String
+  joinCode    String   @unique
+  trackId     String?
+  createdById String
+  createdBy   User     @relation("ClassroomCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  memberships ClassroomMembership[]
+}
+
+model ClassroomMembership {
+  id          String        @id @default(cuid())
+  classroomId String
+  classroom   Classroom     @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        ClassroomRole @default(student)
+  joinedAt    DateTime      @default(now())
+
+  @@unique([classroomId, userId])
+  @@index([userId])
+}

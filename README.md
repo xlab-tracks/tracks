@@ -1,0 +1,113 @@
+# Tracks
+
+An AI-safety learning platform by XLab — a Khan Academy–style home that
+de-centralizes the messy AI-safety onboarding pipeline. It offers structured
+**tracks** (Control and Governance), interactive demos, real writing practice,
+and a curated resource hub.
+
+## Features
+
+- **Modular, lesson-style content** with a persistent module/lesson sidebar.
+- **Four content types**: embedded video (media-chrome), text, interactive demos
+  embedded inline, and exercises.
+- **Exercises** — closed-ended (multiple-choice, multi-select, true/false,
+  understanding checks) graded server-side, and open-ended writing.
+- **End-of-module assessments** that mirror real deliverables (policy memo, bill
+  draft, research summary, briefing, essay) with section scaffolds + rubrics.
+- **Prerequisites** per module, including cross-track gating, with soft (warn) or
+  hard (lock) enforcement.
+- **Capstone** — configurable per track: progressive (per-module checkpoints) or
+  final-module-only.
+- **Centralized resource hub** with filters, plus an explicit "background we
+  don't teach — learn it elsewhere" section.
+- **Progress tracking** (checkmarks, % complete, continue-where-you-left-off) and
+  **autosaving** writing drafts.
+- **Classrooms** — instructors create a class, share a join code, and track each
+  student's progress and submissions; reads are scoped to classroom membership.
+- **Embeddable demos** — a central registry renders demos in lessons, a gallery,
+  standalone pages, or any external page via an `/embed` iframe route.
+
+## Stack
+
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 · shadcn/ui ·
+MDX (`@next/mdx`) · media-chrome · WorkOS AuthKit (Google OAuth) · Postgres +
+Prisma · Vitest.
+
+## Setup
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Copy the env template and fill it in:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   - **`DATABASE_URL`** — a Postgres connection string (Neon, Supabase Postgres,
+     RDS, or local Docker).
+   - **WorkOS** — create a project at the [WorkOS dashboard](https://dashboard.workos.com),
+     enable **Google** as the only connection, register the redirect URI
+     `http://localhost:3000/callback`, then set `WORKOS_API_KEY`,
+     `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD` (32+ chars:
+     `openssl rand -base64 32`), and `NEXT_PUBLIC_WORKOS_REDIRECT_URI`.
+
+3. Create the database schema:
+
+   ```bash
+   npx prisma migrate dev --name init
+   ```
+
+4. Run the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+   Open http://localhost:3000. Browsing tracks, demos, and resources works
+   signed-out; progress, writing, capstone, and classrooms require signing in.
+
+## Scripts
+
+- `npm run dev` — start the dev server
+- `npm run build` / `npm run start` — production build / serve
+- `npm run typecheck` — `tsc --noEmit`
+- `npm run lint` — ESLint
+- `npm run test` — Vitest unit tests (grading, prerequisite locking, content integrity)
+
+## Authoring content
+
+The content graph is **code-defined**; only user data lives in Postgres.
+
+- **Structure** — edit the typed data files in `src/content/`:
+  `curriculum.data.ts` (tracks/modules/lessons), `exercises.data.ts`,
+  `assessments.data.ts`, `resources.data.ts`.
+- **Lesson bodies** — MDX files in `src/content/lessons/<contentRef>.mdx`. Inside
+  them you can drop:
+  - `<Video src="…" title="…" />` (YouTube/Vimeo/file)
+  - `<Demo id="…" />` (a registered demo)
+  - `<Exercise id="…" />` (an exercise from `exercises.data.ts`)
+  - `<Callout variant="note|tip|warning">…</Callout>`
+- **Demos** — add a self-contained client component and register it in
+  `src/lib/demos/registry.ts`. It is then embeddable everywhere by `id`.
+
+Placeholder copy is lorem ipsum — replace it with real curriculum.
+
+## Architecture notes
+
+- Auth: WorkOS AuthKit. `src/proxy.ts` (Next 16's renamed middleware) refreshes
+  the session; pages/actions call `getCurrentUser()` / `requireUser()` from
+  `src/lib/auth.ts`, which upserts the WorkOS user into the local `User` table.
+- Mutations are React Server Actions in `src/app/actions/`; closed-exercise
+  answer keys never reach the client (graded in `gradeExercise`).
+- Prisma models (`prisma/schema.prisma`) cover users, lesson progress,
+  submissions, capstone projects/entries, and classrooms/memberships.
+
+## Deploy
+
+Deploy on Vercel with a managed Postgres (e.g. Neon). Set the same env vars in
+the hosting dashboard, update the WorkOS redirect URI to the production
+`/callback` URL, and run `prisma migrate deploy` against the production database.
