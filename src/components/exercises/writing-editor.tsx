@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { RubricCriterion, WritingSection } from "@/lib/content/types";
 
@@ -45,6 +46,10 @@ export function WritingEditor({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [pending, startTransition] = useTransition();
   const skipFirstSave = useRef(true);
+  // Keep the latest save handler in a ref so a changed bound-action identity
+  // doesn't re-trigger the debounced autosave.
+  const saveDraftRef = useRef(onSaveDraft);
+  saveDraftRef.current = onSaveDraft;
 
   const totalWords = useMemo(
     () => sections.reduce((sum, s) => sum + countWords(values[s.id] ?? ""), 0),
@@ -52,18 +57,18 @@ export function WritingEditor({
   );
 
   useEffect(() => {
-    if (!onSaveDraft || isSubmitted) return;
+    if (!saveDraftRef.current || isSubmitted) return;
     if (skipFirstSave.current) {
       skipFirstSave.current = false;
       return;
     }
     setSaveState("saving");
     const handle = setTimeout(async () => {
-      await onSaveDraft(values);
+      await saveDraftRef.current?.(values);
       setSaveState("saved");
     }, 800);
     return () => clearTimeout(handle);
-  }, [values, onSaveDraft, isSubmitted]);
+  }, [values, isSubmitted]);
 
   const setField = (id: string, value: string) =>
     setValues((prev) => ({ ...prev, [id]: value }));
@@ -71,8 +76,12 @@ export function WritingEditor({
   const submit = () => {
     if (!onSubmit) return;
     startTransition(async () => {
-      await onSubmit(values);
-      setIsSubmitted(true);
+      try {
+        await onSubmit(values);
+        setIsSubmitted(true);
+      } catch {
+        toast.error("Couldn't submit. Please try again.");
+      }
     });
   };
 
@@ -101,7 +110,7 @@ export function WritingEditor({
       ))}
 
       <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs">
-        <span className={cn((belowMin || aboveMax) && "text-amber-600")}>
+        <span className={cn((belowMin || aboveMax) && "text-amber-400")}>
           {totalWords} words
           {minWords ? ` · min ${minWords}` : ""}
           {maxWords ? ` · max ${maxWords}` : ""}

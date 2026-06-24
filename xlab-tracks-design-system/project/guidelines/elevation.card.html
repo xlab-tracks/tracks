@@ -1,0 +1,19 @@
+<!-- @dsCard group="Spacing" viewport="700x170" name="Elevation" subtitle="Hairline borders carry structure; shadows reserved for overlays" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--bg-base);padding:24px;font-family:var(--font-sans)}
+  .row{display:flex;gap:20px}
+  .item{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .box{width:130px;height:70px;background:var(--surface-card);border-radius:var(--radius-md);
+    display:grid;place-items:center;color:var(--text-secondary);font-size:12px}
+  .n{font-size:11px;color:var(--text-muted)}
+</style></head>
+<body>
+<div class="row">
+  <div class="item"><div class="box" style="border:0.5px solid var(--border-default)">hairline</div><span class="n">default surface</span></div>
+  <div class="item"><div class="box" style="box-shadow:var(--shadow-sm)">shadow-sm</div><span class="n">subtle lift</span></div>
+  <div class="item"><div class="box" style="box-shadow:var(--shadow-md)">shadow-md</div><span class="n">popover</span></div>
+  <div class="item"><div class="box" style="box-shadow:var(--shadow-lg)">shadow-lg</div><span class="n">dialog</span></div>
+</div>
+</body></html>

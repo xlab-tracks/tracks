@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Track page" description="XLab Tracks course page — left tree-view of modules & material (typed icons), right content viewer. Interactive." -->
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css" />
+<script src="./ds-base.js"></script>
+<style>
+  html,body{margin:0;background:#201A19;color:#ECE5E3;font-family:'Inter',system-ui,sans-serif}
+  *{box-sizing:border-box}
+  ::selection{background:#E1854F;color:#201A19}
+  .scroll::-webkit-scrollbar{width:9px}
+  .scroll::-webkit-scrollbar-thumb{background:#38302E;border-radius:9px}
+
+  /* Tree-row state (driven by data-* attributes, not style holes) */
+  .trk-row[data-sel="1"]{background:color-mix(in oklch,#E1854F 14%,transparent)}
+  .trk-status{color:#574D4B}
+  .trk-row[data-sel="1"] .trk-status{color:#E1854F}
+  .trk-row[data-status="done"] .trk-status{color:#7FA682}
+  .trk-label{color:#A69A98;font-weight:400}
+  .trk-row[data-sel="1"] .trk-label{color:#ECE5E3;font-weight:600}
+  .trk-type{color:#7C746F}
+  .trk-row[data-sel="1"][data-type="reading"]    .trk-type{color:#CFC8C4}
+  .trk-row[data-sel="1"][data-type="video"]      .trk-type{color:#E1854F}
+  .trk-row[data-sel="1"][data-type="exercise"]   .trk-type{color:#7FB0AE}
+  .trk-row[data-sel="1"][data-type="quiz"]       .trk-type{color:#D7A24B}
+  .trk-row[data-sel="1"][data-type="discussion"] .trk-type{color:#CD8A7F}
+  .trk-row[data-sel="1"][data-type="project"]    .trk-type{color:#E1854F}
+
+  /* Viewer type chip */
+  .trk-chip[data-type="reading"]   {color:#CFC8C4;background:color-mix(in oklch,#CFC8C4 16%,transparent)}
+  .trk-chip[data-type="video"]     {color:#E1854F;background:color-mix(in oklch,#E1854F 16%,transparent)}
+  .trk-chip[data-type="exercise"]  {color:#7FB0AE;background:color-mix(in oklch,#7FB0AE 16%,transparent)}
+  .trk-chip[data-type="quiz"]      {color:#D7A24B;background:color-mix(in oklch,#D7A24B 16%,transparent)}
+  .trk-chip[data-type="discussion"]{color:#CD8A7F;background:color-mix(in oklch,#CD8A7F 16%,transparent)}
+  .trk-chip[data-type="project"]   {color:#E1854F;background:color-mix(in oklch,#E1854F 16%,transparent)}
+
+  /* Small "mark complete" check + hover tooltip */
+  .trk-mark{position:relative;display:inline-flex}
+  .trk-mark__btn{width:34px;height:34px;border-radius:999px;border:0.5px solid #574D4B;background:transparent;color:#A69A98;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .12s,color .12s,background .12s}
+  .trk-mark__btn:hover{border-color:#7FA682;color:#7FA682;background:color-mix(in oklch,#7FA682 12%,transparent)}
+  .trk-mark__tip{position:absolute;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%) translateY(3px);white-space:nowrap;background:#2B2321;border:0.5px solid #574D4B;color:#ECE5E3;font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .12s,transform .12s}
+  .trk-mark__tip::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#2B2321}
+  .trk-mark:hover .trk-mark__tip{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</helmet>
+
+<div style="display:grid;grid-template-columns:288px 1fr;height:100vh">
+
+  <!-- ============ LEFT: tree-view ============ -->
+  <aside class="scroll" style="background:#171211;border-right:0.5px solid #38302E;display:flex;flex-direction:column;overflow:auto">
+    <div style="padding:18px 16px 14px;border-bottom:0.5px solid #38302E;position:sticky;top:0;background:#171211;z-index:2">
+      <div style="display:flex;align-items:center;gap:8px;color:#7C746F;font-size:12px;margin-bottom:11px">
+        <i class="ti ti-arrow-left"></i> Catalogue
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <i class="ti ti-route" style="font-size:22px;color:#E1854F;margin-top:2px"></i>
+        <div>
+          <p style="font-family:'Source Serif 4',serif;font-weight:600;font-size:17px;line-height:1.25;color:#ECE5E3;margin:0 0 8px">Foundations of AI safety</p>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#7C746F">
+            <span>{{ doneCount }} of {{ totalCount }} done</span><span>·</span><span>4 modules</span>
+          </div>
+          <div style="margin-top:10px">
+            <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.ProgressBar" value="{{ doneCount }}" max="{{ totalCount }}" size="sm" show-value="{{ no }}" hint-size="100%,8px"></x-import>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav style="padding:10px 12px 24px;display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ modules }}" as="m" hint-placeholder-count="4">
+        <div>
+          <button onClick="{{ m.toggle }}" style="display:flex;align-items:center;gap:9px;width:100%;background:none;border:none;cursor:pointer;padding:11px 8px;color:#ECE5E3;font-family:'Inter',sans-serif;text-align:left">
+            <i class="ti ti-{{ m.chevron }}" style="font-size:16px;color:#7C746F"></i>
+            <span style="flex:1;font-size:13.5px;font-weight:600">{{ m.title }}</span>
+            <span style="font-size:11.5px;color:#7C746F">{{ m.meta }}</span>
+          </button>
+          <sc-if value="{{ m.open }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:1px;padding-left:8px;margin-left:15px;border-left:0.5px solid #38302E">
+              <sc-for list="{{ m.items }}" as="it" hint-placeholder-count="3">
+                <button onClick="{{ it.select }}" class="trk-row" data-sel="{{ it.sel }}" data-status="{{ it.status }}" data-type="{{ it.type }}" style="display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;font-family:'Inter',sans-serif;border:none;border-radius:8px;padding:9px 10px;background:transparent">
+                  <i class="ti ti-{{ it.statusIcon }} trk-status" style="font-size:15px;flex:none"></i>
+                  <i class="ti ti-{{ it.typeIcon }} trk-type" style="font-size:15px;flex:none"></i>
+                  <span class="trk-label" style="flex:1;font-size:13px;line-height:1.35;text-align:left">{{ it.label }}</span>
+                  <span style="font-size:11px;color:#7C746F;flex:none">{{ it.dur }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <!-- ============ RIGHT: viewer ============ -->
+  <main class="scroll" style="overflow:auto;background:#201A19">
+    <div style="max-width:760px;margin:0 auto;padding:30px 40px 64px">
+
+      <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#7C746F;margin-bottom:16px">
+        <span>Foundations of AI safety</span>
+        <i class="ti ti-chevron-right" style="font-size:14px"></i>
+        <span>{{ sel.moduleTitle }}</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span class="trk-chip" data-type="{{ sel.type }}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:5px 11px;border-radius:8px">
+          <i class="ti ti-{{ sel.typeIcon }}" style="font-size:14px"></i> {{ sel.typeLabel }}
+        </span>
+        <span style="font-size:12.5px;color:#7C746F;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-clock"></i> {{ sel.dur }}</span>
+        <span style="font-size:12.5px;color:#7C746F">{{ sel.position }}</span>
+      </div>
+
+      <h1 style="font-family:'Source Serif 4',serif;font-weight:600;font-size:34px;line-height:1.15;color:#ECE5E3;margin:0 0 22px">{{ sel.title }}</h1>
+
+      <!-- VIDEO viewer -->
+      <sc-if value="{{ sel.isVideo }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;aspect-ratio:16/9;width:100%;border-radius:14px;overflow:hidden;border:0.5px solid #574D4B;background:radial-gradient(120% 120% at 50% 35%, #2D211C 0%, #171211 100%);display:flex;align-items:center;justify-content:center;margin-bottom:22px">
+          <div style="width:64px;height:64px;border-radius:999px;background:#E1854F;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px rgba(0,0,0,.5)">
+            <i class="ti ti-player-play-filled" style="font-size:26px;color:#201A19;margin-left:3px"></i>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:14px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(to top, rgba(0,0,0,.55), transparent)">
+            <i class="ti ti-player-play" style="font-size:18px;color:#ECE5E3"></i>
+            <div style="flex:1;height:4px;border-radius:999px;background:rgba(255,255,255,.18)">
+              <div style="width:22%;height:100%;border-radius:999px;background:#E1854F"></div>
+            </div>
+            <span style="font-size:12px;color:#CFC8C4;font-variant-numeric:tabular-nums">3:04 / {{ sel.dur }}</span>
+            <i class="ti ti-maximize" style="font-size:16px;color:#CFC8C4"></i>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- EXERCISE viewer -->
+      <sc-if value="{{ sel.isExercise }}" hint-placeholder-val="{{ true }}">
+        <div style="border:0.5px solid #574D4B;border-radius:14px;overflow:hidden;margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#171211;border-bottom:0.5px solid #38302E;font-size:12.5px;color:#A69A98">
+            <i class="ti ti-code" style="color:#7FB0AE"></i> reward_hack.py
+          </div>
+          <pre style="margin:0;padding:16px;background:#171211;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:#A69A98;overflow:auto"><span style="color:#7C746F"># TODO: maximise true reward, not the proxy.</span>
+<span style="color:#7C746F"># Where does this break?</span>
+<span style="color:#F1B189">def</span> objective(state):
+    proxy = sensor.read(state)
+    <span style="color:#F1B189">return</span> proxy  <span style="color:#7C746F"># &lt;- your fix here</span></pre>
+        </div>
+      </sc-if>
+
+      <!-- body copy -->
+      <sc-for list="{{ sel.body }}" as="p" hint-placeholder-count="3">
+        <p style="font-size:16.5px;line-height:1.75;color:#A69A98;margin:0 0 18px">{{ p }}</p>
+      </sc-for>
+
+      <!-- footer actions -->
+      <div style="display:flex;align-items:center;gap:12px;padding-top:24px;margin-top:8px;border-top:0.5px solid #38302E">
+        <sc-if value="{{ sel.done }}" hint-placeholder-val="{{ true }}">
+          <span style="display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:500;color:#7FA682"><i class="ti ti-circle-check-filled" style="font-size:18px"></i> Completed</span>
+        </sc-if>
+        <sc-if value="{{ sel.notDone }}" hint-placeholder-val="{{ true }}">
+          <span class="trk-mark">
+            <button class="trk-mark__btn" onClick="{{ markDone }}" aria-label="Mark complete now"><i class="ti ti-check" style="font-size:17px"></i></button>
+            <span class="trk-mark__tip">Mark complete now</span>
+          </span>
+        </sc-if>
+        <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="primary" icon-right="arrow-right" onClick="{{ next }}" style="margin-left:auto" hint-size="130px,42px">Next lesson</x-import>
+      </div>
+      <p style="font-size:12px;color:#7C746F;margin:13px 0 0;display:inline-flex;align-items:center;gap:6px"><i class="ti ti-sparkles" style="font-size:13px;color:#7FB0AE"></i> Lessons mark themselves complete as you move on.</p>
+    </div>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.TYPE = {
+      reading:    { icon: 'file-text',      label: 'Reading' },
+      video:      { icon: 'player-play',    label: 'Video' },
+      exercise:   { icon: 'code',           label: 'Exercise' },
+      quiz:       { icon: 'help-circle',    label: 'Quiz' },
+      discussion: { icon: 'message-circle', label: 'Discussion' },
+      project:    { icon: 'flag',           label: 'Project' },
+    };
+    this.DATA = [
+      { id: 'm1', title: 'Getting oriented', items: [
+        { id: 'l1', label: 'What we mean by "AI safety"', type: 'reading', dur: '18 min', done: true },
+        { id: 'l2', label: 'Why this is hard', type: 'video', dur: '9 min', done: true },
+      ]},
+      { id: 'm2', title: 'The core problems', items: [
+        { id: 'l3', label: 'The alignment problem', type: 'reading', dur: '20 min', done: true },
+        { id: 'l4', label: 'Specification & reward hacking', type: 'video', dur: '14 min', done: false },
+        { id: 'l5', label: 'Reward hacking, hands-on', type: 'exercise', dur: '45 min', done: false },
+        { id: 'l6', label: 'Quick check', type: 'quiz', dur: '5 min', done: false },
+      ]},
+      { id: 'm3', title: 'Threat models', items: [
+        { id: 'l7', label: 'Goal misgeneralisation', type: 'reading', dur: '16 min', done: false },
+        { id: 'l8', label: 'Threat models, mapped', type: 'reading', dur: '22 min', done: false },
+        { id: 'l9', label: 'Where is the risk? — discuss', type: 'discussion', dur: '—', done: false },
+      ]},
+      { id: 'm4', title: 'Oversight', items: [
+        { id: 'l10', label: 'Oversight & scalability', type: 'reading', dur: '20 min', done: false },
+        { id: 'l11', label: 'Interpretability, briefly', type: 'video', dur: '12 min', done: false },
+        { id: 'l12', label: 'Capstone: write an eval', type: 'project', dur: '—', done: false },
+      ]},
+    ];
+    this.CONTENT = {
+      l4: ['When a model learns to satisfy your reward signal without doing the thing you actually wanted, that\u2019s specification gaming \u2014 and it shows up everywhere from game-playing agents to RLHF.',
+           'In this video we walk through three real examples, then name the structural reason it keeps happening: the reward is a proxy, and optimisation pressure finds the gap between the proxy and your intent.',
+           'Watch for the moment the boat-racing agent stops finishing the race. That\u2019s the whole problem in one clip.'],
+      l5: ['Open the file on the left. The agent currently optimises the sensor reading directly. Your job: change the objective so that gaming the sensor no longer maximises reward.',
+           'There is no single right answer. When you\u2019re done, write two sentences on what your fix assumes about the environment \u2014 that assumption is usually where the next failure hides.'],
+      _default: ['This lesson is part of Foundations of AI safety. Select it to read the full material here.',
+                 'Each item ends with something to do \u2014 a short exercise, a prompt, or a question for your cohort \u2014 so the idea actually sticks before you move on.'],
+    };
+    this.state = {
+      selectedId: 'l4',
+      open: { m1: true, m2: true, m3: false, m4: false },
+    };
+  }
+
+  toggleModule(id) { this.setState(s => ({ open: { ...s.open, [id]: !s.open[id] } })); }
+  markComplete(id) {
+    for (const m of this.DATA) for (const it of m.items) if (it.id === id) it.done = true;
+  }
+  select(id) {
+    // Auto-complete the item you're leaving, then open the new one.
+    if (id !== this.state.selectedId) this.markComplete(this.state.selectedId);
+    this.setState({ selectedId: id });
+  }
+  markDone() { this.markComplete(this.state.selectedId); this.forceUpdate(); }
+  next() {
+    this.markComplete(this.state.selectedId); // finishing the current item completes it
+    const flat = this.DATA.flatMap(m => m.items.map(it => it.id));
+    const i = flat.indexOf(this.state.selectedId);
+    const nid = flat[Math.min(flat.length - 1, i + 1)];
+    const mod = this.DATA.find(m => m.items.some(it => it.id === nid));
+    this.setState(s => ({ selectedId: nid, open: { ...s.open, [mod.id]: true } }));
+  }
+
+  renderVals() {
+    const { selectedId, open } = this.state;
+    const flat = this.DATA.flatMap(m => m.items);
+    const total = flat.length;
+    const done = flat.filter(it => it.done).length;
+
+    const modules = this.DATA.map((m, mi) => {
+      const mdone = m.items.filter(it => it.done).length;
+      return {
+        title: `${mi + 1} · ${m.title}`,
+        meta: `${mdone}/${m.items.length}`,
+        open: !!open[m.id],
+        chevron: open[m.id] ? 'chevron-down' : 'chevron-right',
+        toggle: () => this.toggleModule(m.id),
+        items: m.items.map(it => {
+          const t = this.TYPE[it.type];
+          const isSel = it.id === selectedId;
+          return {
+            label: it.label,
+            dur: it.dur,
+            type: it.type,
+            sel: isSel ? '1' : '0',
+            status: it.done ? 'done' : 'todo',
+            typeIcon: t.icon,
+            statusIcon: it.done ? 'circle-check-filled' : (isSel ? 'player-play-filled' : 'circle'),
+            select: () => this.select(it.id),
+          };
+        }),
+      };
+    });
+
+    const selRaw = flat.find(it => it.id === selectedId) || flat[0];
+    const selMod = this.DATA.find(m => m.items.some(it => it.id === selRaw.id));
+    const selModIdx = this.DATA.indexOf(selMod);
+    const t = this.TYPE[selRaw.type];
+    const posInMod = selMod.items.indexOf(selRaw) + 1;
+
+    const sel = {
+      title: selRaw.title,
+      moduleTitle: `${selModIdx + 1} · ${selMod.title}`,
+      type: selRaw.type,
+      typeLabel: t.label,
+      typeIcon: t.icon,
+      dur: selRaw.dur,
+      position: `Item ${posInMod} of ${selMod.items.length}`,
+      isVideo: selRaw.type === 'video',
+      isExercise: selRaw.type === 'exercise',
+      done: !!selRaw.done,
+      notDone: !selRaw.done,
+      body: this.CONTENT[selRaw.id] || this.CONTENT._default,
+    };
+
+    return {
+      no: false,
+      doneCount: done,
+      totalCount: total,
+      modules,
+      sel,
+      markDone: () => this.markDone(),
+      next: () => this.next(),
+    };
+  }
+}
+</script>
+</body>
+</html>

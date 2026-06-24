@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Learner dashboard" description="XLab Tracks signed-in dashboard — sidebar, continue-learning banner, track progress, cohort activity." -->
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css" />
+<script src="./ds-base.js"></script>
+<style>
+  html,body{margin:0;background:#201A19;color:#ECE5E3;font-family:'Inter',system-ui,sans-serif}
+  *{box-sizing:border-box}
+  ::selection{background:#E1854F;color:#201A19}
+  a{color:inherit}
+</style>
+</helmet>
+
+<div style="display:grid;grid-template-columns:236px 1fr;min-height:100vh;background:#201A19">
+  <aside style="background:#171211;border-right:0.5px solid #3A302E;display:flex;flex-direction:column;padding:20px 16px;position:sticky;top:0;height:100vh">
+    <span style="font-family:'Source Serif 4',serif;font-weight:700;font-size:19px;color:#ECE5E3;padding:0 8px 18px">XLab<span style="color:#E1854F"> · </span>Tracks</span>
+    <nav style="display:flex;flex-direction:column;gap:3px">
+      <a href="#" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#ECE5E3;background:color-mix(in oklch,#ECE5E3 7%,transparent)"><i class="ti ti-home" style="font-size:18px;color:#E1854F"></i> Home</a>
+      <a href="#" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#A69A98"><i class="ti ti-route" style="font-size:18px;color:#7C746F"></i> My tracks</a>
+      <a href="#" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#A69A98"><i class="ti ti-books" style="font-size:18px;color:#7C746F"></i> Catalogue</a>
+      <a href="#" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#A69A98"><i class="ti ti-message-circle" style="font-size:18px;color:#7C746F"></i> Discussion</a>
+      <a href="#" style="display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;color:#A69A98"><i class="ti ti-certificate" style="font-size:18px;color:#7C746F"></i> Certificates</a>
+    </nav>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px;border-top:0.5px solid #3A302E">
+      <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Avatar" name="Ada Okonkwo" size="sm" hint-size="28px,28px"></x-import>
+      <div style="line-height:1.2">
+        <div style="font-size:13px;color:#ECE5E3;font-weight:500">Ada Okonkwo</div>
+        <div style="font-size:11.5px;color:#7C746F">Member</div>
+      </div>
+    </div>
+  </aside>
+
+  <div style="display:flex;flex-direction:column;min-width:0">
+    <header style="display:flex;align-items:center;gap:16px;padding:14px 28px;border-bottom:0.5px solid #3A302E;position:sticky;top:0;background:color-mix(in oklch,#201A19 90%,transparent);backdrop-filter:blur(8px);z-index:5">
+      <div style="flex:1;max-width:380px;display:flex;align-items:center;gap:9px;padding:8px 12px;background:#171211;border:0.5px solid #574D4B;border-radius:8px;color:#7C746F;font-size:13.5px"><i class="ti ti-search" style="font-size:16px"></i> Search tracks & lessons</div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+        <i class="ti ti-flame" style="font-size:18px;color:#E1854F"></i>
+        <span style="font-size:13px;color:#A69A98">3-day streak</span>
+        <i class="ti ti-bell" style="font-size:18px;color:#A69A98"></i>
+      </div>
+    </header>
+
+    <div style="flex:1;overflow:auto">
+      <div style="padding:32px 28px;max-width:980px;margin:0 auto">
+        <h1 style="font-family:'Source Serif 4',serif;font-weight:600;font-size:30px;color:#ECE5E3;margin:0 0 4px">Welcome back, Ada.</h1>
+        <p style="font-size:15px;color:#A69A98;margin:0 0 28px">You're 5 lessons into Foundations. Keep the thread going.</p>
+
+        <div style="display:flex;align-items:center;gap:24px;background:#2D211C;border:0.5px solid #574D4B;border-radius:14px;padding:32px;margin-bottom:30px">
+          <i class="ti ti-route" style="font-size:34px;color:#E1854F"></i>
+          <div style="flex:1;min-width:0">
+            <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Badge" variant="outline" hint-size="90px,26px">Continue</x-import>
+            <p style="font-family:'Source Serif 4',serif;font-weight:600;font-size:20px;color:#ECE5E3;margin:10px 0 4px">Foundations of AI safety</p>
+            <p style="font-size:14px;color:#A69A98;margin:0 0 12px">Up next — Lesson 6: Oversight & scalability</p>
+            <div style="max-width:360px">
+              <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.ProgressBar" value="{{ five }}" max="{{ eight }}" size="sm" label="5 of 8 lessons" hint-size="360px,30px"></x-import>
+            </div>
+          </div>
+          <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="primary" size="lg" icon-right="player-play" hint-size="130px,48px">Resume</x-import>
+        </div>
+
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+          <h2 style="font-size:16px;font-weight:600;color:#ECE5E3;margin:0">Your tracks</h2>
+          <a href="#" style="font-size:13px;color:#D9A99F;text-decoration:none">Browse catalogue →</a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px">
+          <sc-for list="{{ myTracks }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:12px;background:#2B2321;border:0.5px solid #574D4B;border-radius:14px;padding:22px">
+              <i class="ti ti-{{ t.icon }}" style="font-size:24px;color:#E1854F"></i>
+              <p style="font-weight:600;font-size:16px;color:#ECE5E3;margin:0">{{ t.title }}</p>
+              <p style="font-size:13px;color:#7C746F;margin:0">{{ t.note }}</p>
+              <div style="margin-top:auto;padding-top:8px">
+                <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.ProgressBar" value="{{ t.done }}" max="{{ t.total }}" size="sm" show-value="{{ no }}" variant="{{ t.variant }}" hint-size="100%,8px"></x-import>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-size:16px;font-weight:600;color:#ECE5E3;margin:0 0 14px">This week in your cohort</h2>
+        <div style="background:#2B2321;border:0.5px solid #574D4B;border-radius:14px;overflow:hidden">
+          <sc-for list="{{ activity }}" as="a" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:14px;padding:15px 18px;border-top:0.5px solid #3A302E">
+              <i class="ti ti-{{ a.icon }}" style="font-size:20px;color:#A69A98"></i>
+              <div style="flex:1">
+                <p style="font-size:14px;font-weight:500;color:#ECE5E3;margin:0 0 2px">{{ a.title }}</p>
+                <p style="font-size:12.5px;color:#7C746F;margin:0">{{ a.desc }}</p>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      five: 5, eight: 8, no: false,
+      myTracks: [
+        { icon: 'route', title: 'Foundations of AI safety', note: 'Threat models, mapped', done: 5, total: 8, variant: 'accent' },
+        { icon: 'eye', title: 'Interpretability', note: 'Features & superposition', done: 2, total: 10, variant: 'accent' },
+        { icon: 'shield-half', title: 'Evaluations & red-teaming', note: 'Certificate ready', done: 9, total: 9, variant: 'success' },
+      ],
+      activity: [
+        { icon: 'calendar-event', title: 'Live session — Threat models', desc: 'Thursday, 6:00pm · with Dr. Reyes' },
+        { icon: 'message-circle', title: '4 new replies in your study group', desc: 'On "Why is reward hacking hard to detect?"' },
+        { icon: 'pencil', title: 'Exercise feedback returned', desc: 'Mentor notes on your eval write-up' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

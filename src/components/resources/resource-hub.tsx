@@ -157,7 +157,7 @@ export function ResourceHub({ resources }: { resources: ExternalResource[] }) {
           className={cn(
             "rounded-full border px-3 py-1 text-xs transition-colors",
             topic === null
-              ? "border-foreground bg-foreground text-background"
+              ? "border-primary bg-primary text-primary-foreground"
               : "border-border hover:bg-muted",
           )}
         >
@@ -171,7 +171,7 @@ export function ResourceHub({ resources }: { resources: ExternalResource[] }) {
             className={cn(
               "rounded-full border px-3 py-1 text-xs transition-colors",
               topic === t
-                ? "border-foreground bg-foreground text-background"
+                ? "border-primary bg-primary text-primary-foreground"
                 : "border-border hover:bg-muted",
             )}
           >

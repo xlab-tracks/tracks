@@ -6,6 +6,7 @@ export default authkitMiddleware();
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Skip static assets and the public chrome-less demo embed routes.
+    "/((?!_next/static|_next/image|favicon.ico|.*/embed$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

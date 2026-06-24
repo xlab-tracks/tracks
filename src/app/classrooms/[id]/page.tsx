@@ -81,7 +81,7 @@ export default async function ClassroomPage({
   }
 
   // ---- Instructor view ----
-  const roster = await getClassroomRoster(classroom.id, classroom.trackId);
+  const roster = await getClassroomRoster(classroom.memberships, classroom.trackId);
   const students = roster.filter((r) => r.role === "student");
 
   return (
@@ -118,7 +118,7 @@ export default async function ClassroomPage({
               <tr>
                 <th className="px-4 py-3 text-left font-medium">Student</th>
                 <th className="px-4 py-3 text-left font-medium">Progress</th>
-                <th className="px-4 py-3 text-left font-medium">Submitted</th>
+                <th className="px-4 py-3 text-left font-medium">Assessments</th>
                 <th className="px-4 py-3 text-left font-medium">Capstone</th>
                 <th className="px-4 py-3 text-left font-medium">Last active</th>
                 <th className="px-4 py-3" />
@@ -158,7 +158,7 @@ export default async function ClassroomPage({
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">{row.submittedCount}</td>
+                  <td className="px-4 py-3">{row.assessmentsSubmitted}</td>
                   <td className="px-4 py-3">
                     {row.capstoneStatus ? (
                       <Badge variant="secondary">{row.capstoneStatus}</Badge>

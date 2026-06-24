@@ -64,8 +64,8 @@ export function ChoiceExerciseCard({
                   "flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
                   !graded && isSelected && "border-foreground bg-muted",
                   !graded && !isSelected && "border-border hover:bg-muted",
-                  graded && isCorrect && "border-emerald-500/60 bg-emerald-50",
-                  graded && !isCorrect && isSelected && "border-destructive/60 bg-destructive/5",
+                  graded && isCorrect && "border-emerald-500/50 bg-emerald-500/10",
+                  graded && !isCorrect && isSelected && "border-destructive/60 bg-destructive/10",
                   graded && !isCorrect && !isSelected && "border-border opacity-70",
                 )}
               >
@@ -92,7 +92,7 @@ export function ChoiceExerciseCard({
         <div
           className={cn(
             "mt-4 rounded-lg p-3 text-sm",
-            result.correct ? "bg-emerald-50 text-emerald-900" : "bg-muted",
+            result.correct ? "bg-emerald-500/10 text-emerald-200" : "bg-muted",
           )}
         >
           <p className="font-medium">{result.correct ? "Correct" : "Not quite"}</p>

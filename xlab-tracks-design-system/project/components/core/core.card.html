@@ -1,0 +1,90 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Core UI" subtitle="Buttons, inputs, badges, tags, progress, tabs & avatars" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css" />
+<style>
+  body{margin:0;background:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans);padding:24px}
+  .wrap{display:flex;flex-direction:column;gap:22px}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+  .grp{display:flex;flex-direction:column;gap:9px}
+  .lbl{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted);font-weight:600}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .panel{display:flex;flex-direction:column;gap:14px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+  const { Button, Badge, Tag, Card, Input, Checkbox, Switch, Avatar, ProgressBar, Tabs } = window.XLabTracksDesignSystem_8f3d24;
+  function Demo(){
+    return (
+      <div className="wrap">
+        <div className="grp">
+          <span className="lbl">Buttons</span>
+          <div className="row">
+            <Button variant="primary" iconLeft="flame">Start the track</Button>
+            <Button variant="secondary">Take a tour</Button>
+            <Button variant="ghost" iconRight="arrow-right">Next lesson</Button>
+            <Button variant="danger">Leave cohort</Button>
+            <Button variant="primary" disabled>Disabled</Button>
+          </div>
+          <div className="row">
+            <Button size="sm" variant="primary">Small</Button>
+            <Button size="md" variant="primary">Medium</Button>
+            <Button size="lg" variant="primary">Large</Button>
+          </div>
+        </div>
+
+        <div className="cols">
+          <div className="panel">
+            <span className="lbl">Badges &amp; tags</span>
+            <div className="row">
+              <Badge>Now enrolling</Badge>
+              <Badge variant="success" dot>Completed</Badge>
+              <Badge variant="warning" icon="clock">Due soon</Badge>
+              <Badge variant="outline">4 weeks</Badge>
+            </div>
+            <div className="row">
+              <Tag selected>Alignment</Tag>
+              <Tag>Interpretability</Tag>
+              <Tag onRemove={()=>{}}>RL</Tag>
+            </div>
+            <span className="lbl">Progress</span>
+            <ProgressBar value={3} max={6} label="Intro to alignment" />
+            <ProgressBar value={100} size="sm" label="Foundations" />
+          </div>
+
+          <div className="panel">
+            <span className="lbl">Forms</span>
+            <Input label="Email" icon="mail" placeholder="you@lab.org" />
+            <div className="row">
+              <Checkbox label="Mark complete" defaultChecked />
+              <Switch label="Reminders" defaultChecked />
+            </div>
+            <span className="lbl">Avatars</span>
+            <div className="row">
+              <Avatar name="Ada Okonkwo" />
+              <Avatar name="Sam Lin" tone="rose" />
+              <Avatar name="AI" tone="neutral" size="sm" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grp">
+          <span className="lbl">Tabs</span>
+          <Tabs items={[{id:'o',label:'Overview',icon:'book'},{id:'l',label:'Lessons'},{id:'d',label:'Discussion'}]} defaultValue="o" />
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<Demo/>);
+</script>
+</body>
+</html>

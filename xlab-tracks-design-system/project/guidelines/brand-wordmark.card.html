@@ -1,0 +1,30 @@
+<!-- @dsCard group="Brand" viewport="700x200" name="Wordmark" subtitle="Source Serif 4 700 with an ember track-dot" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--bg-base);font-family:var(--font-sans);padding:0}
+  .stage{display:flex;flex-direction:column}
+  .panel{padding:26px 28px;display:flex;align-items:center;gap:14px}
+  .mark{font-family:var(--font-display);font-weight:700;letter-spacing:-0.01em}
+  .dot{color:var(--accent)}
+  .on-dark{background:var(--bg-base)}
+  .on-warm{background:var(--surface-warm)}
+  .on-light{background:var(--stone-100)}
+  .cap{font-size:11px;color:var(--text-muted);margin-left:auto}
+</style></head>
+<body>
+<div class="stage">
+  <div class="panel on-dark">
+    <span class="mark" style="font-size:34px;color:var(--text-primary)">XLab<span class="dot"> · </span>Tracks</span>
+    <span class="cap">primary · on stone-900</span>
+  </div>
+  <div class="panel on-warm">
+    <span class="mark" style="font-size:34px;color:var(--text-primary)">XLab<span class="dot"> · </span>Tracks</span>
+    <span class="cap">on warm band</span>
+  </div>
+  <div class="panel on-light">
+    <span class="mark" style="font-size:34px;color:var(--stone-900)">XLab<span class="dot"> · </span>Tracks</span>
+    <span class="cap" style="color:var(--stone-500)">on light</span>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,20 @@
+<!-- @dsCard group="Spacing" viewport="700x150" name="Corner radius" subtitle="8 buttons · 14 cards · 16 panels · pill" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--bg-base);padding:22px;font-family:var(--font-sans)}
+  .row{display:flex;gap:18px;align-items:flex-end}
+  .item{display:flex;flex-direction:column;gap:8px;align-items:center}
+  .box{width:80px;height:60px;background:var(--surface-card);border:0.5px solid var(--border-default)}
+  .n{font-size:11px;color:var(--text-secondary)}
+  .v{font-size:10px;color:var(--text-muted)}
+</style></head>
+<body>
+<div class="row">
+  <div class="item"><div class="box" style="border-radius:var(--radius-sm)"></div><span class="n">sm</span><span class="v">8px · buttons</span></div>
+  <div class="item"><div class="box" style="border-radius:var(--radius-md)"></div><span class="n">md</span><span class="v">14px · cards</span></div>
+  <div class="item"><div class="box" style="border-radius:var(--radius-lg)"></div><span class="n">lg</span><span class="v">16px · panels</span></div>
+  <div class="item"><div class="box" style="border-radius:var(--radius-xl)"></div><span class="n">xl</span><span class="v">22px</span></div>
+  <div class="item"><div class="box" style="width:60px;border-radius:var(--radius-pill)"></div><span class="n">pill</span><span class="v">avatars/toggle</span></div>
+</div>
+</body></html>

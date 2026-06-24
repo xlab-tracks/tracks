@@ -1,0 +1,15 @@
+<!-- @dsCard group="Type" viewport="700x150" name="Mono — JetBrains Mono" subtitle="Code samples in lessons" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--bg-base);padding:22px;font-family:var(--font-sans)}
+  pre{margin:0;background:var(--bg-sunken);border:0.5px solid var(--border-subtle);border-radius:var(--radius-md);
+    padding:16px;font-family:var(--font-mono);font-size:13.5px;line-height:1.6;color:var(--text-secondary);overflow:auto}
+  .k{color:var(--ember-300)}.s{color:var(--rose-300)}.c{color:var(--text-muted)}
+</style></head>
+<body>
+<pre><span class="c"># reward model sanity check</span>
+<span class="k">def</span> score(prompt, completion):
+    r = model.reward(prompt, completion)
+    <span class="k">return</span> clamp(r, <span class="s">-1.0</span>, <span class="s">1.0</span>)</pre>
+</body></html>

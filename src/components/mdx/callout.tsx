@@ -20,8 +20,8 @@ const VARIANTS: Record<
   },
   warning: {
     icon: TriangleAlert,
-    className: "border-amber-300/60 bg-amber-50",
-    iconClassName: "text-amber-600",
+    className: "border-amber-500/40 bg-amber-500/10",
+    iconClassName: "text-amber-400",
   },
 };
 

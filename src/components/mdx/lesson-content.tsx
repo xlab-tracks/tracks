@@ -19,7 +19,7 @@ export async function LessonContent({ contentRef }: { contentRef: string }) {
   const Body = mdxModule.default;
 
   return (
-    <article className="prose prose-neutral prose-headings:font-semibold prose-headings:tracking-tight prose-a:font-medium prose-a:underline-offset-4 max-w-none">
+    <article className="prose prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-primary prose-a:font-medium prose-a:underline-offset-4 max-w-none">
       <Body />
     </article>
   );

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GraduationCap, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,9 +39,8 @@ export function SiteHeader() {
   return (
     <header className="border-border/80 bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-6 px-4 lg:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <GraduationCap className="size-5" aria-hidden />
-          Tracks
+        <Link href="/" className="font-serif text-lg font-bold tracking-tight">
+          XLab<span className="text-primary"> · </span>Tracks
         </Link>
         <nav className="text-muted-foreground hidden items-center gap-1 text-sm sm:flex">
           {NAV.map((item) => (

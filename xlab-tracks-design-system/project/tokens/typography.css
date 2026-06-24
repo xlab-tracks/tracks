@@ -1,0 +1,39 @@
+/* ============================================================
+   XLab Tracks — Typography tokens
+   Display: Source Serif 4 (serif). UI/body: Inter. Code: JetBrains Mono.
+   Headlines use Source Serif 4 600. Body uses Inter 400/500. Sentence case.
+   ============================================================ */
+
+:root {
+  /* Families */
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Weights */
+  --weight-regular: 400;  /* @kind font */
+  --weight-medium:  500;  /* @kind font */
+  --weight-semibold: 600; /* @kind font */
+  --weight-bold:    700;  /* @kind font */
+
+  /* ---- Type scale (size / line-height) ----
+     Display sizes use --font-display; text sizes use --font-sans. */
+  --text-display-2xl: 56px;  --lh-display-2xl: 1.05; /* @kind other */
+  --text-display-xl:  44px;  --lh-display-xl:  1.08; /* @kind other */
+  --text-display-lg:  36px;  --lh-display-lg:  1.1;  /* @kind other */
+  --text-display-md:  28px;  --lh-display-md:  1.18; /* @kind other */
+
+  --text-title-lg:    22px;  --lh-title-lg:    1.3;  /* @kind other */
+  --text-title:       18px;  --lh-title:       1.4;  /* @kind other */
+
+  --text-body-lg:     17px;  --lh-body-lg:     1.7;  /* @kind other */
+  --text-body:        15px;  --lh-body:        1.65; /* @kind other */
+  --text-body-sm:     14px;  --lh-body-sm:     1.6;  /* @kind other */
+  --text-caption:     13px;  --lh-caption:     1.5;  /* @kind other */
+  --text-overline:    12px;  --lh-overline:    1.4;  /* @kind other */
+
+  /* Tracking */
+  --tracking-tight:  -0.01em;  /* @kind other */
+  --tracking-normal:  0;       /* @kind other */
+  --tracking-wide:    0.01em;  /* @kind other */
+}

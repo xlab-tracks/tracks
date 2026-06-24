@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Marketing landing" description="XLab Tracks public landing page — hero, track catalogue, how-it-works, CTA. Warm dark brand." -->
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css" />
+<script src="./ds-base.js"></script>
+<style>
+  html,body{margin:0;background:#201A19;color:#ECE5E3;font-family:'Inter',system-ui,sans-serif}
+  *{box-sizing:border-box}
+  ::selection{background:#E1854F;color:#201A19}
+  a{color:inherit}
+</style>
+</helmet>
+
+<header style="display:flex;align-items:center;justify-content:space-between;padding:18px 40px;border-bottom:0.5px solid #3A302E;position:sticky;top:0;background:color-mix(in oklch,#201A19 88%,transparent);backdrop-filter:blur(8px);z-index:10">
+  <span style="font-family:'Source Serif 4',serif;font-weight:700;font-size:20px;letter-spacing:-0.01em;color:#ECE5E3">XLab<span style="color:#E1854F"> · </span>Tracks</span>
+  <nav style="display:flex;align-items:center;gap:28px;font-size:14px;font-weight:500;color:#CFC8C4">
+    <a href="#" style="text-decoration:none">Tracks</a>
+    <a href="#" style="text-decoration:none">How it works</a>
+    <a href="#" style="text-decoration:none">Pricing</a>
+    <a href="#" style="text-decoration:none">For teams</a>
+    <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="ghost" size="sm" hint-size="80px,34px">Sign in</x-import>
+    <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="primary" size="sm" icon-right="arrow-right" hint-size="150px,34px">Browse tracks</x-import>
+  </nav>
+</header>
+
+<main>
+  <section style="padding:76px 40px 56px;max-width:1080px;margin:0 auto">
+    <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Badge" hint-size="190px,26px">New cohort starts July 14</x-import>
+    <h1 style="font-family:'Source Serif 4',serif;font-weight:600;font-size:56px;line-height:1.05;letter-spacing:-0.01em;color:#ECE5E3;margin:20px 0 18px;max-width:16ch">Learn to make AI go well.</h1>
+    <p style="font-size:18px;line-height:1.7;color:#A69A98;max-width:54ch;margin:0 0 28px">Structured tracks in AI safety — alignment, interpretability, evaluations — built by researchers and paced for working people. No hype, no firehose. Just the path, one lesson at a time.</p>
+    <div style="display:flex;align-items:center;gap:14px">
+      <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="primary" size="lg" icon-left="flame" hint-size="180px,48px">Browse tracks</x-import>
+      <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="secondary" size="lg" hint-size="170px,48px">See the syllabus</x-import>
+    </div>
+  </section>
+
+  <section style="padding:8px 40px 64px;max-width:1080px;margin:0 auto">
+    <p style="font-size:13px;font-weight:500;color:#D9A99F;margin:0 0 6px">The catalogue</p>
+    <h2 style="font-family:'Source Serif 4',serif;font-weight:600;font-size:30px;color:#ECE5E3;margin:0 0 22px">Pick a track. Start anywhere.</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <sc-for list="{{ tracks }}" as="t" hint-placeholder-count="6">
+        <a href="#" style="display:flex;flex-direction:column;gap:12px;background:#2B2321;border:0.5px solid #574D4B;border-radius:14px;padding:22px;text-decoration:none;color:#ECE5E3">
+          <i class="ti ti-{{ t.icon }}" style="font-size:26px;color:#E1854F"></i>
+          <div>
+            <p style="font-family:'Source Serif 4',serif;font-weight:600;font-size:19px;color:#ECE5E3;margin:0 0 6px">{{ t.title }}</p>
+            <p style="font-size:14px;line-height:1.6;color:#A69A98;margin:0">{{ t.desc }}</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:6px;font-size:12.5px;color:#7C746F">
+            <span style="display:inline-flex;align-items:center;gap:5px"><i class="ti ti-book"></i> {{ t.lessons }} lessons</span>
+            <span style="display:inline-flex;align-items:center;gap:5px"><i class="ti ti-clock"></i> {{ t.weeks }} weeks</span>
+            <span style="margin-left:auto;color:#D9A99F">{{ t.level }}</span>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="background:#2D211C;padding:56px 40px">
+    <div style="max-width:1080px;margin:0 auto">
+      <p style="font-size:13px;font-weight:500;color:#D9A99F;margin:0 0 6px">How it works</p>
+      <h2 style="font-family:'Source Serif 4',serif;font-weight:600;font-size:30px;color:#ECE5E3;margin:0 0 30px">Read, build, discuss. Then again.</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <i class="ti ti-{{ s.icon }}" style="font-size:22px;color:#E1854F"></i>
+              <span style="font-size:12.5px;color:#7C746F">{{ s.time }}</span>
+            </div>
+            <p style="font-size:17px;font-weight:500;color:#ECE5E3;margin:0 0 6px">{{ s.title }}</p>
+            <p style="font-size:14px;line-height:1.65;color:#A69A98;margin:0;max-width:34ch">{{ s.desc }}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:64px 40px;max-width:1080px;margin:0 auto">
+    <div style="background:#2B2321;border:0.5px solid #574D4B;border-radius:16px;padding:44px 32px;text-align:center">
+      <h2 style="font-family:'Source Serif 4',serif;font-weight:600;font-size:30px;color:#ECE5E3;margin:0 0 10px">Learn at your own pace</h2>
+      <p style="font-size:16px;line-height:1.7;color:#A69A98;max-width:46ch;margin:0 auto 24px">Audit any track free, forever. Join a cohort for live discussion, mentor feedback, and a certificate — $29 a month, cancel whenever.</p>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="primary" size="lg" hint-size="150px,48px">Start for free</x-import>
+        <x-import component-from-global-scope="XLabTracksDesignSystem_8f3d24.Button" variant="ghost" size="lg" hint-size="160px,48px">Compare plans</x-import>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer style="padding:40px;background:#171211;border-top:0.5px solid #3A302E;color:#7C746F;font-size:13px">
+  <span style="font-family:'Source Serif 4',serif;font-weight:700;font-size:18px;color:#ECE5E3">XLab<span style="color:#E1854F"> · </span>Tracks</span>
+  <p style="margin:10px 0 0;max-width:40ch;line-height:1.6">Structured learning in AI safety. Built by researchers, paced for working people.</p>
+</footer>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      tracks: [
+        { icon: 'route', title: 'Foundations of AI safety', desc: 'The core problem, the main threat models, and why this is hard. Start here.', lessons: 8, weeks: 4, level: 'Beginner' },
+        { icon: 'eye', title: 'Interpretability', desc: 'Open the black box. Features, circuits, and probing what a model knows.', lessons: 10, weeks: 6, level: 'Intermediate' },
+        { icon: 'shield-half', title: 'Evaluations & red-teaming', desc: 'Measure capability and risk. Build evals that actually catch failures.', lessons: 9, weeks: 5, level: 'Intermediate' },
+        { icon: 'scale', title: 'Alignment theory', desc: 'Reward modelling, RLHF, scalable oversight, and where they break.', lessons: 12, weeks: 7, level: 'Advanced' },
+        { icon: 'gavel', title: 'AI governance', desc: 'Policy, standards, and the levers outside the model. For non-engineers too.', lessons: 7, weeks: 4, level: 'Beginner' },
+        { icon: 'building-bank', title: 'RLHF in practice', desc: 'Hands-on: train a reward model and fine-tune with human feedback.', lessons: 11, weeks: 6, level: 'Advanced' },
+      ],
+      steps: [
+        { icon: 'book-2', title: '1. Read the lesson', desc: 'Short, dense, written by people who do the work. 20 minutes, no padding.', time: '~20 min' },
+        { icon: 'tool', title: '2. Build something', desc: 'Every lesson ends with an exercise you run yourself — code or written.', time: '~45 min' },
+        { icon: 'message-circle', title: '3. Discuss in cohort', desc: 'Bring it to your weekly group and a mentor. Then move to the next.', time: 'weekly' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

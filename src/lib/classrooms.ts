@@ -1,6 +1,11 @@
 import type { ClassroomRole } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getTrackLessonIds, tracks } from "@/lib/content";
+import {
+  getAssessmentForModule,
+  getModulesForTrack,
+  getTrackLessonIds,
+  tracks,
+} from "@/lib/content";
 
 /** The caller's role in a classroom, or null if they are not a member. */
 export async function getMembership(userId: string, classroomId: string) {
@@ -44,26 +49,34 @@ export interface RosterRow {
   total: number;
   percent: number;
   lastActive: Date | null;
-  submittedCount: number;
+  assessmentsSubmitted: number;
   capstoneStatus: string | null;
+}
+
+export interface RosterMember {
+  userId: string;
+  role: ClassroomRole;
+  user: { name: string | null; email: string; imageUrl: string | null };
 }
 
 /**
  * Aggregated per-member progress for the instructor roster. Scoped to the
- * classroom's track when set, otherwise across all tracks.
+ * classroom's track when set, otherwise across all tracks. Takes the already
+ * loaded members to avoid re-querying the classroom.
  */
 export async function getClassroomRoster(
-  classroomId: string,
+  members: RosterMember[],
   trackId: string | null,
 ): Promise<RosterRow[]> {
-  const classroom = await getClassroom(classroomId);
-  if (!classroom) return [];
-  const members = classroom.memberships;
   const userIds = members.map((m) => m.userId);
 
-  const scopeLessonIds = trackId
-    ? getTrackLessonIds(trackId)
-    : tracks.flatMap((t) => getTrackLessonIds(t.id));
+  const scopeTrackIds = trackId ? [trackId] : tracks.map((t) => t.id);
+  const scopeLessonIds = scopeTrackIds.flatMap((id) => getTrackLessonIds(id));
+  const scopeAssessmentIds = scopeTrackIds.flatMap((id) =>
+    getModulesForTrack(id)
+      .map((m) => getAssessmentForModule(m.id)?.id)
+      .filter((x): x is string => Boolean(x)),
+  );
   const total = scopeLessonIds.length;
 
   const [progress, submissions, capstones] = await Promise.all([
@@ -72,7 +85,12 @@ export async function getClassroomRoster(
       select: { userId: true, status: true, lastViewedAt: true },
     }),
     prisma.submission.findMany({
-      where: { userId: { in: userIds }, status: "submitted" },
+      where: {
+        userId: { in: userIds },
+        kind: "assessment",
+        status: "submitted",
+        contentId: { in: scopeAssessmentIds },
+      },
       select: { userId: true },
     }),
     trackId
@@ -113,7 +131,7 @@ export async function getClassroomRoster(
       total,
       percent: total ? Math.round((completed / total) * 100) : 0,
       lastActive: lastActiveByUser.get(m.userId) ?? null,
-      submittedCount: submittedByUser.get(m.userId) ?? 0,
+      assessmentsSubmitted: submittedByUser.get(m.userId) ?? 0,
       capstoneStatus: capstoneByUser.get(m.userId) ?? null,
     };
   });

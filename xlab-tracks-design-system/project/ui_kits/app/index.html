@@ -1,0 +1,44 @@
+<!-- @dsCard group="Learner app" viewport="1280x800" name="Learner app" subtitle="Sign in → dashboard → lesson reader" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>XLab Tracks — App</title>
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css" />
+<style>
+  html,body{margin:0;background:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans)}
+  *{box-sizing:border-box}
+  ::selection{background:var(--accent);color:var(--text-on-accent)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel" src="AppShell.jsx"></script>
+<script type="text/babel" src="Login.jsx"></script>
+<script type="text/babel" src="Dashboard.jsx"></script>
+<script type="text/babel" src="Lesson.jsx"></script>
+<script type="text/babel">
+  const USER = { name: 'Ada Okonkwo' };
+  function App(){
+    const [screen, setScreen] = React.useState('login'); // login | dashboard | lesson
+    if (screen === 'login') return <AppLogin onSignIn={() => setScreen('dashboard')} />;
+    return (
+      <AppShell active={screen === 'lesson' ? 'tracks' : screen} user={USER}
+        onNav={(id) => setScreen(id === 'tracks' ? 'dashboard' : 'dashboard')}
+        onOpenSearch={() => {}}>
+        {screen === 'lesson'
+          ? <AppLesson onBack={() => setScreen('dashboard')} onComplete={() => setScreen('dashboard')} />
+          : <AppDashboard user={USER} onOpenLesson={() => setScreen('lesson')} />}
+      </AppShell>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

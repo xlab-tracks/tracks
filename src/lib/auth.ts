@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { prisma } from "./db";
 
@@ -48,15 +49,19 @@ async function upsertUser(workosUser: WorkosUserShape): Promise<AppUser> {
   });
 }
 
-/** The signed-in app user, or null when not authenticated. */
-export async function getCurrentUser(): Promise<AppUser | null> {
+/**
+ * The signed-in app user, or null when not authenticated.
+ * `cache()` dedupes the WorkOS lookup + user upsert within a single request,
+ * so layout + page calls don't each hit the DB.
+ */
+export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
   const { user } = await withAuth();
   if (!user) return null;
   return upsertUser(user);
-}
+});
 
 /** Like getCurrentUser, but redirects to sign-in when not authenticated. */
-export async function requireUser(): Promise<AppUser> {
+export const requireUser = cache(async (): Promise<AppUser> => {
   const { user } = await withAuth({ ensureSignedIn: true });
   return upsertUser(user);
-}
+});

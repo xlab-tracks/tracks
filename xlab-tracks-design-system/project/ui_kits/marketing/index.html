@@ -1,0 +1,40 @@
+<!-- @dsCard group="Marketing site" viewport="1280x720" name="Marketing site" subtitle="Landing + pricing — click the nav" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>XLab Tracks — Marketing</title>
+<link rel="stylesheet" href="../../styles.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css" />
+<style>
+  html,body{margin:0;background:var(--bg-base);color:var(--text-primary);font-family:var(--font-sans)}
+  *{box-sizing:border-box}
+  ::selection{background:var(--accent);color:var(--text-on-accent)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel" src="Chrome.jsx"></script>
+<script type="text/babel" src="Landing.jsx"></script>
+<script type="text/babel" src="Pricing.jsx"></script>
+<script type="text/babel">
+  function App(){
+    const [page, setPage] = React.useState('home');
+    React.useEffect(()=>{ window.scrollTo(0,0); }, [page]);
+    return (
+      <React.Fragment>
+        <MktNav page={page} onNav={setPage} />
+        {page === 'home' ? <MktLanding onNav={setPage} /> : <MktPricing />}
+        <MktFooter />
+      </React.Fragment>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

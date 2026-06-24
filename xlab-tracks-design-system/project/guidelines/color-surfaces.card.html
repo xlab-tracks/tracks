@@ -1,0 +1,24 @@
+<!-- @dsCard group="Colors" viewport="700x170" name="Surfaces & borders" subtitle="How the dark UI layers — sunken, base, card, warm band" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--bg-sunken);font-family:var(--font-sans);padding:20px}
+  .row{display:flex;gap:14px}
+  .layer{flex:1;border-radius:var(--radius-md);border:0.5px solid var(--border-default);padding:16px;display:flex;flex-direction:column;gap:6px}
+  .t{font-size:13px;color:var(--text-primary);font-weight:500}
+  .v{font-size:11px;color:var(--text-muted)}
+  .pri{color:var(--text-primary);font-size:13px}
+  .sec{color:var(--text-secondary);font-size:13px}
+  .mut{color:var(--text-muted);font-size:13px}
+</style></head>
+<body>
+<div class="row">
+  <div class="layer" style="background:var(--bg-sunken)"><span class="t">Sunken well</span><span class="v">--bg-sunken</span></div>
+  <div class="layer" style="background:var(--bg-base)"><span class="t">Base</span><span class="v">--bg-base</span></div>
+  <div class="layer" style="background:var(--surface-card)"><span class="t">Card</span><span class="v">--surface-card</span></div>
+  <div class="layer" style="background:var(--surface-warm)"><span class="t">Warm band</span><span class="v">--surface-warm</span></div>
+  <div class="layer" style="background:var(--surface-card)">
+    <span class="pri">Primary text</span><span class="sec">Secondary text</span><span class="mut">Muted text</span>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,22 @@
+/* ============================================================
+   XLab Tracks — Elevation & shadow tokens
+   Dark UI: structure comes mostly from hairline borders, not big shadows.
+   Shadows are quiet and warm-black; reserve the strong one for overlays.
+   ============================================================ */
+
+:root {
+  /* Hairline border convention (0.5px reads as crisp on retina) */
+  --hairline: 0.5px solid var(--border-default);
+  --hairline-subtle: 0.5px solid var(--border-subtle);
+
+  --shadow-none: none;
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md:  0 4px 14px rgba(0, 0, 0, 0.40);
+  --shadow-lg:  0 12px 40px rgba(0, 0, 0, 0.55); /* dialogs, popovers */
+
+  /* Focus ring (outer glow) */
+  --shadow-focus: 0 0 0 3px var(--focus-ring);
+
+  /* Inset for pressed wells / inputs */
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.30);
+}

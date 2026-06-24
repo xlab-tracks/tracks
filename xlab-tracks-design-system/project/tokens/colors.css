@@ -1,0 +1,92 @@
+/* ============================================================
+   XLab Tracks — Color tokens
+   Dark-first, warm "stone & ember" palette.
+   Base ramp = warm greys (concrete/stone). Accents = ember + dusty rose.
+   ============================================================ */
+
+:root {
+  /* ---- Base neutrals: warm stone ramp (dark -> light) ---- */
+  --stone-950: #171211; /* deepest: page chrome, footers, sunken wells */
+  --stone-900: #201A19; /* app background */
+  --stone-850: #2B2321; /* card surface */
+  --stone-800: #2D211C; /* warm raised band / ember-tinted section */
+  --stone-750: #3A2B28; /* accent-soft background (rose/ember tint) */
+  --stone-700: #38302E; /* hairline border on dark */
+  --stone-650: #574D4B; /* default border, dividers */
+  --stone-500: #7C746F; /* faint text, placeholder */
+  --stone-400: #A69A98; /* secondary text */
+  --stone-300: #B0A39E; /* secondary text (slightly brighter) */
+  --stone-200: #CFC8C4; /* nav links, quiet labels */
+  --stone-100: #ECE5E3; /* primary text, near-white */
+  --stone-50:  #F5F0EE; /* highest contrast text on dark */
+
+  /* ---- Brand accent: ember (terracotta) ---- */
+  --ember-700: #A85A2F;
+  --ember-600: #C9703D; /* hover / pressed */
+  --ember-500: #E1854F; /* primary brand accent */
+  --ember-400: #EB9A68;
+  --ember-300: #F1B189; /* light, for on-dark emphasis text */
+
+  /* ---- Secondary accent: dusty rose ---- */
+  --rose-400: #CD8A7F; /* secondary buttons, links */
+  --rose-300: #D9A99F; /* soft accent text on tinted chips */
+  --rose-200: #E3BDB5;
+
+  /* ---- Cool counterpoint (used sparingly: "cold plunge" / info) ---- */
+  --slate-400: #8FA3A8;
+  --slate-300: #A7B7BB;
+
+  /* ---- Water (cool accent: deep & shallow) ---- */
+  --water-deep:    #1D383D; /* deep water — dark teal surface / well */
+  --water-shallow: #7FB0AE; /* shallow water — bright teal accent text/fill */
+
+  /* ---- Semantic status (warm-leaning, harmonised) ---- */
+  --sage-500:   #7FA682; /* success */
+  --sage-300:   #A9C7AB;
+  --amber-500:  #D7A24B; /* warning */
+  --amber-300:  #E6C285;
+  --clay-500:   #C5705F; /* danger / error */
+  --clay-300:   #DB9C90;
+
+  /* ============================================================
+     Semantic aliases — prefer these in components
+     ============================================================ */
+
+  /* Surfaces */
+  --bg-base:        var(--stone-900);
+  --bg-sunken:      var(--stone-950);
+  --surface-card:   var(--stone-850);
+  --surface-raised: var(--stone-800);
+  --surface-warm:   var(--stone-800);
+
+  /* Borders / dividers */
+  --border-subtle:  var(--stone-700);
+  --border-default: var(--stone-650);
+  --border-strong:  var(--stone-500);
+
+  /* Text */
+  --text-primary:   var(--stone-100);
+  --text-secondary: var(--stone-400);
+  --text-muted:     var(--stone-500);
+  --text-faint:     var(--stone-500);
+  --text-on-accent: var(--stone-900); /* dark text sits on ember */
+
+  /* Accent roles */
+  --accent:           var(--ember-500);
+  --accent-hover:     var(--ember-600);
+  --accent-text:      var(--ember-300);  /* ember as readable text on dark */
+  --accent-soft-bg:   var(--stone-750);  /* tinted chip background */
+  --accent-soft-text: var(--rose-300);
+
+  --accent-2:         var(--rose-400);   /* secondary / outline accent */
+  --accent-2-text:    var(--rose-300);
+
+  /* Status roles */
+  --success: var(--sage-500);
+  --warning: var(--amber-500);
+  --danger:  var(--clay-500);
+  --info:    var(--slate-400);
+
+  /* Focus ring */
+  --focus-ring: color-mix(in oklch, var(--ember-500) 55%, transparent);
+}

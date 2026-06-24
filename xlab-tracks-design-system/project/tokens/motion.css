@@ -1,0 +1,23 @@
+/* ============================================================
+   XLab Tracks — Motion tokens
+   Calm and unhurried. Fades and gentle moves; no bounce, no spring.
+   ============================================================ */
+
+:root {
+  --dur-fast:  120ms;  /* @kind other */
+  --dur-base:  200ms;  /* @kind other */
+  --dur-slow:  320ms;  /* @kind other */
+  --dur-slower: 520ms; /* @kind other */
+
+  /* Easing: soft ease-out for entrances, standard for state changes */
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);     /* @kind other */
+  --ease-out:      cubic-bezier(0.16, 0.84, 0.30, 1);  /* @kind other */
+  --ease-in-out:   cubic-bezier(0.45, 0.05, 0.30, 1);  /* @kind other */
+
+  /* Default interactive transition */
+  --transition-base: color var(--dur-fast) var(--ease-standard),
+                     background-color var(--dur-fast) var(--ease-standard),
+                     border-color var(--dur-fast) var(--ease-standard),
+                     opacity var(--dur-fast) var(--ease-standard),
+                     transform var(--dur-fast) var(--ease-standard);
+}
