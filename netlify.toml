@@ -1,9 +1,10 @@
 # Netlify build & deploy for Tracks (Next.js 16).
-# Netlify's Neon extension injects NETLIFY_DATABASE_URL and
-# NETLIFY_DATABASE_URL_UNPOOLED at build time, so `prisma migrate deploy`
-# applies pending migrations to the production database on every deploy.
+# Netlify injects NETLIFY_DATABASE_URL into the build (pooled). Prisma migrations
+# need a DIRECT connection, so we derive the unpooled URL (strip "-pooler") and
+# run `prisma migrate deploy` against it, applying migrations to production on
+# each deploy. At runtime the app uses the injected NETLIFY_DATABASE_URL.
 [build]
-  command = "prisma generate && prisma migrate deploy && next build"
+  command = 'prisma generate && NETLIFY_DATABASE_URL_UNPOOLED=${NETLIFY_DATABASE_URL/-pooler/} prisma migrate deploy && next build'
 
 [build.environment]
   NODE_VERSION = "22"
