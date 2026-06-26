@@ -16,8 +16,6 @@ and a curated resource hub.
   draft, research summary, briefing, essay) with section scaffolds + rubrics.
 - **Prerequisites** per module, including cross-track gating, with soft (warn) or
   hard (lock) enforcement.
-- **Capstone** — configurable per track: progressive (per-module checkpoints) or
-  final-module-only.
 - **Centralized resource hub** with filters, plus an explicit "background we
   don't teach — learn it elsewhere" section.
 - **Progress tracking** (checkmarks, % complete, continue-where-you-left-off) and
@@ -68,7 +66,7 @@ Prisma · Vitest.
    ```
 
    Open http://localhost:3000. Browsing tracks, demos, and resources works
-   signed-out; progress, writing, capstone, and classrooms require signing in.
+   signed-out; progress, writing, and classrooms require signing in.
 
 ## Scripts
 
@@ -80,7 +78,9 @@ Prisma · Vitest.
 
 ## Authoring content
 
-The content graph is **code-defined**; only user data lives in Postgres.
+The content graph is **code-defined**; only user data lives in Postgres. See
+**[AUTHORING.md](AUTHORING.md)** for step-by-step workflows (add a lesson, create a
+demo, embed a demo in a track, create a track).
 
 - **Structure** — edit the typed data files in `src/content/`:
   `curriculum.data.ts` (tracks/modules/lessons), `exercises.data.ts`,
@@ -104,7 +104,7 @@ Placeholder copy is lorem ipsum — replace it with real curriculum.
 - Mutations are React Server Actions in `src/app/actions/`; closed-exercise
   answer keys never reach the client (graded in `gradeExercise`).
 - Prisma models (`prisma/schema.prisma`) cover users, lesson progress,
-  submissions, capstone projects/entries, and classrooms/memberships.
+  submissions, and classrooms/memberships.
 
 ## Deploy
 

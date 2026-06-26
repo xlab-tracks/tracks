@@ -2,11 +2,10 @@
 //
 // The *content graph* (tracks, modules, lessons, exercises, assessments,
 // resources) is static and code-defined — authored as typed data + MDX files in
-// the repo. User/stateful data (progress, submissions, capstone work) lives in
-// Postgres and references these string IDs. Keep this file free of any DB or
-// user-specific concepts.
+// the repo. User/stateful data (progress, submissions) lives in Postgres and
+// references these string IDs. Keep this file free of any DB or user-specific
+// concepts.
 
-export type CapstoneMode = "progressive" | "final-only";
 export type PrerequisiteEnforcement = "soft" | "hard";
 export type TrackKind = "foundations" | "technical" | "governance";
 
@@ -20,18 +19,9 @@ export interface Track {
   kind: TrackKind;
   /** Ordered module IDs. */
   moduleIds: string[];
-  capstoneMode: CapstoneMode;
-  /** Whether this track has a capstone project at all (Foundations does not). */
-  hasCapstone: boolean;
   /** How prerequisites gate access for this track's modules. */
   prerequisiteEnforcement: PrerequisiteEnforcement;
   estimatedHours?: number;
-}
-
-export interface CapstoneCheckpoint {
-  id: string;
-  title: string;
-  prompt: string;
 }
 
 export interface Module {
@@ -48,8 +38,6 @@ export interface Module {
   lessonIds: string[];
   /** End-of-module written assessment, if any. */
   assessmentId?: string;
-  /** Capstone work attached to this module (progressive tracks only). */
-  capstoneCheckpoint?: CapstoneCheckpoint;
   /** Resource-hub topic tags surfaced as "Further reading". */
   furtherReadingTopics?: string[];
   estimatedMinutes?: number;

@@ -119,7 +119,6 @@ export default async function ClassroomPage({
                 <th className="px-4 py-3 text-left font-medium">Student</th>
                 <th className="px-4 py-3 text-left font-medium">Progress</th>
                 <th className="px-4 py-3 text-left font-medium">Assessments</th>
-                <th className="px-4 py-3 text-left font-medium">Capstone</th>
                 <th className="px-4 py-3 text-left font-medium">Last active</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -159,13 +158,6 @@ export default async function ClassroomPage({
                     </div>
                   </td>
                   <td className="px-4 py-3">{row.assessmentsSubmitted}</td>
-                  <td className="px-4 py-3">
-                    {row.capstoneStatus ? (
-                      <Badge variant="secondary">{row.capstoneStatus}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
                   <td className="text-muted-foreground px-4 py-3">
                     {fmtDate(row.lastActive)}
                   </td>

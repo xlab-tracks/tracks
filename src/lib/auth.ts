@@ -24,7 +24,7 @@ function displayName(user: WorkosUserShape): string | null {
 }
 
 // WorkOS owns identity/sessions; mirror the signed-in user into our DB so app
-// data (progress, submissions, capstone, classrooms) can reference a local ID.
+// data (progress, submissions, classrooms) can reference a local ID.
 async function upsertUser(workosUser: WorkosUserShape): Promise<AppUser> {
   return prisma.user.upsert({
     where: { workosUserId: workosUser.id },

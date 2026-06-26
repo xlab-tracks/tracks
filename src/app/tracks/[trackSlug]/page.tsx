@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, FileText, Lock, Trophy } from "lucide-react";
+import { CheckCircle2, FileText, Lock } from "lucide-react";
 import {
   getAssessmentForModule,
   getLessonById,
@@ -79,20 +79,7 @@ export default async function TrackOverviewPage({
           {track.estimatedHours && (
             <Badge variant="secondary">~{track.estimatedHours}h</Badge>
           )}
-          {track.hasCapstone && (
-            <Badge variant="outline">
-              Capstone:{" "}
-              {track.capstoneMode === "progressive" ? "Progressive" : "Final module"}
-            </Badge>
-          )}
         </div>
-        {track.hasCapstone && (
-          <Button asChild variant="outline" size="sm" className="mt-4 gap-2">
-            <Link href="/capstone">
-              <Trophy className="size-4" aria-hidden /> View capstone
-            </Link>
-          </Button>
-        )}
       </header>
 
       {user && progress ? (

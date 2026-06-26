@@ -11,7 +11,6 @@ import {
   tracks,
   type Track,
 } from "@/lib/content";
-import { getCapstone } from "@/lib/capstone";
 import { getCompletedLessonIds, getSubmission, getTrackProgress } from "@/lib/progress";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import {
@@ -63,8 +62,7 @@ export default async function StudentDetailPage({
           return { module, lessons, assessment, submission };
         }),
       );
-      const capstone = track.hasCapstone ? await getCapstone(sid, track.id) : null;
-      return { track, progress, completed, modules, capstone };
+      return { track, progress, completed, modules };
     }),
   );
 
@@ -96,7 +94,7 @@ export default async function StudentDetailPage({
       </div>
 
       <div className="mt-8 space-y-8">
-        {trackData.map(({ track, progress, completed, modules, capstone }) => (
+        {trackData.map(({ track, progress, completed, modules }) => (
           <section key={track.id}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">{track.title}</h2>
@@ -105,13 +103,6 @@ export default async function StudentDetailPage({
               </span>
             </div>
             <Progress value={progress.percent} className="mt-2" />
-
-            {capstone && (
-              <p className="text-muted-foreground mt-3 text-sm">
-                Capstone: <Badge variant="secondary">{capstone.status}</Badge>
-                {capstone.topic ? ` — ${capstone.topic}` : ""}
-              </p>
-            )}
 
             <Accordion type="multiple" className="mt-3">
               {modules.map(({ module, lessons, assessment, submission }) => (

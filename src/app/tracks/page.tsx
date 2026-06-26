@@ -39,14 +39,6 @@ export default function TracksPage() {
               <CardHeader>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="secondary">{KIND_LABEL[track.kind]}</Badge>
-                  {track.hasCapstone && (
-                    <Badge variant="outline">
-                      Capstone:{" "}
-                      {track.capstoneMode === "progressive"
-                        ? "Progressive"
-                        : "Final module"}
-                    </Badge>
-                  )}
                 </div>
                 <CardTitle className="mt-2 text-xl">{track.title}</CardTitle>
                 <CardDescription>{track.description}</CardDescription>

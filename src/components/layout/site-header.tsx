@@ -77,9 +77,6 @@ export function SiteHeader() {
                 <DropdownMenuItem asChild>
                   <Link href="/classrooms">My classrooms</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/capstone">My capstone</Link>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => signOut()}>
                   <LogOut className="mr-2 size-4" aria-hidden /> Sign out

@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  CheckCircle2,
-  Clock,
-  ExternalLink,
-  FileText,
-  Lock,
-  Trophy,
-} from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, FileText, Lock } from "lucide-react";
 import {
   getAssessmentForModule,
   getLessonsForModule,
@@ -153,26 +146,6 @@ export default async function ModulePage({
                 <CardFooter>
                   <Button asChild variant="outline">
                     <Link href={`${moduleHref}/assessment`}>Open assessment</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            </section>
-          )}
-
-          {module.capstoneCheckpoint && (
-            <section className="mt-8">
-              <h2 className="text-lg font-semibold">Capstone checkpoint</h2>
-              <Card className="bg-secondary/40 mt-3">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Trophy className="size-4" aria-hidden />
-                    {module.capstoneCheckpoint.title}
-                  </CardTitle>
-                  <CardDescription>{module.capstoneCheckpoint.prompt}</CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button asChild variant="outline">
-                    <Link href="/capstone">Work on capstone</Link>
                   </Button>
                 </CardFooter>
               </Card>

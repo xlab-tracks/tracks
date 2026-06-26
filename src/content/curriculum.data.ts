@@ -2,8 +2,8 @@ import type { Lesson, Module, Track } from "@/lib/content/types";
 
 // Placeholder curriculum: 2 tracks for now — Control (technical) and Governance.
 // ~2 modules each, ~1–2 lessons per module. Real curriculum replaces the copy;
-// the structure exercises prerequisites (including a cross-track link),
-// capstone modes, and assessments.
+// the structure exercises prerequisites (including a cross-track link) and
+// assessments.
 
 export const tracks: Track[] = [
   {
@@ -12,11 +12,9 @@ export const tracks: Track[] = [
     title: "AI Control",
     shortTitle: "Control",
     description:
-      "Hands-on technical track on controlling and evaluating AI systems. Lorem ipsum dolor sit amet, consectetur adipiscing elit, building toward a capstone in the final module.",
+      "Hands-on technical track on controlling and evaluating AI systems. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.",
     kind: "technical",
     moduleIds: ["c-intro", "c-threat-modeling"],
-    capstoneMode: "final-only",
-    hasCapstone: true,
     prerequisiteEnforcement: "hard",
     estimatedHours: 20,
   },
@@ -26,11 +24,9 @@ export const tracks: Track[] = [
     title: "AI Governance & Policy",
     shortTitle: "Governance",
     description:
-      "Policy-oriented track with real writing deliverables. Lorem ipsum dolor sit amet — a capstone that builds progressively across modules.",
+      "Policy-oriented track with real writing deliverables. Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     kind: "governance",
     moduleIds: ["g-intro", "g-instruments"],
-    capstoneMode: "progressive",
-    hasCapstone: true,
     prerequisiteEnforcement: "soft",
     estimatedHours: 18,
   },
@@ -80,12 +76,6 @@ export const modules: Module[] = [
     assessmentId: "as-g1",
     furtherReadingTopics: ["governance", "policy"],
     estimatedMinutes: 70,
-    capstoneCheckpoint: {
-      id: "cp-g1",
-      title: "Capstone: frame your policy question",
-      prompt:
-        "Lorem ipsum dolor sit amet: define the policy question your capstone will address and why it matters.",
-    },
   },
   {
     id: "g-instruments",
@@ -102,12 +92,6 @@ export const modules: Module[] = [
     assessmentId: "as-g2",
     furtherReadingTopics: ["policy", "governance"],
     estimatedMinutes: 55,
-    capstoneCheckpoint: {
-      id: "cp-g2",
-      title: "Capstone: choose an instrument",
-      prompt:
-        "Consectetur adipiscing elit: select the policy instrument(s) your proposal will use and justify the choice.",
-    },
   },
 ];
 
