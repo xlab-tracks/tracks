@@ -38,7 +38,7 @@ export default async function TrackLayout({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col lg:flex-row">
+    <div className="flex w-full flex-1 flex-col lg:flex-row">
       <TrackSidebar
         outline={outline}
         completedLessonIds={completedLessonIds}

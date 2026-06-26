@@ -10,7 +10,7 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { LessonContent } from "@/components/mdx/lesson-content";
 import { LessonNav } from "@/components/layout/lesson-nav";
 import { LessonCompleteButton } from "@/components/learn/lesson-complete-button";
-import { RecordView } from "@/components/learn/record-view";
+import { LessonTracker } from "@/components/learn/lesson-tracker";
 import { Button } from "@/components/ui/button";
 
 export async function generateMetadata({
@@ -53,7 +53,7 @@ export default async function LessonPage({
   const completed = user ? await isLessonCompleted(user.id, lesson.id) : false;
 
   return (
-    <div className="max-w-3xl px-4 py-8 lg:px-8">
+    <div className="max-w-4xl px-4 py-8 lg:px-8">
       <Breadcrumbs
         items={[
           { label: track.title, href: `/tracks/${track.slug}` },
@@ -78,6 +78,8 @@ export default async function LessonPage({
         <LessonContent contentRef={lesson.contentRef} />
       </div>
 
+      {user ? <LessonTracker lessonId={lesson.id} completed={completed} /> : null}
+
       <div className="mt-8 flex flex-wrap items-center gap-3">
         {user ? (
           <LessonCompleteButton lessonId={lesson.id} initialCompleted={completed} />
@@ -87,8 +89,6 @@ export default async function LessonPage({
           </Button>
         )}
       </div>
-
-      {user ? <RecordView lessonId={lesson.id} /> : null}
 
       <LessonNav prev={nav.prev} next={nav.next} />
     </div>

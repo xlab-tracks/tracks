@@ -66,12 +66,12 @@ export default async function TrackOverviewPage({
   const continueHref = continueLessonId ? lessonHref(track.slug, continueLessonId) : null;
 
   return (
-    <div className="px-4 py-8 lg:px-8">
+    <div className="max-w-5xl px-4 py-8 lg:px-8">
       <Breadcrumbs
         items={[{ label: "Tracks", href: "/tracks" }, { label: track.title }]}
       />
 
-      <header className="max-w-3xl">
+      <header>
         <h1 className="text-3xl font-semibold tracking-tight">{track.title}</h1>
         <p className="text-muted-foreground mt-2">{track.description}</p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -83,7 +83,7 @@ export default async function TrackOverviewPage({
       </header>
 
       {user && progress ? (
-        <Card className="shadow-soft mt-6 max-w-3xl">
+        <Card className="shadow-soft mt-6">
           <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between text-sm">
