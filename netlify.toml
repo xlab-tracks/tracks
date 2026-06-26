@@ -1,10 +1,9 @@
 # Netlify build & deploy for Tracks (Next.js 16).
-# Netlify injects NETLIFY_DATABASE_URL into the build (pooled). Prisma migrations
-# need a DIRECT connection, so we derive the unpooled URL (strip "-pooler") and
-# run `prisma migrate deploy` against it, applying migrations to production on
-# each deploy. At runtime the app uses the injected NETLIFY_DATABASE_URL.
+# Netlify Database (GA) applies migrations from netlify/database/migrations on
+# each deploy, so the build does NOT run migrations. Prisma is the runtime query
+# client, reading the injected NETLIFY_DB_URL.
 [build]
-  command = 'prisma generate && NETLIFY_DATABASE_URL_UNPOOLED=${NETLIFY_DATABASE_URL/-pooler/} prisma migrate deploy && next build'
+  command = "prisma generate && next build"
 
 [build.environment]
   NODE_VERSION = "22"

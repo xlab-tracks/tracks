@@ -13,6 +13,7 @@
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
+    "@netlify/database": "^1.1.0",
     "@next/mdx": "^16.2.9",
     "@types/mdx": "^2.0.14",
     "@workos-inc/authkit-nextjs": "^4.1.1",

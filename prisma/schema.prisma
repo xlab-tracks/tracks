@@ -7,12 +7,11 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  // Pooled URL — injected by Netlify's Neon extension at build & runtime.
-  url       = env("NETLIFY_DATABASE_URL")
-  // Direct URL for migrations (Neon's pooler can't run them). The Netlify build
-  // derives this from NETLIFY_DATABASE_URL by stripping "-pooler".
-  directUrl = env("NETLIFY_DATABASE_URL_UNPOOLED")
+  provider = "postgresql"
+  // Netlify Database (GA) injects NETLIFY_DB_URL into builds, functions, and
+  // local dev. Schema migrations live in netlify/database/migrations and are
+  // applied by the Netlify deploy — never by `prisma migrate` against this DB.
+  url      = env("NETLIFY_DB_URL")
 }
 
 model User {
