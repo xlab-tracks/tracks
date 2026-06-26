@@ -4,6 +4,7 @@
 # client, reading the injected NETLIFY_DB_URL.
 [build]
   command = "prisma generate && next build"
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
