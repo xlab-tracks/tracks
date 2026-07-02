@@ -122,3 +122,73 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* ============================================================
+   Footnotes — numbered via a CSS counter, revealed via a
+   checkbox/label toggle (no JS). On wide viewports the note
+   floats into the right margin next to its reference, LessWrong/
+   Alignment-Forum style; the lesson column (article.lesson-body,
+   inside the page's max-w-4xl wrapper) leaves enough free space
+   at 2xl+ once the w-72 track sidebar is accounted for.
+   ============================================================ */
+.lesson-body {
+  counter-reset: footnote;
+}
+
+.footnote-marker {
+  counter-increment: footnote;
+  cursor: pointer;
+}
+
+.footnote-marker::before {
+  content: "[" counter(footnote) "]";
+  color: var(--primary);
+  font-size: 0.75em;
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 0.05em;
+}
+
+.footnote-toggle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.footnote-content {
+  display: none;
+}
+
+@media (max-width: 95.99rem) {
+  .footnote-marker:has(.footnote-toggle:checked) .footnote-content {
+    display: block;
+    margin: 0.5rem 0;
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+}
+
+@media (min-width: 96rem) {
+  .footnote-content {
+    display: block;
+    float: right;
+    clear: right;
+    width: 15rem;
+    margin-top: 0.15em;
+    margin-right: -17.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+}

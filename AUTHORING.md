@@ -68,6 +68,9 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
    <Demo id="sample-demo" />
 
    <Exercise id="ex-mc-3" />
+
+   A claim that needs a source.<Footnote>The footnote body — can hold prose, links,
+   `code`, etc.</Footnote>
    ```
 
    - `<Video src … title? provider? poster? />` — provider (`youtube`/`vimeo`/`file`)
@@ -75,6 +78,10 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
    - `<Callout variant?="note|tip|warning" title?>…</Callout>` (defaults to `note`).
    - `<Demo id="…" />` — a demo registered in the demo registry (see §2–3).
    - `<Exercise id="…" />` — an exercise defined in `src/content/exercises.data.ts`.
+   - `<Footnote>…</Footnote>` — drop it right after the word/claim it annotates, no
+     id needed. It numbers itself automatically (in document order) and renders as
+     a sidenote in the right margin on wide screens, or a tap-to-expand marker on
+     narrower ones — no separate "References" section at the bottom of the lesson.
 
 The lesson is now live at `/tracks/<trackSlug>/<moduleSlug>/<lessonSlug>` and shows
 in the sidebar + prev/next.
