@@ -1,0 +1,28 @@
+## Appendix F. Details of Monitoring With a Trusted Model
+
+We wanted to ensure that the red team can't follow a strategy of "always produce solutions which are somewhat suspicious, but aren't actually backdoored" which would naively exhaust our monitoring budget early and allow for rare brazen failures. And so, the protocol also continuously checks to see if there have been significantly more false positives from monitoring than the expected 2% rate (tested using the binomial CDF with $p=0.03$). When there are significantly more false positives than expected, we only submit solutions from the trusted model while still collecting data on the untrusted model's submissions. It's possible to temporarily have significantly more false positives than expected and then for more data to overturn this. In this case, we temporarily use the trusted model and then swap back to the untrusted model when there are no longer significantly more false positives.
+
+## Noise in the Results
+
+Noise is negligible for correctness (usefulness) measurements, but there is some noise for safety measurements.
+
+Noise in our results can come from two places:
+
+1. The Monte Carlo estimation procedure we use to estimate results given blue and red team behavior on a set of problems.
+2. Which set of problems we sampled.
+
+In practice, noise from (1) is quite small. Here is a version of our zoomed-in plot with safety error bars representing the Standard Error of the Mean (SEM) with respect to *just* the variation from the Monte Carlo estimation procedure, as shown in the figure below.
+
+<img src="/lessons/ai-control-paper/image7.png" alt="Safety vs Usefulness. Zoomed-in plot with safety error bars." style={{width: "100%"}} />
+
+*Figure 7. Safety vs Usefulness. Zoomed-in plot with safety error bars. (Error bars would be even smaller for usefulness.)*
+
+However, error due to the subset of problems we ended up sampling might be more substantial (though we attempt to mitigate this via downsampling backdoor attempts as described earlier).
+
+## Testing Higher Backdoor Frequency in Response to Defer to Trusted
+
+It's possible that backdooring more frequently could help to counter deferring to GPT-3.5 with conservative thresholds. If this were the case, then the optimal red team policy would differ depending on the rate of deferring to GPT-3.5. We find that backdooring more frequently is not a good red team response in our setting. We tested two different red team strategies beyond the one we typically use: "sometimes" which backdoors more often than the default "rarely" strategy we use and "common" which backdoors even more often than that. Results are shown in the figure below. Note that backdooring more frequently requires taking worse opportunities.
+
+<img src="/lessons/ai-control-paper/image5.png" alt="Safety vs Usefulness for different trusted monitoring strategies." style={{width: "100%"}} />
+
+*Figure 8. Safety vs Usefulness for different trusted monitoring strategies.*

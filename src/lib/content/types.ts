@@ -66,7 +66,8 @@ export type ClosedExerciseType =
   | "multiple-choice"
   | "multi-select"
   | "true-false"
-  | "understanding-check";
+  | "understanding-check"
+  | "flowchart";
 
 export type OpenExerciseType = "short-answer" | "writing-prompt" | "memo" | "essay";
 
@@ -113,12 +114,54 @@ export interface ChoiceExercise extends ExerciseBase {
   /** Option IDs that count as correct. Single entry for MC/true-false. */
   correctOptionIds: string[];
   explanation?: string;
+  /** Render option labels in a monospace/code style (e.g. "pick the line"). */
+  monospaceOptions?: boolean;
 }
 
 export interface UnderstandingCheckExercise extends ExerciseBase {
   type: "understanding-check";
   /** Revealed after the learner self-attempts; not auto-graded. */
   sampleAnswer: string;
+}
+
+// --- Flowchart construction ---
+
+export type FlowchartBlockKind = "step" | "branch" | "terminal";
+
+/** A palette block the learner can place while constructing a flowchart. */
+export interface FlowchartBlock {
+  id: string;
+  label: string;
+  kind: FlowchartBlockKind;
+  /** Arm labels for branch blocks, in display order. */
+  branchLabels?: string[];
+}
+
+/**
+ * A placed block in a constructed chart. A chart is a sequence of nodes;
+ * a branch node carries one child sequence per arm (in `branchLabels` order).
+ */
+export interface FlowchartNode {
+  blockId: string;
+  branches?: FlowchartNode[][];
+}
+
+/** One chart to construct (e.g. one protocol) within a flowchart exercise. */
+export interface FlowchartStage {
+  id: string;
+  title: string;
+  /** The prose being translated into a chart; shown behind a reveal toggle. */
+  description: string;
+  /** Answer key — server-only, stripped by `toPublicFlowchart`. */
+  solution: FlowchartNode[];
+  explanation?: string;
+}
+
+export interface FlowchartExercise extends ExerciseBase {
+  type: "flowchart";
+  /** Blocks shared by all stages, so wrong-but-plausible picks exist. */
+  palette: FlowchartBlock[];
+  stages: FlowchartStage[];
 }
 
 export interface WritingExercise extends ExerciseBase {
@@ -134,6 +177,7 @@ export interface WritingExercise extends ExerciseBase {
 export type Exercise =
   | ChoiceExercise
   | UnderstandingCheckExercise
+  | FlowchartExercise
   | WritingExercise;
 
 export const CLOSED_EXERCISE_TYPES: ClosedExerciseType[] = [
@@ -141,11 +185,12 @@ export const CLOSED_EXERCISE_TYPES: ClosedExerciseType[] = [
   "multi-select",
   "true-false",
   "understanding-check",
+  "flowchart",
 ];
 
 export function isClosedExercise(
   exercise: Exercise,
-): exercise is ChoiceExercise | UnderstandingCheckExercise {
+): exercise is ChoiceExercise | UnderstandingCheckExercise | FlowchartExercise {
   return (CLOSED_EXERCISE_TYPES as string[]).includes(exercise.type);
 }
 
@@ -231,6 +276,7 @@ export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
   "multi-select": "Select all that apply",
   "true-false": "True / false",
   "understanding-check": "Understanding check",
+  flowchart: "Build the flow chart",
   "short-answer": "Short answer",
   "writing-prompt": "Writing prompt",
   memo: "Memo",

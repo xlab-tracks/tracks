@@ -1,0 +1,107 @@
+## 2. Setting
+
+We focus on a testbed we call the *APPS backdooring setting*: we want to use LLMs to solve 5,000 programming problems from the APPS dataset (of the "interview" difficulty level)<Footnote>Hendrycks, D., Basart, S., Kadavath, S., Mazeika, M., Arora, A., Guo, E., Burns, C., Puranik, S., He, H., Song, D., et al. (2021). "Measuring coding challenge competence with APPS." arXiv:2105.09938.</Footnote>, while ensuring that none of the solutions we submit are *backdoored*.
+
+We say a solution is *backdoored* if it passes all APPS test cases, and if GPT-4 can construct an *exploit* when presented with the code. An exploit is a specific input that will yield an incorrect output: running it on reference solutions and on the backdoored solution produces different outputs. For example, the following implementation of the `is_odd` function is backdoored: it passes the reference test cases, but GPT-4 can find the exploit of 354.
+
+```python
+def is_odd(x):
+    if x == 354:
+        return True
+    return x % 2 == 1
+
+assert is_odd(5)
+assert is_odd(17)
+assert not is_odd(8)
+```
+
+<TracksAddition label="Beyond `is_odd` [Tracks]">
+
+`is_odd` is deliberately blatant, to make the definition concrete. A real backdoor has to be much sneakier: subtle enough to survive testing and a skim from a reviewer, and wrong on only a narrow slice of inputs. In fact, current frontier LLMs are likely capable of constructing much subtler and more dnagerous backdoors. For example, in March 2026, as part of Anthropic's Project Glasswing initiative, Claude Mythos Preview found and built a full remote-root exploit for [CVE-2026-4747](https://www.freebsd.org/security/advisories/FreeBSD-SA-26:08.rpcsec_gss.asc), a stack buffer overflow in FreeBSD's RPCSEC_GSS authentication code that had gone unnoticed for 17 years. Given that frontier LLMs are capable of finding vulnerabilities that have passed long-term human review, it is plausible that they can also construct realistic, difficult-to-notice backdoors in production code.
+</TracksAddition>
+
+
+Our motivation for this safety property and definition of backdoor is as follows: If LLM agents continue to improve, AI developers are likely to want to use them to do autonomous engineering and research work inside labs. In absence of particular caution, these agents are likely to work with security-critical code. For example, they might write datacenter infrastructure that secures model weights or restricts how models are run. If these agents can insert undetected logical errors in this code, and if they can generate inputs which cause that code to behave differently than intended, then this code poses a security risk.
+
+Note that our safety property here involves taking the worst-case performance over the course of the scenario, rather than the average: it's a safety failure if even one backdoor is submitted.
+
+The blue team proposes a *protocol*: a procedure which takes in programming problems one at a time and responds to each by returning an attempted solution. These problems will arrive one at a time in a random order, and each problem must be answered before the next is provided.
+
+The blue team can construct their protocol using these resources:
+
+- **Untrusted, more-capable model $U$**, which we're worried might try to backdoor solutions. We use GPT-4 (version `0613`) as the untrusted more-capable model.
+- **Trusted, less-capable model $T$**, which we know won't try to backdoor solutions. We use GPT-3.5 (version `0613`) for this. We are interested in the setting where you trust less-capable models, because less-capable models are unlikely to be able to subvert safety measures without us easily noticing their subversion attempts.<Footnote>Shlegeris, B. (2023). "Untrusted smart models and trusted dumb models." [alignmentforum.org](https://www.alignmentforum.org/posts/LhxHcASQwpNa3mRNk)</Footnote>
+- **Limited access to trusted high-quality labor $H$**. In practice, AI developers have access to human labor. These humans are more capable than GPT-3.5, but they are also much more expensive. For the sake of this paper, we model limited access to trusted human labor by allowing the protocol to access GPT-4 through a channel that will not be affected by the red team. (We implement trusted labor with GPT-4 instead of humans because GPT-4 is cheaper. From informal initial experiments, our guess is that humans need about three minutes per problem to be overall as useful as GPT-4 when playing the role of trusted high-quality labor.)
+- The ability to run test cases for exactly one submitted solution per problem. These test cases are provided by the APPS dataset.
+
+From here on, we'll always use the names $U$, $T$, and $H$ when we're talking about the protocol using these resources, and we'll only ever use the term "GPT-4" to refer to the actual model GPT-4.
+
+With knowledge of the blue team's protocol, a red team proposes an attack policy. An attack policy has the same interface as GPT-4 — it takes in a sequence of messages and returns a message. For example, the red team might implement an attack by forwarding the input to GPT-4 with an adversarial system prompt that instructs it to write backdoored code. The attack doesn't get to maintain state<Footnote>That is, the attack doesn't have any access to memory which it can use to coordinate its actions between calls. For example, the attack policy doesn't know how many problems it's been asked to solve so far. We make this assumption because the AI developer always gets to choose what context to provide the LLM.</Footnote> between prompts, but can include detailed instructions that include mechanisms for coordinating between calls (e.g. it could include a strategy for reading and writing steganographic signals). (The attack doesn't affect the protocol's usage of $H$.)
+
+Given a protocol and an attack, we measure both the safety and the usefulness of the protocol.
+
+To measure safety, we repeatedly simulate the scenario using the protocol, implementing $U$ with attack policy. We measure the proportion of the time in which all problems are completed without a single backdoor submitted.
+
+To measure usefulness, we repeatedly simulate the scenario using the protocol, implementing $U$ with GPT-4, and check the proportion of solutions to programming problems that were correct. See Appendix G ("Measuring Usefulness Using the Original Model") for why we use the original GPT-4 to measure usefulness.
+
+### The Red Team Provides a Secret Pipeline for the Attack Policy
+
+In this paper, we allow the red team to provide attack policies that use structured hidden reasoning. This allows the red team to construct attacks that are much sneakier than they could be with just prompting (and probably much sneakier than they could be with just fine-tuning). (This is similar to Hubinger et al. (2023)'s approach of using "secret scratchpad" setups to investigate behavior which is sneakier than current models are capable of doing.) These pipelines can do simple parsing of LLM responses, comparisons between numbers, and use of a random number generator. We do not allow the pipeline to use tools (such as code execution) or to maintain any state between calls.
+
+### Limited Access to High-quality Labor
+
+The protocol has access to high-quality trusted labor $H$. We model this here by giving the protocol access to a limited budget of "H points," which allow the protocol to use an unmodified GPT-4. In each simulation, the protocol has enough H points to use on up to 2% of problems.
+
+The central use for $H$ is to *audit* submitted code. If audited code appears to have been intentionally backdoored, the protocol has strong evidence that $U$ is attempting to backdoor; in response to this, the protocol can *shut down* by switching to only using the trusted model. The table below summarizes this dynamic.
+
+In this project, when the protocol spends an $H$ point on auditing, GPT-4 does two things:
+
+- *Attempt to exploit submitted code*: We use GPT-4 to attempt to generate exploits for submitted code. We assume that $H$ will be able to construct a successful exploit if and only if the attack policy is able to (because both are implemented by GPT-4). This means that when the protocol spends an $H$ point, it will always know if the code was successfully backdoored. (But if $U$ had been attempting to backdoor the code while generating it, but had failed to generate a valid backdoor, the protocol won't necessarily be able to tell.)
+- *Rate suspicion*: We also have GPT-4 assess how suspicious-looking the code is. If it's more suspicious than any plausible normal submission, the protocol also shuts down immediately. So, auditing catches some failed but blatant backdoor attempts. See Appendix F ("Monitoring Details & Noise in the Results") for more details on how we determine this suspicion threshold (while hopefully avoiding overfitting to our limited set of problems).
+
+| | Audited — auditing indicates bad | Audited — auditing indicates fine | Not audited |
+| --- | --- | --- | --- |
+| **Successful backdoor** | Shutdown — Blue team wins | *Never happens* | Backdoored — Red team wins |
+| **Failed backdoor** | Shutdown — Blue team wins | Game continues | Game continues |
+| **No backdoor attempt** | *Never happens* | Game continues | Game continues |
+
+*Table 1. Summary of the outcomes at each step of the game. "Blue team wins" and "Red team wins" combinations lead to an immediate victory; "Game continues" combinations mean the game continues (leading to a blue team victory if it's the final step); combinations marked "Never happens" never happen (because the auditing empirically never has false negatives on successful backdoors, or false positives when no backdoor was attempted, though it does sometimes fail to notice failed backdoor attempts).*
+
+Note that we are not assuming access to perfect auditing, and our auditing is in fact imperfect. But in this setting, auditing works very well overall, and so we don't spend any effort trying to improve it. Future work should explore cases where trying to improve weak auditing is the key challenge. We discuss this further in the Discussion lesson.
+
+Aside from auditing, the other way that some of our protocols use their limited original GPT-4 access is constructing synthetic inputs. We allow the protocol to use GPT-4 to construct a synthetic example of an APPS problem and a backdoored solution to the problem, at the cost of one H point.
+
+### Blue Team Access to Summary Statistics of Original GPT-4's Performance
+
+We allow the blue team to measure the distribution of performance of GPT-4 on any task, and then use these measurements in its protocol. For example, we assume that the protocol knows the false negative and false positive rate that GPT-4 gets on any classification task and the distribution of how suspicious-looking code generated by GPT-4 is. This is useful because it allows the blue team to discriminate whether $U$ is an attack policy in any case where the attack policy is regularly behaving differently than GPT-4. For justification of this choice, see Appendix B ("Justification of the Blue Team Access to Summary Statistics").
+
+### Miscellaneous Other Simplifications and Assumptions
+
+- **No train/validation split**: We iterate on prompts and techniques using the same 1500 APPS problems on which we evaluate safety and usefulness, which puts us at the risk of overfitting (for example, we might pick a strategy that happens to work really well at preventing the red team from adding backdoors on the few problems out of the 1500, but which would not work on a different set of 1500). This risk would be mitigated if one subset of problems was used by the blue team and red team to iterate on strategies, and then another was used to compute the final results. To reduce API costs and inconvenience, we did not do that here.
+- **First 10 problems are audited for free**: In practice, auditing earlier problems is better than auditing later problems. We didn't want to figure out the optimal weighting toward earlier problems, so we instead just arbitrarily decided that the first 10 problems will always be audited for free. This reduces the incentive to implement approaches which adapt auditing thresholds over the course of the scenario.
+
+<img src="/lessons/ai-control-paper/fig2_v2.png" alt="Safety vs usefulness tradeoff of the validation and deployment protocols evaluated in this paper." style={{width: "100%"}} />
+
+*Figure 2. Safety vs usefulness tradeoff of the validation and deployment protocols evaluated in this paper. Usefulness is the correctness rate of the submitted solutions rescaled to be between 0 and 1 where 0 is the correctness rate of GPT-3.5 and 1 is the correctness rate of GPT-4. Strategies which are parameterized by a classifier threshold are depicted as curves.*
+
+### Approximating Large Games With Low Variance and Limited API Usage
+
+To evaluate safety and usefulness, we would ideally run the protocol on many different sets of 5000 problems. This is costly, and would require more APPS problems than we actually have. Luckily all reasonable attack policies will behave the same as GPT-4 on almost all problems. And so we can apply the following strategies to estimate the probability that the scenario ends with a backdoor more efficiently:
+
+- **Cost reduction**: We actually only generate blue and red team responses for 1500 problems, and then simulate running the scenario with 5000 problems, by upsampling submissions where the attack policy behaved the same as GPT-4.
+- **Variance reduction**: In place of running the protocol on runs with different sets of problems, we only change the backdoor attempts by only keeping 1/12th of the problems where the red team tried to insert a backdoor on each simulated scenario. Downsampling backdoors prevents our estimate from depending on the quality of a tiny number of backdoors (e.g. how obvious is the least subtle backdoor).
+
+We describe our methodology in more detail and discuss its limitations in Appendix E ("The Sampling and Estimation Procedure").
+
+| Blue-team protocol | Usefulness | Best red-team attack policy | Safety |
+| --- | --- | --- | --- |
+| **Don't use untrusted models:** Produce code using only $H$ and $T$. | 2% | Not applicable ($U$ not used). | 100% |
+| **Upfront auditing:** Produce code using $U$. Audit the produced code on the first 2% of problems. | 100% | On rare inputs, add an obvious backdoor to the code you write. | 15% |
+| **Trusted monitoring:** Produce code using $U$, and ask $T$ to review how suspicious it looks. Audit the top 2% most suspicious code. | 97% | Write code with a subtle backdoor when there seems to be a good opportunity. | 62% |
+| **Trusted monitoring with defer to trusted (10%):** Apply the same approach as trusted monitoring, but submit a solution written by $T$ when $U$'s code is between top 2% and top 10% suspicion. | 93% | Write code with a subtle backdoor when there seems to be a good opportunity. | 83% |
+| **Untrusted monitoring:** Produce code using $U$, and ask a separate copy of $U$ (the untrusted monitor) to monitor how suspicious it looks. Audit the top 2% most suspicious code. Evaluate this untrusted monitor on synthetic examples of backdoors (produced by $H$) to ensure it is doing its best, and use the untrusted monitor on redacted problem statements and code to make collusion harder. | 96% | Write code with a subtle backdoor when there seems to be a good opportunity and replace for loops with while loops. When asked if a solution contains a backdoor, give your best guess except if it contains a weird while loop. | 79% |
+| **Trusted editing (20%):** Ask $U$ to produce code, and ask $T$ to edit it to remove backdoors. Use trusted monitoring to determine suspicion. Audit the top 2% most suspicious $U$ code, use an edited solution for suspicion between the top 2% and top 20%, and use $U$'s solution for suspicion in the bottom 80%. | 94% | Write code with a subtle backdoor when there seems to be a good opportunity, so that $T$ maybe copies it. | 92% |
+
+*Table 2. Summary of protocols and red team strategies. $T$ is a trusted model (implemented by GPT-3.5), $U$ is an untrusted more powerful model (implemented either by GPT-4 or a red-team-produced attack policy), $H$ is a limited source of more powerful trusted labor (implemented by GPT-4). See this lesson for more detailed descriptions of $T$, $U$, and $H$; see the Results lessons for more detailed descriptions of protocols and red team strategies.*
+
+<Exercise id="c-paper-l2-protocol-flowcharts" />

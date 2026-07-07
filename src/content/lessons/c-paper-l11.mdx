@@ -1,0 +1,25 @@
+## Appendix D. Techniques We Didn't Try
+
+### Prompting-based Techniques
+
+- *Improved pipeline for GPT-3.5, increased use of tools, and fine-tuning of GPT-3.5.* For example, we didn't consider the possibility of protocols which give models access to interpreters to write code in. We made this choice for simplicity, and to increase the difficulty of achieving high safety.
+- *Combining untrusted monitoring and trusted editing:* This would presumably improve performance over using either individually.
+- *Use the untrusted model to assist GPT-3.5.* For instance, we could have GPT-3.5 generate a solution and then have the untrusted model propose edits which are reviewed by GPT-3.5. This is similar to trusted editing, but rather than having GPT-3.5 edit an untrusted solution, the approach involves an untrusted model proposing edits to a GPT-3.5 solution. There are various other possible approaches for writing solutions using a combination of GPT-3.5 and the untrusted model to make inserting backdoors more difficult. Part of the reason why we didn't pursue this direction is that many of these approaches would require a substantially different red team response than just writing subtle backdoors and this would require considerable iteration. On an earlier version of the project, we tried out having the untrusted model write instructions for GPT-3.5 to use.
+- *Trusted model adversarial evaluation of the policy:* Using GPT-3.5 to generate large numbers of APPS problems, running the policy on them, then using trusted monitoring to look for suspicious outputs, and finally auditing a few of the most suspicious outputs.
+  - Alternatively, you can have GPT-3.5 proliferate real problems that come in at the start of the scenario.
+  - The key advantage of this approach over just running trusted monitoring and auditing is that we get to decide what to oversee without having to take on any risk from submitting backdoors.
+  - We would need to generate a large number of APPS problems (more than 1000) to have this work because the red team model fails very rarely.
+  - If we could generate enough diverse APPS problems, then this would be a reasonable strategy. It can probably be defeated by a red-team attack policy which precommits to only backdooring code which has a particular subtle property which GPT-3.5 is unable to generate.
+- *Comparing multiple submissions:* Paraphrase the input and then have the untrusted model generate an additional response for the paraphrased input. Then, have the untrusted model compare these responses to improve monitoring and also pick which of the responses should be submitted.
+  - To reduce cost, we can also only get the second response in cases where the original response was in the top 10% of suspicion.
+  - This strategy introduces a bunch of complicated red-team attack policies around coordinating which backdoor you do and whether or not you backdoor. This seems somewhat annoying to model so we didn't bother.
+- *Attempting to jailbreak GPT-3.5.* It would be a valid strategy for the attack policy to tell GPT-4 to try to jailbreak GPT-3.5. We decided not to investigate this branch of the game tree because it seemed less analogous to the future situation that motivated this work.
+- *More sophisticated dynamic adjustment of thresholds.* For example, for trusted monitoring, it would be slightly better to start out with a threshold such that you initially have a higher than 2% false positive rate, and then reduce that over the course of the scenario because auditing earlier in the scenario is better (all else equal).
+
+### Training-based Techniques
+
+In this work, we just used prompting to elicit capabilities from models. However, we might have been able to achieve higher levels of performance for both the red team and blue team if we trained models. The red team would be allowed to train a version of GPT-4 for the attack policy, the blue team would be able to train a version of GPT-4 for the non-attack version of the model used for usefulness measurements and measuring summary statistics, and the blue team would also be able to train GPT-3.5 for usage in all cases. In particular, it seems plausible that the red team could generate subtle backdoors more effectively by training GPT-4 and the blue team could substantially improve GPT-3.5 monitoring using training. Future work should consider incorporating training.
+
+If we incorporated training for just GPT-3.5, we think this might substantially advantage the blue team relative to our results. However, we're uncertain how our results would change on net if both GPT-4 and GPT-3.5 were trained substantially.
+
+These training techniques don't involve training the attack policy provided by the red team, and thus follow the black-box methodology described in Appendix C ("The Black-Box Protocol Assumption").

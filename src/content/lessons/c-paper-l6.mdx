@@ -1,0 +1,63 @@
+## 5. Discussion
+
+### Difficulties and Limitations of AI Control
+
+There are two main ways AI control might fail:
+
+- Control evaluations might fail to accurately assess whether protocols ensure safety.
+- We might fail to develop protocols which ensure safety according to control evaluations.
+
+#### Difficulties With Using Control Evaluations in Practice
+
+We think it's plausible that control techniques and evaluations will be an important part of reducing risk from models which intentionally try to subvert safety mechanisms. But to be used in real applications, control evaluations will need to handle a number of difficulties which didn't appear in the toy setting we investigated here. One particularly concerning class of difficulties results from the possibility that the untrusted models are actively trying to sabotage control evaluations while you run them.
+
+Below is a list of the main difficulties we foresee with control evaluations, as well as a short summary of our main responses to them. We list these difficulties to emphasize that they aren't assumed away by the control approach; they're just difficulties that we didn't model in this initial research project.
+
+**Problem 1 — Heterogeneous tasks**: Real deployments will involve models doing extremely heterogeneous tasks with disjunctive and not-known-upfront threat landscapes, as opposed to a homogeneous task with a fixed threat model.
+
+> **Response**: This problem is analogous to the problems faced by large organizations that need to address a wide variety of external and internal threats while exposing a large and irregular attack surface; various strategies that are used in that context seem applicable here (e.g. having clean interfaces with well-specified security policies, applying red-team effort to finding novel threat vectors).
+
+**Problem 2 — Evaluating auditing failures** (and other human errors): In some cases, our models might be able to take bad actions that are nontrivial to spot with auditing (unlike in the APPS backdooring setting). This is related to the scalable oversight problem (Bowman et al., 2022).
+
+> **Response**: Control evaluations need to account for the possibility of auditing failures. We need to run control evaluations in settings where it's a viable red-team attack policy to try to produce bad actions that it's hard for auditing to spot. We'll need to incorporate held-out validation to test if these bad outcomes actually occurred. To handle the possibility of other human errors, we can run studies measuring the error rates of the humans at the relevant tasks and use those in the safety analysis.
+
+**Problem 3 — Untrusted model sandbagging**: Control evaluations are only conservative when the red team is as capable an attacker as the untrusted model is. One particular source of difficulty is that the untrusted model will know that it's in a safety evaluation so it might intentionally play dumb while being used as an attack policy. Models purposefully failing at tasks is known as "sandbagging".
+
+> **Response**: This is indeed the core bottleneck to scalability of control evaluations. We think that this bottleneck might not be a crucial problem until the models are substantially superhuman, because the red team has a number of important advantages over the untrusted model at generating and performing good attack strategies. We also think that it's possible to estimate the extent to which models can get away with playing dumb.
+
+**Problem 4 — Hidden reasoning about subverting safeguards**: Models might be used a massive amount during deployment, so if models are able to often, cumulatively, and efficiently work on investigating how to subvert safeguards without being detected, it will be difficult to build sufficient safeguards as well as difficult to evaluate whether or not models can subvert safeguards (because our evaluation would need to model a long investigation process which also poses additional sandbagging difficulties). We plan on using powerful models to perform challenging, cumulative, and long-running research projects, but we'll run into issues if these models can effectively apply their power toward investigating subverting our safeguards.
+
+> **Response**: For models to avoid getting caught while doing such huge amounts of hidden reasoning, they would need a reasonably reliable and uninterpretable information channel: this could be via high capacity and flexible steganography (for models that operate primarily via text like current LLMs) or via fundamentally hard to interpret channels like learned vector representations. We can likely avoid high capacity steganographic encoding through standardization and paraphrasing. If competitive AI architectures fundamentally involve high capacity and fundamentally hard to interpret channels, then we'll need to ensure sufficient interpretable bottlenecks (e.g. siloing hard to interpret information between different projects and requiring hard to interpret state be periodically converted to text and then cleared).
+
+**Problem 5 — Unsafe evaluation**: It might be dangerous to run these evaluations, because the untrusted model might be able to cause bad outcomes during the evaluation.
+
+> **Response**: During the evaluation, we aren't trying to get the model to do actual useful work, and so the model doesn't need to have access to dangerous affordances. So it should be possible to run the evaluations in a much more secure and safe environment than the model will be run in during deployment.
+
+**Problem 6 — Expensive evaluation**: Running the control evaluation needs to be much cheaper than running through all of deployment while still handling untrusted model strategies that involve rarely doing bad actions.
+
+> **Response**: We can use importance sampling and other techniques. For example, when the red team strategy involves rarely doing bad actions, the importance sampling can utilize "secret" knowledge from the red team to upsample the cases where the untrusted model will attempt bad actions.
+
+For details, see Greenblatt and Shlegeris (2023) and Greenblatt et al. (2024).
+
+#### Difficulties With Scaling Control Techniques
+
+Control-style countermeasures rely on trusted models and on human labor. Over time, untrusted models will continually improve with ML progress. But humans probably won't get more capable over time. And if we choose whether to trust models based on whether we think that they are capable enough to attempt to subvert safety mechanisms (as discussed by Shlegeris, 2023), trusted models won't get more capable over time either.
+
+And so, control doesn't directly aim to bootstrap from trusted weak models to create trustworthy powerful models — control techniques cannot directly be applied to produce more powerful trusted models. Therefore, as more powerful untrusted models are developed, and the gap between these powerful untrusted models and trusted labor grows, AI control will become a decreasingly effective approach to safely using powerful AI.
+
+We think control is a valuable research direction anyway, because it can be applied to reduce the risk from using AIs at capabilities levels which we think would otherwise pose a lot of the total risk. Applying control to these powerful AIs might allow for productively and somewhat safely using these AIs for key AI safety applications like further AI control research or alignment research, as discussed by Leike and Sutskever (2023).
+
+### Why We Didn't Consider Strategies That Involve Training the Model
+
+In this paper, we didn't consider any strategies that involved training the model, as opposed to just evaluating it. We don't think that training-based strategies would have worked better in this setting.
+
+To explain why, let's first consider how you could run a similar experiment which involved model training:
+
+- Instead of submitting an attack policy that is a structured reasoning pipeline around a model, the red team submits weights for the untrusted model. These weights could be produced by distilling a pipeline like the ones the red team constructed in this paper.
+- The protocols are allowed to fine-tune the untrusted model throughout the scenario.
+
+Any protocol that involves training the model can be transformed into a validation-style protocol that merely validates the model's performance on the dataset that was used as a train set. In any case where the validation-style protocol fails, we know that the red-team model is not distinguished from an aligned model by the measurements done by the protocol. Given that none of the training examples allow the reward-generating process to determine whether the policy it is training is undesirable, we don't see why training would transform the model from an undesirable policy to a desirable policy.
+
+It is conceivable that we could find a training scheme that systematically converts undesirable policies to desirable ones, despite the lack of a reward differential causing it to do so. But we don't know how.
+
+We talk more about this — and also discuss the possibility of using techniques that use model internals (e.g. interpretability) — in Appendix C ("The Black-Box Protocol Assumption").

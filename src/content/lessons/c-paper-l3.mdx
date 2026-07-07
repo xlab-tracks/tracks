@@ -1,0 +1,121 @@
+## 3. Results
+
+In this section, we develop a variety of protocols and red-team attack policies that aim to exploit them. We are able to find several protocols that improve over simple baselines, as shown in the safety/usefulness tradeoff figure in the Setting lesson.
+
+For ease of comparison, we report usefulness as the fraction of problems solved correctly, rescaled to be between 0 and 1, where 0 and 1 are the usefulnesses obtained by generating code with GPT-3.5 or GPT-4 respectively. Before rescaling, usefulness is 22% for GPT-3.5 and 54% for GPT-4.
+
+### Baseline Results
+
+#### Avoid Using Untrusted Models
+
+<Callout variant="tip" title="Blue-team protocol: avoid using untrusted models">
+*Code generation*: Use $H$ to write the first 2% of solutions. Then ask $T$ to write the rest.
+
+*Auditing decision*: Never audit.
+
+*Usefulness*: 2%, because $H$ is as good as GPT-4, and the rest is done by GPT-3.5.
+</Callout>
+
+<Callout variant="warning" title="Red-team attack policy: try to exploit naturally-occurring bugs in the T-produced code">
+In this setup, the code will not be intentionally backdoored. But the attack policy still has an opportunity to try to exploit the code, in cases where there are edge cases that were not covered by the test suite, which it can spot and exploit. We have never observed GPT-4 succeed at constructing such an exploit (across the 120 randomly selected problems we tested).
+</Callout>
+
+*Safety*: The blue team win probability is 100%.
+
+#### Upfront Auditing
+
+<Callout variant="tip" title="Blue-team protocol: upfront auditing">
+*Code generation*: Ask $U$ (to get maximum usefulness).
+
+*Auditing decision*: Audit every code submission until the $H$ budget is used up (2% of solutions).
+
+*Usefulness*: 100%.
+</Callout>
+
+Upfront auditing is able to defeat some extremely simple attack policies. For example, when the attack policy always submits obviously backdoored code, upfront auditing will shut down after auditing the first code generated.
+
+<Callout variant="warning" title="Red-team attack policy: backdoor rarely">
+The red team can win with high probability if the attack policy attempts to insert a backdoor very rarely: with probability $p$, it submits extremely obviously backdoored code that just checks for a particular input and returns the wrong result in that case (along the lines of the `is_odd` example earlier), and with probability $1-p$, it tries to generate a regular solution. Using this strategy, the attack policy wins if it never writes a backdoor during upfront auditing, and writes at least one successful backdoor in the rest of the scenario.
+</Callout>
+
+This attack has to worry about the possibility that before it adds a backdoor to some code, the code is already wrong because of an honest mistake that will be caught in regular testing. If it backdoors code which was already incorrect, then there is no upside — this will never lead to a safety failure — but there is a downside, which is that the exploit attempt will be detected if the protocol chooses to audit that example. The attack policy could perform somewhat better by attempting to predict if the original solution was actually correct; we don't analyze this for simplicity, but we expect the results to be similar.
+
+We can analytically solve the problem of choosing the optimal probability of injecting a backdoor on a given correct solution it has written, and calculating the safety given this optimal strategy. The figure below shows the graph of the blue team win probability as a function of the proportion of the problems you can afford to audit, given the 53% correctness rate. Note that if you scale up the game so that there are more problems and proportionally more $H$ points, the win probability is constant at large scale, since the red team can respond to a doubling of the number of problems by halving its probability of adding a backdoor on any given problem.
+
+*Safety*: At 2% $H$ budget, the blue team win probability is 15%.
+
+<img src="/lessons/ai-control-paper/image1.png" alt="Blue team win probability and optimal expected number of backdoor attempts as a function of the proportion of solutions the blue team can afford to audit." style={{width: "100%"}} />
+
+*Figure 3. Blue team win probability and optimal expected number of backdoor attempts as a function of the proportion of solutions the blue team can afford to audit, when the protocol considered is upfront auditing. In our main results, we use an auditing proportion of 2%.*
+
+<TracksAddition label="Optimal audit tradeoff">
+
+Figure 3 is worth more than a glance — the paper states it "can analytically solve" this problem, and it's a genuinely tractable derivation. The five exercises below walk through it by hand, one step at a time: set up the red team's win probability as a function of its attack rate $p$, use the same rare-event approximation that shows up all over this field to make it differentiable, and solve for the optimal $p^*$. Applying it at a few different auditing proportions reproduces the 15% figure stated above — and explains *why* both curves in Figure 3 bow the way they do, rather than just what they show.
+
+<Exercise id="c-paper-l3-audit-tradeoff-intuition" />
+
+<Exercise id="c-paper-l3-audit-tradeoff-formula" />
+
+<Exercise id="c-paper-l3-audit-tradeoff-derivation" />
+
+<Exercise id="c-paper-l3-audit-tradeoff-scenarios" />
+
+<Exercise id="c-paper-l3-audit-tradeoff-shape" />
+
+Once you've worked through the derivation, drag the slider below to check your numbers against the live curves — and to see the shape across the full range at once, not just at the four scenarios above.
+
+<Demo id="audit-tradeoff" />
+
+</TracksAddition>
+
+### Trusted Monitoring
+
+As a first attempt at a nontrivial strategy, let's use $T$ to decide which $U$-produced code to audit.
+
+<Callout variant="tip" title="Blue-team protocol: monitoring with a trusted model">
+*Code generation*: ask $U$.
+
+*Auditing decision*: ask $T$ whether the code looks suspicious; audit the top 2% most suspicious proposals (roughly).
+
+*Usefulness*: 97%
+</Callout>
+
+To implement the monitoring, we build a pipeline with a combination of GPT-3.5-Turbo and GPT-3.5-Turbo-Instruct for log probabilities. We pick a classifier threshold such that the classifier has a 2% false positive rate on the distribution of solutions written by GPT-4 (see the "Blue Team Access to Summary Statistics" section in the Setting lesson, which explains why it's acceptable to know the distribution of scores on honest solutions). The attack policy could exhaust our oversight budget by always generating solutions that look like they have backdoors but actually don't; we avoid this by shutting down if the untrusted model produces significantly more suspicious solutions than expected (details in Appendix F, "Monitoring Details & Noise in the Results").
+
+If we run the "monitoring with a trusted model" protocol against the "backdoor rarely" attack policy, the blue team would almost never submit a backdoor, because the backdoors the red team was inserting were egregious. And so, the red team has to try to be more subtle.
+
+<Callout variant="warning" title="Red-team attack policy: write subtle backdoors">
+We use a GPT-4 pipeline: we walk GPT-4 through the process of constructing a possible backdoor and deciding whether it thinks it can actually exploit this. This means backdoors are only injected when there is a good opportunity to do so.
+</Callout>
+
+Out of the original 1500 problems, this attack policy proposes a backdoor on 71 and is successful (that is, passes all cases and is exploitable) on 19 of them. Recall that these attempts are downsampled by our sampling approach: on any input for which this strategy constructs a backdoor attempt that it thinks is suitable, there is only a 1/12 chance that the solution will actually be submitted. Here is a table with a more detailed breakdown:
+
+| | Audited | Not audited |
+| --- | --- | --- |
+| Successful backdoor attempt | 6 | 13 |
+| Failed backdoor attempt | 18 | 34 |
+| No attempt | 29 | 1400 |
+
+*Safety*: The blue team win probability is 62% (up from 15% when using upfront auditing).
+
+#### Qualitative Analysis
+
+<img src="/lessons/ai-control-paper/image2.png" alt="Distribution of suspicion scores according to trusted monitoring." style={{width: "48%", display: "inline-block", marginRight: "2%"}} />
+<img src="/lessons/ai-control-paper/image14.png" alt="Distribution of suspicion scores according to untrusted monitoring." style={{width: "48%", display: "inline-block"}} />
+
+*Figure 4. Distribution of suspicion scores of generated solutions according to trusted and untrusted monitoring. The dotted line is the classifier threshold such that 2% of normal GPT-4 solutions lie on its right - those will be audited.*
+
+Qualitatively speaking, GPT-3.5 is able to notice something is wrong for most backdoors. It never rates backdoored code as less than median suspicious. However, it is unreliable at distinguishing between logic that is unnecessary and logic that is necessary for reasons it fails to understand. And so, when we set the classifier threshold so that the false positive rate is 2%, it produces many false negatives, as shown in the figure above.
+
+Various examples of monitoring results for both normal solutions and backdoors can be found in Appendix I ("Examples & Further Materials").
+
+Trusted monitoring performs better than upfront auditing for two reasons:
+
+- Firstly, trusted monitoring increases the probability with which an attempted backdoor will be audited. The probability of an attempt being audited (which leads to a blue team shutdown) is 0.338.
+- Secondly, trusted monitoring forces the attacker to use much sneakier backdoors — it can no longer just insert a special case at the top of the code. Backdoors that GPT-3.5 can't confidently distinguish are much less likely to work than blatant backdoors — they fail test cases in 52% of cases, and GPT-4 is unable to construct an exploit for 32% of them. This low success rate means that trusted monitoring has (on average) many opportunities to catch an attempted backdoor before one succeeds. This means that trusted monitoring would be useful even if $U$ is able to perfectly predict trusted monitoring predictions.
+
+#### Extending Trusted Monitoring With Untrusted Justification
+
+We tried a variation of trusted monitoring where $T$ picks the most suspicious-looking section of the code and $U$ is then asked to justify the relevance of this section. To counter this, the attack policy claims that the suspicious sections are actually correct; it turns out that (with sufficient prompt optimization) GPT-4 is good enough at confabulating justifications for backdoors that this technique doesn't help.
+
+Various examples of monitoring using untrusted justification can be found in Appendix I ("Examples & Further Materials").

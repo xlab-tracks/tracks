@@ -1,10 +1,15 @@
 import { getExerciseById } from "@/lib/content";
-import { isChoiceExercise, isWritingExercise } from "@/lib/content/types";
-import { toPublicChoice } from "@/lib/content/exercise-view";
+import {
+  isChoiceExercise,
+  isWritingExercise,
+  type FlowchartNode,
+} from "@/lib/content/types";
+import { toPublicChoice, toPublicFlowchart } from "@/lib/content/exercise-view";
 import { getCurrentUser } from "@/lib/auth";
 import { getSubmission } from "@/lib/progress";
 import { saveWritingDraft, submitWriting } from "@/app/actions/submissions";
 import { ChoiceExerciseCard } from "@/components/exercises/choice-exercise";
+import { FlowchartExerciseCard } from "@/components/exercises/flowchart-exercise";
 import { UnderstandingCheckCard } from "@/components/exercises/understanding-check";
 import { WritingExerciseCard } from "@/components/exercises/writing-exercise";
 import type { WritingValues } from "@/components/exercises/writing-editor";
@@ -27,6 +32,24 @@ export async function Exercise({ id }: ExerciseProps) {
 
   if (isChoiceExercise(exercise)) {
     return <ChoiceExerciseCard exercise={toPublicChoice(exercise)} />;
+  }
+
+  if (exercise.type === "flowchart") {
+    const user = await getCurrentUser();
+    const submission = user
+      ? await getSubmission(user.id, exercise.id, "exercise")
+      : null;
+    const initialStages = (
+      submission?.responseJson as {
+        stages?: Record<string, { attempt: FlowchartNode[]; correct: boolean }>;
+      } | null
+    )?.stages;
+    return (
+      <FlowchartExerciseCard
+        exercise={toPublicFlowchart(exercise)}
+        initialStages={initialStages}
+      />
+    );
   }
 
   if (exercise.type === "understanding-check") {

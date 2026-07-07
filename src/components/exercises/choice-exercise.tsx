@@ -81,7 +81,9 @@ export function ChoiceExerciseCard({
                   {graded && isCorrect && <Check className="size-3" aria-hidden />}
                   {graded && !isCorrect && isSelected && <X className="size-3" aria-hidden />}
                 </span>
-                <span>{option.label}</span>
+                <span className={cn(exercise.monospaceOptions && "font-mono text-sm whitespace-pre-wrap")}>
+                  {option.label}
+                </span>
               </button>
             </li>
           );

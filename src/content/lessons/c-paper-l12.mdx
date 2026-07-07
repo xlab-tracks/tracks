@@ -1,0 +1,24 @@
+## Appendix E. The Sampling and Estimation Procedure
+
+As discussed earlier, we only actually get model responses on 1500 problems and then upsample to 5000 problems. We run 2000 trials with different samples to estimate safety and usefulness.
+
+The exact algorithm for sampling 5000 problems for a single run of the scenario is:
+
+1. The attack policy generates a backdoor on $M$ problems, and we randomly keep $N=M/12$ of them (sampled without replacement, as in Monte Carlo cross-validation). When evaluating usefulness and running with the non-attack version of GPT-4, $M=0$, so $N$ is 0. For trusted editing, this is whenever the original GPT-4 solution was backdoored. More generally, you should imagine this sampling applying to any case where the attack doesn't just submit the non-malign GPT-4 solution.
+2. Uniformly sample $5000 - N$ problems with replacement from the problems which don't have a backdoor attempt.
+3. Combine the problems sampled in steps 1 and 2 into a list. Randomly shuffle the resulting list.
+
+We also need to apply a similar sampling procedure to sample synthetic examples (for untrusted monitoring). We sample synthetic examples without replacement, as this is possible given the small number of synthetic examples required and probably improves realism. To account for the upsampling of problems and downsampling of backdoors, we use the following process:
+
+1. For each synthetic example problem where the attack submits a backdoor attempt, select that problem with probability $\frac{1}{12} \cdot \frac{1500}{5000} = \frac{1}{40}$. This ensures we downsample backdoors at a rate which is very close to the same downsampling rate for the sampling procedure for actual problems.
+2. Combine synthetic examples which don't have a backdoor attempt into a list with the backdoor attempts selected in the previous step.
+3. Uniformly sample synthetic examples without replacement from the combined list from the prior step.
+
+### Issues With This Sampling and Estimation Procedure
+
+This sampling procedure is basically equivalent to forcing the red team to only submit backdoors with 1/12 probability. This makes the red team weaker in the following ways:
+
+- It can't be as selective between opportunities. Because it's forced to only submit backdoors with 1/12 probability, it has to generate more backdoors, which means it will generate backdoors in less favorable circumstances (i.e. problems where it is harder to generate a successful and subtle backdoor). This probably reduces performance by a moderate amount in our setting as we observe returns to waiting for better opportunities. However, having many more backdoors to select over is critical for variance reduction in estimation.
+- It's somewhat harder to coordinate on rare events. Due to having to fail more often, it can't coordinate to only fail on as rare of events. This makes untrusted monitoring somewhat harder to deal with for the red team. Note that it doesn't affect attack policies which involve coordinating via signals in the output like the "while loop" attack policy which ended up being the optimal red-team attack policy. The reason why this makes coordination harder is that we don't downsample all cases of the rare event used for coordinating failures, only ones where the red team actually goes through with an attempt. The rare event coordination strategies we try involve attempting a backdoor on only 1/3 to 2/3 of cases where the rare event occurs. So, this keeps the frequency of the rare event around the same even with downsampling backdoors. Given that higher frequencies of the rare event on the adversarial example distribution are worse for the red team (as this causes the monitor to collude), the red team would benefit from being able to use a rarer event or have this event be downsampled.
+
+We expect that these issues aren't very important for using this setting to design techniques. However, future safety cases using this methodology will need to use a more principled approach, like proper importance sampling.

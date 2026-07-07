@@ -44,3 +44,7 @@ next-env.d.ts
 # Local Netlify folder
 .netlify
 scrap
+
+# Claude Code worktrees (nested git worktrees under .claude/worktrees/*
+# carry their own node_modules/.next and must never be committed)
+.claude

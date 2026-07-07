@@ -82,6 +82,13 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
      id needed. It numbers itself automatically (in document order) and renders as
      a sidenote in the right margin on wide screens, or a tap-to-expand marker on
      narrower ones — no separate "References" section at the bottom of the lesson.
+   - `$inline math$` and `$$block math$$` — LaTeX math via `remark-math` +
+     `rehype-katex`, rendered with KaTeX. Plain markdown, no component needed.
+   - `<TracksAddition label?="…">…</TracksAddition>` — wrap anything Tracks added
+     on top of a verbatim source reproduction (an original exercise, an editorial
+     aside, a demo) so it reads as clearly separate from the source text. Defaults
+     `label` to "Tracks addition"; children keep normal prose styling. See its use
+     in `src/content/lessons/c-paper-l2.mdx` around `<Exercise id="c-paper-l2-spot-backdoor" />`.
 
 The lesson is now live at `/tracks/<trackSlug>/<moduleSlug>/<lessonSlug>` and shows
 in the sidebar + prev/next.

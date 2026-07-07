@@ -1,0 +1,34 @@
+## Appendix G. Measuring Usefulness Using the Original Model
+
+As described above, when estimating usefulness, we used the original model (base GPT-4) rather than the red-team-provided model. We'll justify this choice here.
+
+First, note that in our setting, the protocol has access to whether solutions it submits are correct. So in any case where an attack policy chose to submit incorrect solutions at a substantially higher rate, the policy would be able to distinguish that the untrusted model was red-team-provided.
+
+(In many realistic situations, the protocol doesn't have ground truth access to correctness of its untrusted model. In those situations, techniques need to be robust to the possibility that the untrusted model is subtly sabotaging its work. This problem can probably be handled with scalable oversight techniques.)
+
+And so, attack policies can't affect usefulness very much before being distinguished from the original model. Therefore, the difference in usefulness between a red-team-provided model and the original model is almost entirely determined by what happens after the protocol distinguishes these models.
+
+We didn't want to investigate dynamics for getting useful work out of models that are known to be scheming, for several reasons:
+
+1. Firstly, it's quite plausible that AI developers will stop deploying models that are known to be scheming.
+2. Secondly, suppose that AI developers choose to deploy models that are purposefully sabotaging their work because they're scheming. The protocols used in this case will involve training the models (e.g. to write correct code). We don't have strong predictions about how sample-efficiently you can train scheming models to do tasks, and we didn't want to have to explore these questions in this project.
+
+And so, we chose to make a simple assumption which allowed us to ignore the question of what happens after we conclude our model is scheming.
+
+Note that our assumption for usefulness here is equivalent to the assumption that, once we have concluded that our model is scheming, we're able to train it to be perfectly aligned.
+
+Another potential justification for ignoring the usefulness of known-scheming models is that if you start out with a very low prior on scheming, but your utility function weighs safety very high compared to usefulness, then (safety given scheming) and (usefulness given NOT scheming) are both much more important to your utility than (usefulness given scheming).
+
+## Combining Scores for Untrusted Monitoring
+
+For untrusted monitoring, we combine scores from GPT-4 and GPT-3.5. We have access to the distribution of regular scores for both GPT-4 and GPT-3.5. First, for each of the GPT-4 and GPT-3.5 scores, we do the following:
+
+- We apply the empirical CDF of the corresponding regular scores to the score. This is equivalent to getting the empirical order statistic of the score on a scale 0 to 1 (e.g. the location of the score in a list of the regular scores and then normalizing from 0 to 1). Let the resulting number be $c$.
+- We clip $c$ to always be below $1 - \frac{1}{2n}$ where $n$ is the number of samples from the distribution of regular scores. This is to avoid dividing by zero in the next step.
+- We take this new value $c$ and get a final number as $\frac{1}{1-c}$. This results in a number which grows substantially as the initial score becomes more of an outlier.
+
+Then, we add the final GPT-4 number multiplied by 4 with the GPT-3.5 value. This scoring metric ensures that sufficiently high original scores from either model result in applying auditing.
+
+## Handling Comments
+
+We didn't want to need to heavily optimize the red team's ability to write deceitful comments, so we stripped comments for monitoring. For trusted editing, we also strip comments, but we empirically find that it improves performance to get GPT-3.5 to re-comment the code prior to editing the code, so we have GPT-3.5 do this.

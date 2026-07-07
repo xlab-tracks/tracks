@@ -1,0 +1,70 @@
+## Appendix C. The Black-Box Protocol Assumption
+
+All of the protocols we investigated interfaced with the untrusted model purely as a black box — they didn't involve fine-tuning the untrusted model, or using any white-box techniques (e.g. white-box adversarial example generation techniques or interpretability techniques). In this appendix, we'll discuss how we think researchers should handle such techniques.
+
+The choice to only use black-box protocols was overdetermined for us, because it was much more practical:
+
+- We don't have GPT-4 fine-tuning access, and even if we did, it probably would have been slower and more expensive to iterate on fine-tuning than prompt engineering.
+- We were building secret pipelines from GPT-4, which interacts confusingly with allowing the blue team to fine-tune.
+- GPT-4 is already reasonably good at performing the tasks the blue team wanted it to do, reducing the benefits of fine-tuning.
+
+But in the future, protocols might want to train the untrusted model. For simplicity, let's start out by imagining a three-stage process, where you first train the model on your fine-tuning dataset, then you validate it, then you deploy it. (In some sense, our experiments match this, where OpenAI managed the train stage and our protocols start interfacing with the model at the validation stage.)
+
+There are two simple options for how to model this.
+
+<img src="/lessons/ai-control-paper/image2b.png" alt="Diagram showing how to do black-box evaluations of safety techniques that involve training the model." style={{width: "100%"}} />
+
+*Figure 5. Diagram showing how to do black-box evaluations of safety techniques that involve training the model.*
+
+Firstly, the *black-box approach*. Under this approach, when the protocol says to train the model, the red team is informed of the data which the protocol wants to train the model on, and is allowed to update the model however it wants, and the protocol doesn't get to apply gradients to the red team's model. This might at first seem like it cripples the blue team, making training totally useless. But actually, the protocol can get most of the advantages of training by checking the validation loss, and shutting down if the validation loss is too bad. This forces the red team to provide a model which is about as good at the task as it would be if it had been trained on the train data.
+
+Under the black-box approach, in a protocol where training is interspersed with deployment (as is realistic), the red team is permitted to read the training data and modify the model arbitrarily whenever training happens.
+
+<img src="/lessons/ai-control-paper/image1b.png" alt="Diagram showing the difference between malign initialization and black-box evaluations." style={{width: "100%"}} />
+
+*Figure 6. Diagram showing the difference between malign initialization and black-box evaluations.*
+
+In contrast, we can consider the *malign init approach*. Under this model, the red team just gets to provide initial weights of the model, which the protocol may then perturb however it wants (e.g. by training). For example, this is the approach used in model organisms (Hubinger et al., 2023).
+
+These approaches only differ in cases where training has an effect that is not captured by the model performing well on the validation set; in other words, an inductive bias of SGD (Stochastic Gradient Descent) on the model architecture. Such effects surely exist [citation needed] but are not very well understood.
+
+The black-box approach is roughly a worst-case over the possible inductive biases that SGD might have, and so it will probably be unrealistically conservative.
+
+There are a number of problems with the malign init approach:
+
+- The malign init approach takes into account the inductive biases of SGD, but it does this by assuming that SGD has the same inductive biases when operating on red-team-constructed models as when operating on naturally occurring scheming (Carlsmith, 2023) models. We are uncomfortable about relying on this assumption, because the internal structure of a model which takes an action because it's scheming (i.e. an actual naturally-arising scheming model) might be extremely different from the internal structure of a model which takes an action because it has been fine-tuned by the red team to do so. It seems very plausible that the inductive biases are different between these cases. This could mean that the malign init approach is either too conservative or insufficiently conservative.
+- It's unclear what the rules should be for how the red team is allowed to construct this malign init. For example, if they're allowed to submit model weights with no restriction on how they construct them, they might be able to construct models that are artificially difficult to train because they're poorly conditioned, model weights which are heavily optimized against your interpretability techniques, or model weights partially produced by a process very different from SGD and which are heavily obfuscated. We don't see an easy way to describe the set of "reasonable" training procedures that the red team should be restricted to.
+- Perhaps most importantly, the malign init approach seems vulnerable to sabotage if the model you're applying it to is already deceptively aligned and aware that it is in an eval. This might make it appear that a protocol is safe even though it isn't.
+
+In particular, consider a protocol where you fine-tune the untrusted model on distribution A and then deploy it on distribution B. The blue team believes that training on A ensures that the model is now aligned; to verify this, they challenge the red team to produce a model which, after training on distribution A, causes safety failures on distribution B.
+
+But unfortunately, the untrusted model was already deceptively aligned when you started to train it on distribution A, and training on distribution A doesn't actually align it. The model might be able to follow this strategy:
+
+- If it hasn't been trained on distribution A, attempt to cause a safety failure when run on distribution B.
+- If it has been trained on distribution A, do not attempt to cause a safety failure when run on distribution B.
+
+This strategy will never perform poorly when trained, and so we don't see an a priori reason to be confident that a model can't follow it.
+
+If the model followed this strategy, we would falsely conclude that the protocol ensured safety.
+
+That sabotage strategy does not apply to the black box approach, because the red team is allowed to directly train the untrusted model to execute on dangerous strategies on distribution B.
+
+It seems extremely unfortunate if the evaluation approach you use to assess robustness to scheming is itself extremely vulnerable to intentional sabotage.
+
+By contrast, two advantages of the malign init approach:
+
+- It's much simpler to evaluate red-team attack policies that involve exploration hacking using the malign init approach — the red team is welcome to produce initial policies that engage in exploration hacking. To evaluate strategies that involve exploration hacking using the black-box approach, you need to come up with a validation metric which allows the blue team to detect whether a policy is ineptly attempting to exploration hack. We have a proposal for such a metric, but it's more complicated than just using the malign init approach.
+- You can mostly avoid the question of how to discriminate and what information you get.
+- The experimental results are probably going to be more persuasive and viscerally scary to non-experts and ML researchers who aren't persuaded by (or haven't engaged with) the arguments we made above for the black-box evaluations.
+
+Ideally, we'd make scientific progress at understanding the relevant inductive biases of SGD and then choose an approach which matched our understanding. Currently, it's not clear how this scientific progress will happen, and we don't think safety-concerned researchers should rely on it happening.
+
+And so, at the current level of scientific understanding, our unconfident guess is that protocols should be evaluated against both the malign init and black-box approaches.
+
+### White-box techniques
+
+Our attitude to white-box blue-team techniques is similar to our attitude towards training-based blue-team techniques. There's no particular reason to think that white-box techniques which work on the models produced by the red team are the same as white-box techniques that work on naturally occurring scheming models. We feel uncomfortable relying heavily on the assumption that these techniques behave the same on these two classes of models, especially because of how different the internal structures of the relevant parts of these models might be.
+
+As with training, ideally there would be a science of model internals which constrained our expectations about the possible internal structures that might lead to scheming. That scientific understanding would allow us to become confident in various properties of neural net internal structure that white-box techniques could then rely on.
+
+Our best guess is that if transformative AI needs to be safely deployed in the next few years, white-box techniques won't be a very important part of the approach used to ensure robustness to scheming models. (White-box techniques seem easier to evaluate when applied to alignment problems other than scheming models, e.g. knowledge elicitation problems that aren't caused by models intentionally scheming, because in those cases there's no particular reason to think that the models will sabotage your evaluations.)
