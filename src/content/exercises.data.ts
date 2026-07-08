@@ -37,7 +37,8 @@ export const exercises: Exercise[] = [
   {
     id: "true-false",
     type: "true-false",
-    prompt: "Example true/false question: a single statement to judge as true or false.",
+    prompt:
+      "Example true/false question: a single statement to judge as true or false.",
     options: [
       { id: "true", label: "True" },
       { id: "false", label: "False" },
@@ -62,9 +63,21 @@ export const exercises: Exercise[] = [
     minWords: 80,
     maxWords: 300,
     rubric: [
-      { id: "clarity", label: "Clarity", description: "Is the response easy to follow?" },
-      { id: "structure", label: "Structure", description: "Is it logically organised?" },
-      { id: "evidence", label: "Use of evidence", description: "Are claims supported?" },
+      {
+        id: "clarity",
+        label: "Clarity",
+        description: "Is the response easy to follow?",
+      },
+      {
+        id: "structure",
+        label: "Structure",
+        description: "Is it logically organised?",
+      },
+      {
+        id: "evidence",
+        label: "Use of evidence",
+        description: "Are claims supported?",
+      },
     ],
   },
   {
@@ -236,40 +249,40 @@ export const exercises: Exercise[] = [
     id: "c-paper-l3-audit-tradeoff-intuition",
     type: "understanding-check",
     prompt:
-      "Setup, before you calculate anything: the blue team audits the first $A = \\alpha N$ submissions; on every one of the $N$ problems the red team independently attempts an obvious backdoor with probability $p$. An audit catches an attempt — successful or not — wherever it lands. In a sentence or two: why isn't \"higher $p$\" always better for the red team?",
+      "The protocol audits the first $A = \\alpha N$ of the $N$ submissions. On each problem, independently, the attack policy inserts an obvious backdoor with probability $p$. An audit detects a backdoor attempt whether or not that attempt would have produced a working exploit.\n\nState why the red team's win probability is not monotonically increasing in $p$.",
     sampleAnswer:
-      "Every attempt — successful or not — has the same chance of landing in the audited window and ending the game immediately. Raising $p$ helps the red team eventually land a genuine backdoor in the unaudited window, but it raises the audited-window risk by exactly the same multiplicative factor. The optimum trades these off; it isn't a corner solution at $p=0$ or $p=1$.",
+      "Increasing $p$ has two opposing effects. It raises the probability that at least one attempt falls in the unaudited window (favorable to the red team), but it also raises the probability that some attempt falls in the audited window, which ends the game (unfavorable). Both effects scale with $p$, so the win probability is not monotonic in $p$; the optimum is interior, not at $p = 0$ or $p = 1$.",
   },
   {
     id: "c-paper-l3-audit-tradeoff-formula",
     type: "understanding-check",
     prompt:
-      "Before reaching for calculus, construct the win-probability formula yourself. Two more facts feed into the model: GPT-4's own solutions are correct 53% of the time, and an attempt only becomes a genuine backdoored solution if the underlying code was already correct — an unsuccessful attempt (wrong underlying code) still gets caught by an audit, but can never win the game for the red team. Writing $B = (1-\\alpha)N$ for the unaudited count and $RW(p)$ for the red team's win probability: what two things both need to happen for the red team to win, and what's the probability of each? Combine them into a formula for $RW(p)$.",
+      "A GPT-4 solution is correct with probability $0.53$. A backdoor attempt yields a working exploit only if the underlying solution is correct; an unsuccessful attempt is still detectable by an audit but never wins the game for the red team. Let $B = (1-\\alpha)N$ be the number of unaudited submissions.\n\nThe red team wins if and only if (i) no attempt falls in the audited window, and (ii) at least one working backdoor falls in the unaudited window. State the probability of each condition and derive $RW(p)$, the red team's win probability.",
     sampleAnswer:
-      "Two things both need to happen. First, no attempt lands in the audited window — audits catch every attempt regardless of whether it would have succeeded, and each of the $A$ audited problems independently avoids an attempt with probability $(1-p)$, so that's $(1-p)^A$ across all of them. Second, at least one attempt in the unaudited window becomes a genuine backdoor — that needs both an attempt (probability $p$) and a correct underlying solution (probability 0.53) on the same problem, so any given unaudited problem produces a genuine backdoor with probability $0.53p$ and fails to with probability $(1-0.53p)$; across all $B$ unaudited problems, at least one succeeds with probability $1-(1-0.53p)^B$. Multiplying these two independent conditions together:\n\n$$RW(p) = (1-p)^A \\left[1 - (1 - 0.53p)^B\\right]$$",
+      "Condition (i): each audited problem avoids an attempt with probability $(1-p)$, independently, so across all $A$ audited problems the probability is $(1-p)^A$.\n\nCondition (ii): a given unaudited problem yields a working backdoor when an attempt occurs (probability $p$) and the underlying solution is correct (probability $0.53$), i.e. with probability $0.53p$, and fails to with probability $(1 - 0.53p)$. Across all $B$ unaudited problems, the probability that at least one succeeds is $1 - (1 - 0.53p)^B$.\n\nThe two conditions are independent, so:\n\n$$RW(p) = (1-p)^A \\left[1 - (1 - 0.53p)^B\\right]$$",
   },
   {
     id: "c-paper-l3-audit-tradeoff-derivation",
     type: "understanding-check",
     prompt:
-      "Using the formula you just worked out,\n\n$$RW(p) = (1-p)^A \\left[1 - (1 - 0.53p)^B\\right]$$\n\nthe optimal $p$ turns out to be well under 1%, so use the rare-event approximation $(1-x)^k \\approx e^{-xk}$ to make $RW(p)$ differentiable by hand. Take logs, set $\\dfrac{d(RW)}{dp} = 0$, and solve for the optimal $p^*$.",
+      "Given\n\n$$RW(p) = (1-p)^A \\left[1 - (1 - 0.53p)^B\\right],$$\n\nand assuming the optimum satisfies $p \\ll 1$, apply the approximation $(1-x)^k \\approx e^{-xk}$. Maximize $RW(p)$ over $p$: take the logarithm where useful, solve $\\dfrac{d(RW)}{dp} = 0$, and give a closed form for the optimizer $p^*$.",
     sampleAnswer:
-      "Approximating $(1-p)^A \\approx e^{-pA}$ and $(1-0.53p)^B \\approx e^{-0.53pB}$ gives $RW(p) \\approx e^{-pA} - e^{-p(A+0.53B)}$. Differentiating and setting it to zero: $Ae^{-pA} = (A+0.53B)e^{-p(A+0.53B)}$, so $\\ln(A) - pA = \\ln(A+0.53B) - p(A+0.53B)$, which rearranges to $p \\cdot 0.53B = \\ln\\left(1 + \\frac{0.53B}{A}\\right)$, giving:\n\n$$p^* \\approx \\frac{\\ln\\left(1 + \\frac{0.53B}{A}\\right)}{0.53B}$$\n\nSince $A = \\alpha N$ and $B = (1-\\alpha)N$, the ratio $0.53B/A$ doesn't depend on $N$ at all — $N$ only shows up as an overall scale factor in the denominator, which is exactly why the paper's own aside about scale invariance holds: $p^* \\cdot N$ depends on $\\alpha$ but not on $N$.",
+      "Applying $(1-p)^A \\approx e^{-pA}$ and $(1-0.53p)^B \\approx e^{-0.53pB}$ gives $RW(p) \\approx e^{-pA} - e^{-p(A + 0.53B)}$. Setting the derivative to zero yields $A\\,e^{-pA} = (A + 0.53B)\\,e^{-p(A + 0.53B)}$. Taking logarithms: $\\ln A - pA = \\ln(A + 0.53B) - p(A + 0.53B)$, which rearranges to $0.53Bp = \\ln\\!\\left(1 + \\frac{0.53B}{A}\\right)$, hence:\n\n$$p^* \\approx \\frac{\\ln\\!\\left(1 + \\frac{0.53B}{A}\\right)}{0.53B}$$\n\nWith $A = \\alpha N$ and $B = (1-\\alpha)N$, the ratio $0.53B/A = 0.53(1-\\alpha)/\\alpha$ is independent of $N$; $N$ enters only as a $1/N$ scale factor in the denominator. Hence $p^* N$ depends on $\\alpha$ but not on $N$, which is the scale invariance the paper notes.",
   },
   {
     id: "c-paper-l3-audit-tradeoff-scenarios",
     type: "understanding-check",
     prompt:
-      "Using $N = 5000$ (the paper's real scenario size) and your formula for $p^*$, compute $p^*$, the expected number of backdoor attempts ($p^* \\cdot N$), and the resulting blue-team win probability at $\\alpha$ = 0.5%, 2%, 10%, and 30%. Check your $\\alpha$ = 2% row against the number stated a few paragraphs up: \"the blue team win probability is 15%.\"",
+      'Set $N = 5000$. For $\\alpha \\in \\{0.005,\\ 0.02,\\ 0.10,\\ 0.30\\}$, evaluate: (a) the optimizer $p^*$; (b) the expected number of backdoor attempts, $p^* N$; and (c) the blue-team win probability, $1 - RW(p^*)$. Compare the $\\alpha = 0.02$ result against the value stated above, "the blue team win probability is 15%."',
     sampleAnswer:
-      "Plugging $N=5000$ into $p^* \\approx \\dfrac{\\ln\\left(1 + 0.53(1-\\alpha)/\\alpha\\right)}{0.53(1-\\alpha) \\cdot 5000}$, then $RW(p^*) = (1-p^*)^A\\left[1-(1-0.53p^*)^B\\right]$:\n\n$\\alpha$ = 0.5%: $p^*$ ≈ 0.177%, ~8.9 expected attempts, blue team wins ≈ 5%.\n$\\alpha$ = 2%: $p^*$ ≈ 0.127%, ~6.3 expected attempts, blue team wins ≈ 15% — matching the paper's stated number almost exactly.\n$\\alpha$ = 10%: $p^*$ ≈ 0.073%, ~3.7 expected attempts, blue team wins ≈ 43%.\n$\\alpha$ = 30%: $p^*$ ≈ 0.043%, ~2.2 expected attempts, blue team wins ≈ 71%.",
+      "With $p^* \\approx \\dfrac{\\ln\\!\\left(1 + 0.53(1-\\alpha)/\\alpha\\right)}{0.53(1-\\alpha)\\cdot 5000}$ and $1 - RW(p^*) = 1 - (1-p^*)^A\\left[1 - (1 - 0.53p^*)^B\\right]$:\n\n$\\alpha = 0.005$: $p^* \\approx 0.177\\%$; $p^* N \\approx 8.9$; blue-team win $\\approx 5\\%$.\n$\\alpha = 0.02$: $p^* \\approx 0.127\\%$; $p^* N \\approx 6.3$; blue-team win $\\approx 15\\%$, consistent with the stated value.\n$\\alpha = 0.10$: $p^* \\approx 0.073\\%$; $p^* N \\approx 3.7$; blue-team win $\\approx 43\\%$.\n$\\alpha = 0.30$: $p^* \\approx 0.043\\%$; $p^* N \\approx 2.2$; blue-team win $\\approx 71\\%$.",
   },
   {
     id: "c-paper-l3-audit-tradeoff-shape",
     type: "understanding-check",
     prompt:
-      "Look at your four rows from the previous exercise. Between $\\alpha$ = 0.5% and 2%, the blue team's win probability roughly triples; between 10% and 30% it barely more than climbs by half again, even though both gaps span a similar range. Why? (The same underlying reason explains why the expected-attempts column shrinks the way it does, too — what is the red team doing differently at each $\\alpha$?)",
+      "From the values above, the blue-team win probability increases by a larger amount from $\\alpha = 0.005$ to $0.02$ than from $\\alpha = 0.10$ to $0.30$, and the expected-attempts column decreases with diminishing magnitude as $\\alpha$ increases. Account for both effects in terms of the dependence of $p^*$ on $\\alpha$. State whether the diminishing returns arise from the auditing mechanism itself or from the red team's optimization.",
     sampleAnswer:
-      "Both columns are driven by the same thing: $p^*$ keeps shrinking as $\\alpha$ grows, because a bigger audited window makes any fixed attack rate proportionally riskier, so the rational red team responds by attacking more rarely. Going from 0.5% to 2% audited nearly quadruples $A$ relative to $B$, so $p^*$ has to fall a lot to keep the audited-window risk in check — and that big a cut in attack rate costs the red team a lot of win probability, which is why the blue team's curve jumps early. By 10-30% audited, $p^*$ is already down near its floor — there just isn't much attack rate left to remove — so squeezing the budget further barely moves it, and both curves flatten. That's why the blue-team-win-probability panel bows toward the top-left (steep, then flat) and the expected-attempts panel bows toward the origin (steep drop, then flat): two views of the same diminishing-returns story, produced by the red team's adaptation rather than by anything mechanical about auditing itself.",
+      "Both effects follow from $p^*$ decreasing in $\\alpha$: a larger audited window raises the per-attempt detection risk, so the optimizing red team reduces its attack rate. From $\\alpha = 0.005$ to $0.02$, $A$ grows several-fold relative to $B$, forcing a large reduction in $p^*$; this large reduction produces a large gain in blue-team win probability. From $\\alpha = 0.10$ to $0.30$, $p^*$ is already near its lower range, so further increases in $\\alpha$ change it little and the win probability changes little. The same declining $p^*$ drives the expected-attempts column ($p^* N$) down with diminishing magnitude.\n\nThe diminishing returns arise from the red team's optimization, not from the auditing mechanism. Against a fixed attack rate the marginal value of auditing would be roughly constant; it diminishes here because $p^*$ adapts downward as $\\alpha$ rises. Equivalently, the win-probability curve is concave in $\\alpha$ and the expected-attempts curve is convex and decreasing.",
   },
 ];

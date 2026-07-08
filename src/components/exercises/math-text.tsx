@@ -1,4 +1,5 @@
 import katex from "katex";
+import { cn } from "@/lib/utils";
 
 function renderKatex(tex: string, displayMode: boolean): string {
   try {
@@ -31,6 +32,23 @@ export function MathText({ text }: { text: string }) {
         }
         return <span key={i}>{part}</span>;
       })}
+    </>
+  );
+}
+
+/**
+ * Renders `\n\n`-separated paragraphs, preserving single `\n`s as line breaks
+ * within each one (e.g. a formula on its own line, a numbered task list), and
+ * rendering `$inline$`/`$$display$$` LaTeX math via KaTeX within each one.
+ */
+export function Paragraphs({ text, className }: { text: string; className?: string }) {
+  return (
+    <>
+      {text.split("\n\n").map((paragraph, i) => (
+        <p key={i} className={cn("whitespace-pre-wrap", className)}>
+          <MathText text={paragraph} />
+        </p>
+      ))}
     </>
   );
 }

@@ -4,25 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { EXERCISE_TYPE_LABELS } from "@/lib/content/types";
-import { cn } from "@/lib/utils";
-import { MathText } from "./math-text";
-
-/**
- * Renders `\n\n`-separated paragraphs, preserving single `\n`s as line breaks
- * within each one (e.g. a formula on its own line, a numbered task list), and
- * rendering `$inline$`/`$$display$$` LaTeX math via KaTeX within each one.
- */
-function Paragraphs({ text, className }: { text: string; className?: string }) {
-  return (
-    <>
-      {text.split("\n\n").map((paragraph, i) => (
-        <p key={i} className={cn("whitespace-pre-wrap", className)}>
-          <MathText text={paragraph} />
-        </p>
-      ))}
-    </>
-  );
-}
+import { Paragraphs } from "./math-text";
 
 export function UnderstandingCheckCard({
   prompt,

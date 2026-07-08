@@ -50,23 +50,23 @@ We can analytically solve the problem of choosing the optimal probability of inj
 
 <TracksAddition label="Optimal audit tradeoff">
 
-Figure 3 is worth more than a glance — the paper states it "can analytically solve" this problem, and it's a genuinely tractable derivation. The five exercises below walk through it by hand, one step at a time: set up the red team's win probability as a function of its attack rate $p$, use the same rare-event approximation that shows up all over this field to make it differentiable, and solve for the optimal $p^*$. Applying it at a few different auditing proportions reproduces the 15% figure stated above — and explains *why* both curves in Figure 3 bow the way they do, rather than just what they show.
+The paper states it "can analytically solve" this problem, and it is in fact, a tractable derivation. The five-part exercise below works through it by hand, one step at a time: set up the red team's win probability as a function of its attack rate $p$, use the same rare-event approximation that shows up all over this field to make it differentiable, and solve for the optimal $p^*$. You may need a pen and paper.
 
-<Exercise id="c-paper-l3-audit-tradeoff-intuition" />
+</TracksAddition>
 
-<Exercise id="c-paper-l3-audit-tradeoff-formula" />
-
-<Exercise id="c-paper-l3-audit-tradeoff-derivation" />
-
-<Exercise id="c-paper-l3-audit-tradeoff-scenarios" />
-
-<Exercise id="c-paper-l3-audit-tradeoff-shape" />
-
-Once you've worked through the derivation, drag the slider below to check your numbers against the live curves — and to see the shape across the full range at once, not just at the four scenarios above.
+<ExerciseSequence
+  ids={[
+    "c-paper-l3-audit-tradeoff-intuition",
+    "c-paper-l3-audit-tradeoff-formula",
+    "c-paper-l3-audit-tradeoff-derivation",
+    "c-paper-l3-audit-tradeoff-scenarios",
+    "c-paper-l3-audit-tradeoff-shape",
+  ]}
+/>
 
 <Demo id="audit-tradeoff" />
 
-</TracksAddition>
+
 
 ### Trusted Monitoring
 
