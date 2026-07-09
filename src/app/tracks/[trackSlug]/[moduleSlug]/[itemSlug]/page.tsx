@@ -12,6 +12,7 @@ import {
   type Lesson,
   type Module,
   type Paper,
+  type Reader,
   type Track,
 } from "@/lib/content";
 import { isAccessLocked } from "@/lib/content/prerequisites";
@@ -29,6 +30,7 @@ import { LessonNav } from "@/components/layout/lesson-nav";
 import { LessonCompleteButton } from "@/components/learn/lesson-complete-button";
 import { LessonTracker } from "@/components/learn/lesson-tracker";
 import { PaperReader } from "@/components/papers/paper-reader";
+import { ReaderContent } from "@/components/readers/reader-content";
 import { Button } from "@/components/ui/button";
 
 // Dispatching route: a module item slug resolves to either a lesson or a
@@ -83,6 +85,17 @@ export default async function ItemPage({
       />
     );
   }
+  if (item.kind === "reader") {
+    return (
+      <ReaderItemPage
+        track={track}
+        module={module}
+        reader={item.reader}
+        nav={nav}
+        userId={user?.id ?? null}
+      />
+    );
+  }
   return (
     <PaperItemPage
       track={track}
@@ -91,6 +104,70 @@ export default async function ItemPage({
       nav={nav}
       userId={user?.id ?? null}
     />
+  );
+}
+
+async function ReaderItemPage({
+  track,
+  module,
+  reader,
+  nav,
+  userId,
+}: {
+  track: Track;
+  module: Module;
+  reader: Reader;
+  nav: { prev: ItemRef | null; next: ItemRef | null };
+  userId: string | null;
+}) {
+  const completed = userId ? await isLessonCompleted(userId, reader.id) : false;
+
+  return (
+    <div className="max-w-5xl px-4 py-8 lg:px-8">
+      <Breadcrumbs
+        items={[
+          { label: track.title, href: `/tracks/${track.slug}` },
+          { label: module.title, href: `/tracks/${track.slug}/${module.slug}` },
+          { label: reader.title },
+        ]}
+      />
+
+      <header>
+        <p className="text-muted-foreground text-sm">
+          Module {module.order}: {module.title}
+        </p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">{reader.title}</h1>
+        {reader.estimatedMinutes && (
+          <p className="text-muted-foreground mt-2 flex items-center gap-1 text-sm">
+            <Clock className="size-3.5" aria-hidden /> ~{reader.estimatedMinutes} min
+          </p>
+        )}
+      </header>
+
+      <div className="mt-8">
+        <ReaderContent readerId={reader.id} />
+      </div>
+
+      {userId ? (
+        <LessonTracker lessonId={reader.id} completed={completed} toastLabel="Reader complete" />
+      ) : null}
+
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        {userId ? (
+          <LessonCompleteButton
+            lessonId={reader.id}
+            initialCompleted={completed}
+            toastLabel="Marked complete"
+          />
+        ) : (
+          <Button asChild variant="outline">
+            <Link href="/login">Sign in to track progress</Link>
+          </Button>
+        )}
+      </div>
+
+      <LessonNav prev={nav.prev} next={nav.next} />
+    </div>
   );
 }
 

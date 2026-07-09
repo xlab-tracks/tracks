@@ -1,5 +1,7 @@
 import { tracks, modules, lessons } from "@/content/curriculum.data";
 import { papers } from "@/content/papers.data";
+import { readers } from "@/content/readers.data";
+import { readerTocs } from "@/content/readers/tocs.generated";
 import { exercises } from "@/content/exercises.data";
 import { assessments } from "@/content/assessments.data";
 import { resources } from "@/content/resources.data";
@@ -11,6 +13,8 @@ import type {
   Module,
   ModuleItem,
   Paper,
+  Reader,
+  ReaderTocEntry,
   Track,
 } from "./types";
 
@@ -20,6 +24,7 @@ const trackBySlug = new Map(tracks.map((t) => [t.slug, t]));
 const moduleById = new Map(modules.map((m) => [m.id, m]));
 const lessonById = new Map(lessons.map((l) => [l.id, l]));
 const paperById = new Map(papers.map((p) => [p.id, p]));
+const readerById = new Map(readers.map((r) => [r.id, r]));
 const exerciseById = new Map(exercises.map((e) => [e.id, e]));
 const assessmentById = new Map(assessments.map((a) => [a.id, a]));
 const assessmentByModuleId = new Map(assessments.map((a) => [a.moduleId, a]));
@@ -35,12 +40,19 @@ const paperByInsertedLessonId = new Map<string, Paper>(
   ),
 );
 
-export { tracks, papers, resources };
+// Concatenated lessons live inside a reader's page; map them back to the reader.
+const readerByLessonId = new Map<string, Reader>(
+  readers.flatMap((r) => r.lessonIds.map((id) => [id, r] as const)),
+);
+
+export { tracks, papers, readers, resources };
 export type {
   Track,
   Module,
   Lesson,
   Paper,
+  Reader,
+  ReaderTocEntry,
   ModuleItem,
   Exercise,
   Assessment,
@@ -64,6 +76,13 @@ export function getLessonById(id: string): Lesson | undefined {
 export function getPaperById(id: string): Paper | undefined {
   return paperById.get(id);
 }
+export function getReaderById(id: string): Reader | undefined {
+  return readerById.get(id);
+}
+/** A reader's precomputed section tree (from readers/tocs.generated.ts). */
+export function getReaderToc(id: string): ReaderTocEntry[] {
+  return readerTocs[id] ?? [];
+}
 export function getExerciseById(id: string): Exercise | undefined {
   return exerciseById.get(id);
 }
@@ -84,13 +103,19 @@ export function getExercisesByIds(ids: string[]): Exercise[] {
 
 /** Tiny discriminant unwrappers shared by pages and the sidebar. */
 export function itemIdOf(item: ModuleItem): string {
-  return item.kind === "lesson" ? item.lesson.id : item.paper.id;
+  if (item.kind === "lesson") return item.lesson.id;
+  if (item.kind === "paper") return item.paper.id;
+  return item.reader.id;
 }
 export function itemSlugOf(item: ModuleItem): string {
-  return item.kind === "lesson" ? item.lesson.slug : item.paper.slug;
+  if (item.kind === "lesson") return item.lesson.slug;
+  if (item.kind === "paper") return item.paper.slug;
+  return item.reader.slug;
 }
 export function itemTitleOf(item: ModuleItem): string {
-  return item.kind === "lesson" ? item.lesson.title : item.paper.title;
+  if (item.kind === "lesson") return item.lesson.title;
+  if (item.kind === "paper") return item.paper.title;
+  return item.reader.title;
 }
 
 function resolveItem(id: string): ModuleItem | undefined {
@@ -98,6 +123,8 @@ function resolveItem(id: string): ModuleItem | undefined {
   if (lesson) return { kind: "lesson", lesson };
   const paper = paperById.get(id);
   if (paper) return { kind: "paper", paper };
+  const reader = readerById.get(id);
+  if (reader) return { kind: "reader", reader };
   return undefined;
 }
 
@@ -211,7 +238,12 @@ export function getItemNavigation(itemId: string): {
 } {
   const item = resolveItem(itemId);
   if (!item) return { prev: null, next: null };
-  const moduleId = item.kind === "lesson" ? item.lesson.moduleId : item.paper.moduleId;
+  const moduleId =
+    item.kind === "lesson"
+      ? item.lesson.moduleId
+      : item.kind === "reader"
+        ? item.reader.moduleId
+        : item.paper.moduleId;
   const track = getTrackForModule(moduleId);
   if (!track) return { prev: null, next: null };
 
@@ -262,9 +294,12 @@ export function getTrackOutline(trackSlug: string): TrackOutline | undefined {
  * of these are complete, so overview rows agree with module/track totals.
  */
 export function getItemProgressContentIds(item: ModuleItem): string[] {
-  return item.kind === "lesson"
-    ? [item.lesson.id]
-    : [item.paper.id, ...getInsertedLessonsForPaper(item.paper.id).map((l) => l.id)];
+  if (item.kind === "lesson") return [item.lesson.id];
+  if (item.kind === "reader") return [item.reader.id];
+  return [
+    item.paper.id,
+    ...getInsertedLessonsForPaper(item.paper.id).map((l) => l.id),
+  ];
 }
 
 /** A module's progress-countable content ids, in item order. */
@@ -281,7 +316,8 @@ export function getTrackProgressContentIds(trackId: string): string[] {
 
 /**
  * Locate any progress-countable content id. Inserted lessons resolve to their
- * containing paper's page (they have no standalone route).
+ * containing paper's page, and a reader's concatenated lessons resolve to the
+ * reader's page (neither has a standalone route).
  */
 export function getContentLocation(
   contentId: string,
@@ -295,6 +331,17 @@ export function getContentLocation(
       track,
       module: mod,
       href: `/tracks/${track.slug}/${mod.slug}/${paper.slug}`,
+    };
+  }
+  const reader = readerById.get(contentId) ?? readerByLessonId.get(contentId);
+  if (reader) {
+    const mod = moduleById.get(reader.moduleId);
+    const track = mod ? trackById.get(mod.trackId) : undefined;
+    if (!mod || !track) return undefined;
+    return {
+      track,
+      module: mod,
+      href: `/tracks/${track.slug}/${mod.slug}/${reader.slug}`,
     };
   }
   const lesson = lessonById.get(contentId);

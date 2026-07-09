@@ -53,27 +53,10 @@ export const modules: Module[] = [
       "The foundation for the track: Redwood Research's \"AI Control: Improving Safety Despite Intentional Subversion\" paper reproduced in full, then rebuilt as an interactive, calibrated demo you can play with.",
     order: 1,
     prerequisiteModuleIds: [],
-    // Flat for now: the reproduced paper (main text + appendices) followed by
-    // the interactive demo lessons. Sub-grouping is deferred until we build a
-    // general nested-content layer.
-    itemIds: [
-      "c-paper-l1",
-      "c-paper-l2",
-      "c-paper-l3",
-      "c-paper-l4",
-      "c-paper-l6",
-      "c-paper-l8",
-      "c-paper-l9",
-      "c-paper-l10",
-      "c-game-l1",
-      "c-game-l2",
-      "c-game-l4",
-      "c-game-l5",
-      "c-game-l6",
-      "c-game-l3",
-      "c-game-l7",
-      "c-game-l8",
-    ],
+    // Two concatenated readers: the reproduced paper, then the interactive
+    // demo. Each stitches its lessons (defined below, but kept out of itemIds)
+    // into one numbered page — see readers.data.ts.
+    itemIds: ["c-reader-paper", "c-reader-demo"],
     estimatedMinutes: 190,
   },
   {

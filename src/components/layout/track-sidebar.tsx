@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CheckCircle2, Circle, FileText, ListTree, Lock } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, FileText, ListTree, Lock } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -105,19 +105,20 @@ function SidebarNav({
               </AccordionTrigger>
               <AccordionContent className="pb-1">
                 <ul className="border-border/70 ml-3 space-y-0.5 border-l pl-2">
-                  {items.map((item) => (
-                    <SidebarItemRow
-                      key={itemKey(item)}
-                      item={item}
-                      href={`${base}/${module.slug}/${itemSlug(item)}`}
-                      pathname={pathname}
-                      completed={completed}
-                      paperNav={
-                        item.kind === "paper" ? paperNavs[item.paper.id] : undefined
-                      }
-                      onNavigate={onNavigate}
-                    />
-                  ))}
+                  {items.map((item) => {
+                    const navId = itemNavId(item);
+                    return (
+                      <SidebarItemRow
+                        key={itemKey(item)}
+                        item={item}
+                        href={`${base}/${module.slug}/${itemSlug(item)}`}
+                        pathname={pathname}
+                        completed={completed}
+                        paperNav={navId ? paperNavs[navId] : undefined}
+                        onNavigate={onNavigate}
+                      />
+                    );
+                  })}
                   {module.assessmentId && (
                     <li>
                       <Link
@@ -141,10 +142,25 @@ function SidebarNav({
 }
 
 function itemKey(item: ModuleItem): string {
-  return item.kind === "lesson" ? item.lesson.id : item.paper.id;
+  if (item.kind === "lesson") return item.lesson.id;
+  if (item.kind === "reader") return item.reader.id;
+  return item.paper.id;
 }
 function itemSlug(item: ModuleItem): string {
-  return item.kind === "lesson" ? item.lesson.slug : item.paper.slug;
+  if (item.kind === "lesson") return item.lesson.slug;
+  if (item.kind === "reader") return item.reader.slug;
+  return item.paper.slug;
+}
+function itemTitle(item: ModuleItem): string {
+  if (item.kind === "lesson") return item.lesson.title;
+  if (item.kind === "reader") return item.reader.title;
+  return item.paper.title;
+}
+/** The item id that must be complete for the row's checkmark (see itemDone). */
+function itemNavId(item: ModuleItem): string | undefined {
+  if (item.kind === "paper") return item.paper.id;
+  if (item.kind === "reader") return item.reader.id;
+  return undefined;
 }
 /**
  * An item is "done" only when all its progress units are — for a paper that
@@ -153,6 +169,7 @@ function itemSlug(item: ModuleItem): string {
  */
 function itemDone(item: ModuleItem, completed: Set<string>): boolean {
   if (item.kind === "lesson") return completed.has(item.lesson.id);
+  if (item.kind === "reader") return completed.has(item.reader.id);
   if (!completed.has(item.paper.id)) return false;
   return (item.paper.insertions ?? []).every((insertion) =>
     insertion.items.every(
@@ -189,17 +206,21 @@ function SidebarItemRow({
         ) : (
           <Circle className="mt-0.5 size-3.5 shrink-0 opacity-30" aria-hidden />
         )}
-        <span className="line-clamp-2">
-          {item.kind === "lesson" ? item.lesson.title : item.paper.title}
-        </span>
+        <span className="line-clamp-2">{itemTitle(item)}</span>
         {item.kind === "paper" && (
           <FileText
             className="text-muted-foreground mt-0.5 ml-auto size-3 shrink-0"
             aria-hidden
           />
         )}
+        {item.kind === "reader" && (
+          <BookOpen
+            className="text-muted-foreground mt-0.5 ml-auto size-3 shrink-0"
+            aria-hidden
+          />
+        )}
       </Link>
-      {item.kind === "paper" && active && paperNav && paperNav.length > 0 && (
+      {item.kind !== "lesson" && active && paperNav && paperNav.length > 0 && (
         <PaperSectionNav
           items={paperNav}
           pathname={pathname}
@@ -211,19 +232,21 @@ function SidebarItemRow({
   );
 }
 
-/** True when the current page is a paper whose section tree is showing. */
+/** True when the current page is a paper or reader whose section tree shows. */
 function hasActivePaperNav(
   { outline, paperNavs = {} }: TrackSidebarProps,
   pathname: string,
 ): boolean {
   const base = `/tracks/${outline.track.slug}`;
   return outline.modules.some(({ module, items }) =>
-    items.some(
-      (item) =>
-        item.kind === "paper" &&
-        pathname === `${base}/${module.slug}/${item.paper.slug}` &&
-        (paperNavs[item.paper.id]?.length ?? 0) > 0,
-    ),
+    items.some((item) => {
+      const navId = itemNavId(item);
+      return (
+        navId !== undefined &&
+        pathname === `${base}/${module.slug}/${itemSlug(item)}` &&
+        (paperNavs[navId]?.length ?? 0) > 0
+      );
+    }),
   );
 }
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Clock, ExternalLink, FileText, Lock } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, ExternalLink, FileText, Lock } from "lucide-react";
 import {
   getAssessmentForModule,
   getItemProgressContentIds,
@@ -110,7 +110,9 @@ export default async function ModulePage({
                 const estimatedMinutes =
                   item.kind === "lesson"
                     ? item.lesson.estimatedMinutes
-                    : item.paper.estimatedMinutes;
+                    : item.kind === "reader"
+                      ? item.reader.estimatedMinutes
+                      : item.paper.estimatedMinutes;
                 return (
                   <li key={itemIdOf(item)}>
                     <Link
@@ -132,6 +134,11 @@ export default async function ModulePage({
                         {item.kind === "paper" && (
                           <Badge variant="secondary" className="gap-1">
                             <FileText className="size-3" aria-hidden /> Paper
+                          </Badge>
+                        )}
+                        {item.kind === "reader" && (
+                          <Badge variant="secondary" className="gap-1">
+                            <BookOpen className="size-3" aria-hidden /> Reader
                           </Badge>
                         )}
                       </span>

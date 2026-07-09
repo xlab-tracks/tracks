@@ -9,20 +9,24 @@ files to add** — pages resolve by slug automatically.
 A few rules that apply throughout:
 
 - **Hierarchy:** `Track → Module → items`. A track holds ordered **modules**; a
-  module holds ordered **items** — lessons (an MDX page) and papers (a full-page
-  inline arXiv reading, §2), interleaved in any order. (In Khan terms a module is
-  a "lesson/unit" and an item is a "sublesson" — the page learners read.)
-- **The `*Ids` arrays drive everything.** Adding a `Lesson`/`Paper`/`Module`/`Track`
-  object is not enough — you must also list its `id` in the parent's `itemIds` /
-  `moduleIds` array. Those arrays set order (sidebar, prev/next) and membership.
+  module holds ordered **items** — lessons (an MDX page), papers (a full-page inline
+  arXiv reading, §2), and readers (several lessons stitched into one numbered page,
+  §6), interleaved in any order. (In Khan terms a module is a "lesson/unit" and an
+  item is a "sublesson" — the page learners read.)
+- **The `*Ids` arrays drive everything.** Adding a `Lesson`/`Paper`/`Reader`/`Module`/
+  `Track` object is not enough — you must also list its `id` in the parent's
+  `itemIds` / `moduleIds` array. Those arrays set order (sidebar, prev/next) and
+  membership. (A reader's own lessons are the exception: they live in `readers.data.ts`
+  and stay OUT of `itemIds`.)
 - **`id` is globally unique; `slug` is unique within its parent.** URLs use slugs:
-  `/tracks/<trackSlug>/<moduleSlug>/<itemSlug>` (lessons and papers share the
-  namespace; `assessment` is reserved).
+  `/tracks/<trackSlug>/<moduleSlug>/<itemSlug>` (lessons, papers, and readers share
+  the namespace; `assessment` is reserved).
 - **Verify after editing:** `npm run typecheck` (catches shape errors) and
   `npm run test` — `src/lib/content/content.test.ts` checks referential integrity
   (every `moduleIds`/`itemIds`/`prerequisiteModuleIds`/`assessmentId` resolves,
   paper artifacts are built at the current converter version, and every paper
-  insertion resolves to a real section/exercise/lesson).
+  insertion resolves to a real section/exercise/lesson), and `readers.test.ts`
+  checks reader integrity and that the committed reader output is not stale.
 - Placeholder copy is lorem ipsum — keep it lorem or leave it empty; don't invent
   real curriculum. (Paper titles/authors are factual — they come from arXiv.)
 
@@ -277,3 +281,39 @@ Governance one.
 > `src/lib/content/types.ts`. To add a kind beyond foundations/technical/governance,
 > extend that union **and** add a label to the `KIND_LABEL` map in
 > `src/app/tracks/page.tsx`.
+
+---
+
+## 6. Bundle lessons into a reader
+
+A **reader** stitches an ordered set of lessons into one long, scrollable page:
+each lesson's title becomes a top-level `#` section and its own headings nest
+below, with **generated `1.1.1` numbering** in both the body and the sidebar
+section tree. The referenced lessons have **no standalone page** — they render
+only inside the reader (like a paper's inserted lessons). Compiling the whole
+thing as one MDX document is what keeps every heading's anchor id unique, so the
+combined body and its TOC are **precomputed** by a build step.
+
+1. **Define the reader** in `src/content/readers.data.ts` (`id`, `slug` unique in
+   the module, `moduleId`, `title`, ordered `lessonIds`, optional
+   `estimatedMinutes`). The lessons are ordinary `Lesson` entries in
+   `curriculum.data.ts` — authored exactly like any lesson (§1), with embedded
+   `<Demo>`/`<Exercise>`/`<Footnote>` and `$math$`.
+
+2. **Add the reader's `id` to its module's `itemIds`** (in `curriculum.data.ts`).
+   Do **not** add the reader's lessons to `itemIds` — that is what keeps them
+   reader-only.
+
+3. **Build the combined document:** `npm run readers:build`. This regenerates
+   `src/content/readers/<id>.mdx` (the concatenated body) and
+   `readers/tocs.generated.ts` (the numbered section tree). **Commit both.** The
+   transform, per lesson: shift the lesson's headings so its shallowest becomes
+   `##`, strip any manual `N.` section number from headings (the reader supplies
+   its own), then prepend the lesson title as `#`. Re-run it after editing the
+   reader or **any lesson it includes**; `readers.test.ts` fails if the committed
+   output is stale.
+
+The reader is now live at `/tracks/<trackSlug>/<moduleSlug>/<readerSlug>`, with the
+numbered section tree in the sidebar (reusing the paper section-nav) and matching
+`1.1.1` numbers rendered in the body via CSS counters (`.reader-body`, globals.css).
+A reader counts as one completion unit.

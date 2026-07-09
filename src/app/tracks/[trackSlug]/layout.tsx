@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import {
   getExerciseById,
   getLessonById,
+  getReaderToc,
   getTrackOutline,
   getTrackProgressContentIds,
   type Paper,
+  type Reader,
 } from "@/lib/content";
 import { EXERCISE_TYPE_LABELS } from "@/lib/content/types";
 import { isAccessLocked } from "@/lib/content/prerequisites";
@@ -58,9 +60,17 @@ export default async function TrackLayout({
   const papers = outline.modules.flatMap(({ items }) =>
     items.flatMap((item) => (item.kind === "paper" ? [item.paper] : [])),
   );
+  const readerItems = outline.modules.flatMap(({ items }) =>
+    items.flatMap((item) => (item.kind === "reader" ? [item.reader] : [])),
+  );
+  // Both papers and readers show a nested section tree under their sidebar row,
+  // keyed by item id in the same map (see TrackSidebar).
   const paperNavs: Record<string, PaperNavItem[]> = {};
   for (const paper of papers) {
     paperNavs[paper.id] = await buildNavForPaper(paper);
+  }
+  for (const reader of readerItems) {
+    paperNavs[reader.id] = buildNavForReader(reader);
   }
 
   return (
@@ -99,4 +109,17 @@ async function buildNavForPaper(paper: Paper): Promise<PaperNavItem[]> {
 function exerciseLabel(exerciseId: string): string {
   const exercise = getExerciseById(exerciseId);
   return exercise ? EXERCISE_TYPE_LABELS[exercise.type] : "Exercise";
+}
+
+// A reader's toc has no inserted activities, so it maps straight to section
+// nav items. Levels are bumped by one (a reader's level-1 lesson title sits
+// where a paper's level-2 top section does) so PaperSectionNav indents it right.
+function buildNavForReader(reader: Reader): PaperNavItem[] {
+  return getReaderToc(reader.id).map((entry) => ({
+    kind: "section",
+    id: entry.id,
+    title: entry.title,
+    number: entry.number,
+    level: entry.level + 1,
+  }));
 }
