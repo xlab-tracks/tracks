@@ -1,0 +1,26 @@
+/* Full-page overrides for the paper reader. The heavy lifting lives in
+   arxiv-paper.css (descendant-scoped under .arxiv-paper, no card
+   assumptions); this file only adjusts for the full-width reading column. */
+
+@layer components {
+  /* The collapsible card renders at 0.875rem; give the full page normal body size. */
+  .paper-reader .arxiv-paper {
+    font-size: 1rem;
+  }
+
+  /* Anchor targets (section headings AND ins-* activity wrappers) must clear
+     the sticky site header (3.5rem). Headings inside .arxiv-paper already
+     carry scroll-margin-top from arxiv-paper.css; this covers the wrappers. */
+  .paper-reader [id] {
+    scroll-margin-top: 5rem;
+  }
+
+  /* On mobile a second sticky bar (the "Contents" sheet trigger) sits under
+     the header, so anchors need more clearance. */
+  @media (max-width: 1023px) {
+    .paper-reader [id],
+    .paper-reader .arxiv-paper :is(h2, h3, h4, h5, h6) {
+      scroll-margin-top: 7rem;
+    }
+  }
+}

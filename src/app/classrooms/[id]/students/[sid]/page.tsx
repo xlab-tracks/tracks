@@ -5,9 +5,12 @@ import { requireUser } from "@/lib/auth";
 import { getClassroom, getMembership } from "@/lib/classrooms";
 import {
   getAssessmentForModule,
+  getItemProgressContentIds,
   getTrackById,
-  getTrackLessonIds,
   getTrackOutline,
+  getTrackProgressContentIds,
+  itemIdOf,
+  itemTitleOf,
   tracks,
   type Track,
 } from "@/lib/content";
@@ -50,16 +53,16 @@ export default async function StudentDetailPage({
     trackList.map(async (track) => {
       const outline = getTrackOutline(track.slug)!;
       const completed = new Set(
-        await getCompletedLessonIds(sid, getTrackLessonIds(track.id)),
+        await getCompletedLessonIds(sid, getTrackProgressContentIds(track.id)),
       );
       const progress = await getTrackProgress(sid, track.id);
       const modules = await Promise.all(
-        outline.modules.map(async ({ module, lessons }) => {
+        outline.modules.map(async ({ module, items }) => {
           const assessment = getAssessmentForModule(module.id);
           const submission = assessment
             ? await getSubmission(sid, assessment.id, "assessment")
             : null;
-          return { module, lessons, assessment, submission };
+          return { module, items, assessment, submission };
         }),
       );
       return { track, progress, completed, modules };
@@ -99,29 +102,40 @@ export default async function StudentDetailPage({
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">{track.title}</h2>
               <span className="text-muted-foreground text-sm">
-                {progress.completed}/{progress.total} lessons
+                {progress.completed}/{progress.total} items
               </span>
             </div>
             <Progress value={progress.percent} className="mt-2" />
 
             <Accordion type="multiple" className="mt-3">
-              {modules.map(({ module, lessons, assessment, submission }) => (
+              {modules.map(({ module, items, assessment, submission }) => (
                 <AccordionItem key={module.id} value={module.id}>
                   <AccordionTrigger className="text-sm">
                     Module {module.order}: {module.title}
                   </AccordionTrigger>
                   <AccordionContent className="space-y-3">
                     <ul className="space-y-1 text-sm">
-                      {lessons.map((lesson) => {
-                        const done = completed.has(lesson.id);
+                      {items.map((item) => {
+                        const done = getItemProgressContentIds(item).every((id) =>
+                          completed.has(id),
+                        );
                         return (
-                          <li key={lesson.id} className="flex items-center gap-2">
+                          <li
+                            key={itemIdOf(item)}
+                            className="flex items-center gap-2"
+                          >
                             {done ? (
                               <CheckCircle2 className="text-foreground size-3.5" aria-hidden />
                             ) : (
                               <Circle className="size-3.5 opacity-30" aria-hidden />
                             )}
-                            {lesson.title}
+                            {itemTitleOf(item)}
+                            {item.kind === "paper" && (
+                              <FileText
+                                className="size-3 shrink-0 opacity-60"
+                                aria-hidden
+                              />
+                            )}
                           </li>
                         );
                       })}

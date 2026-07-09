@@ -6,26 +6,32 @@ import { toast } from "sonner";
 import { recordLessonView, setLessonComplete } from "@/app/actions/progress";
 
 /**
- * Records the lesson view on open and auto-marks it complete once the end of the
- * lesson scrolls into view (the sentinel sits at the end of the body), so a
- * learner who reaches the bottom completes it without clicking. The manual
- * complete button stays available for explicit (re)marking. No-ops when the
- * lesson is already complete.
+ * Records the content view on open and auto-marks it complete once the end
+ * scrolls into view (the sentinel sits at the end of the body), so a learner
+ * who reaches the bottom completes it without clicking. The manual complete
+ * button stays available for explicit (re)marking. No-ops when already
+ * complete. Works for any progress-countable content id (lesson or paper);
+ * inline trackers inside a paper pass recordView={false} so opening a paper
+ * doesn't stamp lastViewedAt for every embedded lesson at once.
  */
 export function LessonTracker({
   lessonId,
   completed,
+  recordView = true,
+  toastLabel = "Lesson complete",
 }: {
   lessonId: string;
   completed: boolean;
+  recordView?: boolean;
+  toastLabel?: string;
 }) {
   const router = useRouter();
   const sentinel = useRef<HTMLDivElement>(null);
   const done = useRef(completed);
 
   useEffect(() => {
-    void recordLessonView(lessonId);
-  }, [lessonId]);
+    if (recordView) void recordLessonView(lessonId);
+  }, [lessonId, recordView]);
 
   useEffect(() => {
     if (done.current) return;
@@ -38,7 +44,7 @@ export function LessonTracker({
         observer.disconnect();
         setLessonComplete(lessonId, true)
           .then(() => {
-            toast.success("Lesson complete");
+            toast.success(toastLabel);
             router.refresh();
           })
           .catch(() => {
@@ -49,7 +55,7 @@ export function LessonTracker({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [lessonId, router]);
+  }, [lessonId, router, toastLabel]);
 
   return <div ref={sentinel} aria-hidden className="h-px w-full" />;
 }

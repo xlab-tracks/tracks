@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-async function importLesson(contentRef: string) {
+export async function importLesson(contentRef: string) {
   try {
     // Per-lesson dynamic import => Turbopack code-splits each MDX body.
     return await import(`@/content/lessons/${contentRef}.mdx`);

@@ -7,6 +7,7 @@ import { sanitize } from "hast-util-sanitize";
 import { toHtml } from "hast-util-to-html";
 import { VFile } from "vfile";
 import { addAnchors, applyResolvedColors, styleToClass } from "./hast-passes";
+import { extractToc, stampLandmarkIds } from "./toc";
 import type { ArxivId } from "./id";
 import { renderMathInHast } from "./katex";
 import { paperSanitizeSchema } from "./sanitize-schema";
@@ -143,11 +144,16 @@ export function convertLatexToHtml(
   styleToClass(hastTree);
   const clean = sanitize(hastTree, paperSanitizeSchema) as HastRoot;
   addAnchors(clean);
+  stampLandmarkIds(clean);
+  // Before the KaTeX pass, so titles with inline math extract as readable
+  // TeX text rather than KaTeX markup.
+  const toc = extractToc(clean);
   applyResolvedColors(clean);
   renderMathInHast(clean, katexTable, warnings);
 
   return {
     html: toHtml(clean),
+    toc,
     warnings: warnings.list(),
     usedAssets: [...usedAssets].sort(),
     meta,
@@ -196,7 +202,6 @@ function scanGraphicsPaths(texSource: string): string[] {
 }
 
 const SECTION_TAGS: Record<string, string> = {
-  chapter: "h2",
   section: "h2",
   subsection: "h3",
   subsubsection: "h4",
@@ -204,9 +209,24 @@ const SECTION_TAGS: Record<string, string> = {
   subparagraph: "h6",
 };
 
+/**
+ * Report/book-class sources: \chapter takes h2 and everything shifts down
+ * one, so the heading hierarchy matches the numbering hierarchy ("2.1" is a
+ * child of chapter 2) — the toc's subtree math depends on that.
+ */
+const CHAPTER_SECTION_TAGS: Record<string, string> = {
+  chapter: "h2",
+  section: "h3",
+  subsection: "h4",
+  subsubsection: "h5",
+  paragraph: "h6",
+  subparagraph: "h6",
+};
+
 function sectionReplacements(numbering: DocNumbering) {
+  const tags = numbering.hasChapters ? CHAPTER_SECTION_TAGS : SECTION_TAGS;
   const replacements: Record<string, (node: Ast.Macro) => Ast.Node> = {};
-  for (const [name, tag] of Object.entries(SECTION_TAGS)) {
+  for (const [name, tag] of Object.entries(tags)) {
     replacements[name] = (node) => {
       const info = numbering.sections.get(node);
       const title = lastArgContent(node);

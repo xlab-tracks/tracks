@@ -7,9 +7,11 @@ and a curated resource hub.
 
 ## Features
 
-- **Modular, lesson-style content** with a persistent module/lesson sidebar.
-- **Four content types**: embedded video (media-chrome), text, interactive demos
-  embedded inline, and exercises.
+- **Modular, lesson-style content** with a persistent module sidebar that also
+  carries per-paper section navigation.
+- **Content types**: embedded video (media-chrome), text, interactive demos
+  embedded inline, exercises, and full-page arXiv papers with exercises and
+  lessons interleaved into their sections.
 - **Exercises** — closed-ended (multiple-choice, multi-select, true/false,
   understanding checks) graded server-side, and open-ended writing.
 - **End-of-module assessments** that mirror real deliverables (policy memo, bill

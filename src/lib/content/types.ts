@@ -34,8 +34,8 @@ export interface Module {
   order: number;
   /** Module IDs that should be completed first; may live in another track. */
   prerequisiteModuleIds: string[];
-  /** Ordered lesson IDs. */
-  lessonIds: string[];
+  /** Ordered content item IDs — lessons and papers, interleaved. */
+  itemIds: string[];
   /** End-of-module written assessment, if any. */
   assessmentId?: string;
   /** Resource-hub topic tags surfaced as "Further reading". */
@@ -48,8 +48,6 @@ export interface Lesson {
   slug: string;
   moduleId: string;
   title: string;
-  /** 1-based order within the module. */
-  order: number;
   /**
    * Path (without extension) under `src/content/lessons` to the MDX body,
    * e.g. "foundations-fundamentals-intro".
@@ -57,6 +55,54 @@ export interface Lesson {
   contentRef: string;
   estimatedMinutes?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Papers (full-page inline readings with embedded activities)
+// ---------------------------------------------------------------------------
+
+/** Where a paper's rendered artifact comes from. Extend by adding kinds. */
+export type PaperSource = { kind: "arxiv"; arxivId: string };
+
+/** An activity spliced into the paper flow: an exercise card or an inline lesson. */
+export interface PaperInsertionItem {
+  kind: "lesson" | "exercise";
+  id: string;
+}
+
+export interface PaperInsertion {
+  /**
+   * Heading id in the converted paper HTML ("ax-sec-…", or a landmark id like
+   * "ax-abstract"). The insertion renders at the END of that (sub)section's
+   * subtree — before the next heading of the same or shallower level.
+   * Discover ids with `npm run arxiv:build -- --toc <arxivId>`; validated
+   * against the committed artifact's toc by content.test.ts.
+   */
+  sectionId: string;
+  /** Rendered top-to-bottom in array order. */
+  items: PaperInsertionItem[];
+}
+
+export interface Paper {
+  /** Globally unique across ALL content ids (lessons included). */
+  id: string;
+  /** Unique among the module's items; shares the /tracks/t/m/<slug> namespace. */
+  slug: string;
+  moduleId: string;
+  title: string;
+  source: PaperSource;
+  /**
+   * Inline activities at section boundaries. Inserted lessons are regular
+   * Lesson entries that are NOT listed in any module's itemIds — they render
+   * inside the paper and have no standalone page.
+   */
+  insertions?: PaperInsertion[];
+  estimatedMinutes?: number;
+}
+
+/** A module's ordered content items (Module.itemIds resolved). */
+export type ModuleItem =
+  | { kind: "lesson"; lesson: Lesson }
+  | { kind: "paper"; paper: Paper };
 
 // ---------------------------------------------------------------------------
 // Exercises

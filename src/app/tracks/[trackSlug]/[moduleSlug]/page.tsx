@@ -4,9 +4,14 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, Clock, ExternalLink, FileText, Lock } from "lucide-react";
 import {
   getAssessmentForModule,
-  getLessonsForModule,
+  getItemProgressContentIds,
+  getItemsForModule,
   getModuleBySlugs,
+  getModuleProgressContentIds,
   getResourcesByTopics,
+  itemIdOf,
+  itemSlugOf,
+  itemTitleOf,
 } from "@/lib/content";
 import { DELIVERABLE_FORMAT_LABELS } from "@/lib/content/types";
 import { isAccessLocked } from "@/lib/content/prerequisites";
@@ -46,7 +51,7 @@ export default async function ModulePage({
   if (!resolved) notFound();
   const { track, module } = resolved;
 
-  const lessons = getLessonsForModule(module.id);
+  const items = getItemsForModule(module.id);
   const assessment = getAssessmentForModule(module.id);
   const furtherReading = getResourcesByTopics(module.furtherReadingTopics ?? []);
   const moduleHref = `/tracks/${track.slug}/${module.slug}`;
@@ -60,7 +65,9 @@ export default async function ModulePage({
       prereqStatuses.map((s) => s.completed),
     );
   const completedSet = new Set(
-    user ? await getCompletedLessonIds(user.id, lessons.map((l) => l.id)) : [],
+    user
+      ? await getCompletedLessonIds(user.id, getModuleProgressContentIds(module.id))
+      : [],
   );
 
   return (
@@ -88,20 +95,26 @@ export default async function ModulePage({
           <Lock className="size-4" aria-hidden />
           <AlertTitle>Module locked</AlertTitle>
           <AlertDescription>
-            Complete the prerequisites above to unlock these lessons.
+            Complete the prerequisites above to unlock this content.
           </AlertDescription>
         </Alert>
       ) : (
         <>
           <section className="mt-8">
-            <h2 className="text-lg font-semibold">Lessons</h2>
+            <h2 className="text-lg font-semibold">Contents</h2>
             <ol className="mt-3 space-y-2">
-              {lessons.map((lesson) => {
-                const done = completedSet.has(lesson.id);
+              {items.map((item, index) => {
+                const done = getItemProgressContentIds(item).every((id) =>
+                  completedSet.has(id),
+                );
+                const estimatedMinutes =
+                  item.kind === "lesson"
+                    ? item.lesson.estimatedMinutes
+                    : item.paper.estimatedMinutes;
                 return (
-                  <li key={lesson.id}>
+                  <li key={itemIdOf(item)}>
                     <Link
-                      href={`${moduleHref}/${lesson.slug}`}
+                      href={`${moduleHref}/${itemSlugOf(item)}`}
                       className="border-border hover:bg-muted shadow-soft flex items-center justify-between gap-3 rounded-xl border p-4 transition-colors"
                     >
                       <span className="flex items-center gap-3">
@@ -114,12 +127,17 @@ export default async function ModulePage({
                           <span className="border-muted-foreground/40 size-4 shrink-0 rounded-full border" />
                         )}
                         <span className="font-medium">
-                          {lesson.order}. {lesson.title}
+                          {index + 1}. {itemTitleOf(item)}
                         </span>
+                        {item.kind === "paper" && (
+                          <Badge variant="secondary" className="gap-1">
+                            <FileText className="size-3" aria-hidden /> Paper
+                          </Badge>
+                        )}
                       </span>
-                      {lesson.estimatedMinutes && (
+                      {estimatedMinutes && (
                         <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                          <Clock className="size-3.5" aria-hidden /> {lesson.estimatedMinutes}m
+                          <Clock className="size-3.5" aria-hidden /> {estimatedMinutes}m
                         </span>
                       )}
                     </Link>

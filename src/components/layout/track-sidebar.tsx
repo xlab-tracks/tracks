@@ -18,28 +18,33 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import type { TrackOutline } from "@/lib/content";
+import type { ModuleItem, TrackOutline } from "@/lib/content";
+import type { PaperNavItem } from "@/lib/papers/paper-nav";
 import { cn } from "@/lib/utils";
+import { navItemClass, PaperSectionNav } from "./paper-section-nav";
 
 export interface TrackSidebarProps {
   outline: TrackOutline;
-  /** Lesson IDs the current user has completed (drives checkmarks). */
-  completedLessonIds?: string[];
+  /** Content IDs the current user has completed — lessons, papers, and papers' inserted lessons (drives checkmarks). */
+  completedContentIds?: string[];
   /** Module slugs gated by unmet prerequisites (drives lock icons). */
   lockedModuleSlugs?: string[];
+  /** Per-paper section navigation (keyed by paper id), shown nested under the active paper. */
+  paperNavs?: Record<string, PaperNavItem[]>;
 }
 
 function SidebarNav({
   outline,
-  completedLessonIds = [],
+  completedContentIds = [],
   lockedModuleSlugs = [],
+  paperNavs = {},
   onNavigate,
 }: TrackSidebarProps & { onNavigate?: () => void }) {
   const pathname = usePathname();
   const base = `/tracks/${outline.track.slug}`;
   const segments = pathname.split("/").filter(Boolean);
   const activeModuleSlug = segments[2];
-  const completed = new Set(completedLessonIds);
+  const completed = new Set(completedContentIds);
   const locked = new Set(lockedModuleSlugs);
 
   const [open, setOpen] = useState<string[]>(() =>
@@ -56,14 +61,6 @@ function SidebarNav({
       );
     }
   }, [activeModuleSlug]);
-
-  const itemClass = (active: boolean) =>
-    cn(
-      "flex items-start gap-2 rounded-md border-l-2 px-2 py-1.5 text-sm transition-colors",
-      active
-        ? "border-destructive bg-destructive/5 text-foreground font-medium"
-        : "border-l-transparent text-muted-foreground hover:text-foreground hover:bg-muted",
-    );
 
   return (
     <div className="flex h-full flex-col">
@@ -88,7 +85,7 @@ function SidebarNav({
         onValueChange={setOpen}
         className="px-2 pb-10"
       >
-        {outline.modules.map(({ module, lessons }) => {
+        {outline.modules.map(({ module, items }) => {
           const isLocked = locked.has(module.slug);
           const assessmentHref = `${base}/${module.slug}/assessment`;
           return (
@@ -108,38 +105,25 @@ function SidebarNav({
               </AccordionTrigger>
               <AccordionContent className="pb-1">
                 <ul className="border-border/70 ml-3 space-y-0.5 border-l pl-2">
-                  {lessons.map((lesson) => {
-                    const href = `${base}/${module.slug}/${lesson.slug}`;
-                    const done = completed.has(lesson.id);
-                    return (
-                      <li key={lesson.id}>
-                        <Link
-                          href={href}
-                          onClick={onNavigate}
-                          className={itemClass(pathname === href)}
-                        >
-                          {done ? (
-                            <CheckCircle2
-                              className="text-foreground mt-0.5 size-3.5 shrink-0"
-                              aria-hidden
-                            />
-                          ) : (
-                            <Circle
-                              className="mt-0.5 size-3.5 shrink-0 opacity-30"
-                              aria-hidden
-                            />
-                          )}
-                          <span className="line-clamp-2">{lesson.title}</span>
-                        </Link>
-                      </li>
-                    );
-                  })}
+                  {items.map((item) => (
+                    <SidebarItemRow
+                      key={itemKey(item)}
+                      item={item}
+                      href={`${base}/${module.slug}/${itemSlug(item)}`}
+                      pathname={pathname}
+                      completed={completed}
+                      paperNav={
+                        item.kind === "paper" ? paperNavs[item.paper.id] : undefined
+                      }
+                      onNavigate={onNavigate}
+                    />
+                  ))}
                   {module.assessmentId && (
                     <li>
                       <Link
                         href={assessmentHref}
                         onClick={onNavigate}
-                        className={itemClass(pathname === assessmentHref)}
+                        className={navItemClass(pathname === assessmentHref)}
                       >
                         <FileText className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                         <span>Assessment</span>
@@ -153,6 +137,77 @@ function SidebarNav({
         })}
       </Accordion>
     </div>
+  );
+}
+
+function itemKey(item: ModuleItem): string {
+  return item.kind === "lesson" ? item.lesson.id : item.paper.id;
+}
+function itemSlug(item: ModuleItem): string {
+  return item.kind === "lesson" ? item.lesson.slug : item.paper.slug;
+}
+/**
+ * An item is "done" only when all its progress units are — for a paper that
+ * includes its inserted lessons, matching module/track totals. (Computed from
+ * props: importing the content accessors would pull the graph client-side.)
+ */
+function itemDone(item: ModuleItem, completed: Set<string>): boolean {
+  if (item.kind === "lesson") return completed.has(item.lesson.id);
+  if (!completed.has(item.paper.id)) return false;
+  return (item.paper.insertions ?? []).every((insertion) =>
+    insertion.items.every(
+      (inserted) => inserted.kind !== "lesson" || completed.has(inserted.id),
+    ),
+  );
+}
+
+function SidebarItemRow({
+  item,
+  href,
+  pathname,
+  completed,
+  paperNav,
+  onNavigate,
+}: {
+  item: ModuleItem;
+  href: string;
+  pathname: string;
+  completed: Set<string>;
+  paperNav?: PaperNavItem[];
+  onNavigate?: () => void;
+}) {
+  const done = itemDone(item, completed);
+  const active = pathname === href;
+  return (
+    <li>
+      <Link href={href} onClick={onNavigate} className={navItemClass(active)}>
+        {done ? (
+          <CheckCircle2
+            className="text-foreground mt-0.5 size-3.5 shrink-0"
+            aria-hidden
+          />
+        ) : (
+          <Circle className="mt-0.5 size-3.5 shrink-0 opacity-30" aria-hidden />
+        )}
+        <span className="line-clamp-2">
+          {item.kind === "lesson" ? item.lesson.title : item.paper.title}
+        </span>
+        {item.kind === "paper" && (
+          <FileText
+            className="text-muted-foreground mt-0.5 ml-auto size-3 shrink-0"
+            aria-hidden
+          />
+        )}
+      </Link>
+      {item.kind === "paper" && active && paperNav && paperNav.length > 0 && (
+        <PaperSectionNav
+          items={paperNav}
+          pathname={pathname}
+          completedContentIds={completed}
+          onNavigate={onNavigate}
+        />
+      )}
+    </li>
   );
 }
 

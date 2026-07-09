@@ -22,6 +22,7 @@ describe("authoring-time filesystem store", () => {
   it("round-trips converted JSON with the converter-version guard", async () => {
     await store.setConvertedPaper(id, {
       html: "<p>hi</p>",
+      toc: [],
       warnings: [],
       meta: { title: "T" },
       assets: [],

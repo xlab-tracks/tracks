@@ -33,6 +33,8 @@ export interface DocNumbering {
   tables: WeakMap<Ast.Environment, NumberInfo>;
   theorems: WeakMap<Ast.Environment, NumberInfo>;
   labels: Map<string, LabelEntry>;
+  /** Report/book-class source (\chapter present) — heading tags shift down one. */
+  hasChapters: boolean;
 }
 
 /**
@@ -82,6 +84,7 @@ export function numberDocument(
     pageref: { signature: "m" },
   });
 
+  const hasChapters = treeHasMacro(tree, "chapter");
   const numbering: DocNumbering = {
     sections: new WeakMap(),
     equations: new WeakMap(),
@@ -89,11 +92,11 @@ export function numberDocument(
     tables: new WeakMap(),
     theorems: new WeakMap(),
     labels: new Map(),
+    hasChapters,
   };
   const ids = new IdMinter();
   const theoremsByEnv = new Map(theoremDefs.map((d) => [d.envName, d]));
 
-  const hasChapters = treeHasMacro(tree, "chapter");
   const SECTION_LEVELS = sectionLevelsFor(hasChapters);
 
   const counters = {

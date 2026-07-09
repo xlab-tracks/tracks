@@ -35,8 +35,11 @@
  * v15: papers precompute at authoring time (`npm run arxiv:build`) into
  *      committed artifacts; asset URLs point at static /arxiv/… paths instead
  *      of the (removed) /api/arxiv asset route.
+ * v16: precomputed section TOC (`toc` on the artifact) + stamped landmark ids
+ *      (ax-abstract/ax-references/ax-footnotes) — powers full-page Paper
+ *      items: sidebar section navigation and end-of-section insertions.
  */
-export const CONVERTER_VERSION = 15;
+export const CONVERTER_VERSION = 16;
 
 export interface ConversionWarning {
   /** Stable machine code, e.g. "unknown-macro", "katex-error". */
@@ -53,8 +56,30 @@ export interface TexMeta {
   abstract?: string;
 }
 
+export type PaperTocEntryKind = "abstract" | "section" | "references" | "footnotes";
+
+/**
+ * One entry of a paper's section tree, extracted at conversion time from the
+ * sanitized HAST. Flat array in document order; nesting derives from `level`.
+ * Entry ids are the anchor targets used by sidebar navigation and by
+ * `Paper.insertions[].sectionId` — stable for a pinned arXiv version +
+ * converter version (same contract as data-anchor).
+ */
+export interface PaperTocEntry {
+  kind: PaperTocEntryKind;
+  /** "ax-sec-…" for sections; "ax-abstract"/"ax-references"/"ax-footnotes" for landmarks. */
+  id: string;
+  /** Plain-text title WITHOUT the section number, e.g. "Model Architecture". */
+  title: string;
+  /** "3.2", "A.1", or "" for unnumbered (starred) sections and landmarks. */
+  number: string;
+  /** Heading depth 2–4 (h2–h4); landmark sections are 2. */
+  level: number;
+}
+
 export interface ConversionResult {
   html: string;
+  toc: PaperTocEntry[];
   warnings: ConversionWarning[];
   /** Tarball paths of assets actually referenced by the HTML. */
   usedAssets: string[];
@@ -63,6 +88,7 @@ export interface ConversionResult {
 
 export interface ConvertedPaper {
   html: string;
+  toc: PaperTocEntry[];
   warnings: ConversionWarning[];
   meta: TexMeta;
   assets: string[];

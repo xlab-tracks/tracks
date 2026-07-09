@@ -2,9 +2,9 @@ import type { Lesson, Module, Track } from "@/lib/content/types";
 
 // Control and Governance are intentionally empty for now — just an intro blurb,
 // ready for real curriculum. The "Example" track is a fully-built demo of every
-// feature (the four content types, each exercise type, an end-of-module
-// assessment, and a cross-module prerequisite). Replace lorem with real content;
-// see AUTHORING.md.
+// feature (the content types, each exercise type, papers with inline activities,
+// an end-of-module assessment, and a cross-module prerequisite). Replace lorem
+// with real content; see AUTHORING.md.
 
 export const tracks: Track[] = [
   {
@@ -35,7 +35,7 @@ export const tracks: Track[] = [
     title: "Example Track",
     shortTitle: "Example",
     description:
-      "A demo track showing every feature in one place — the four content types, each exercise type, an end-of-module assessment, and a cross-module prerequisite.",
+      "A demo track showing every feature in one place — the content types, each exercise type, an inline paper with embedded activities, an end-of-module assessment, and a cross-module prerequisite.",
     kind: "example",
     moduleIds: ["ex-content", "ex-assess"],
     prerequisiteEnforcement: "soft",
@@ -50,12 +50,12 @@ export const modules: Module[] = [
     trackId: "example",
     title: "Content types",
     summary:
-      "Text, video, callouts, an interactive demo, and exercises, all inside lessons.",
+      "Text, video, callouts, an interactive demo, exercises, and an inline paper.",
     order: 1,
     prerequisiteModuleIds: [],
-    lessonIds: ["ex-content-l1", "ex-content-l2"],
+    itemIds: ["ex-content-l1", "ex-paper-attention", "ex-content-l2"],
     furtherReadingTopics: ["alignment", "interpretability"],
-    estimatedMinutes: 25,
+    estimatedMinutes: 70,
   },
   {
     id: "ex-assess",
@@ -66,10 +66,10 @@ export const modules: Module[] = [
       "This module requires the first one (a soft prerequisite) and ends with a written assessment.",
     order: 2,
     prerequisiteModuleIds: ["ex-content"],
-    lessonIds: ["ex-assess-l1"],
+    itemIds: ["ex-assess-l1", "ex-paper-anti-scheming"],
     assessmentId: "ex-assessment",
     furtherReadingTopics: ["governance"],
-    estimatedMinutes: 20,
+    estimatedMinutes: 40,
   },
 ];
 
@@ -79,7 +79,6 @@ export const lessons: Lesson[] = [
     slug: "text-video-callouts",
     moduleId: "ex-content",
     title: "Text, video & callouts",
-    order: 1,
     contentRef: "ex-content-l1",
     estimatedMinutes: 8,
   },
@@ -88,7 +87,6 @@ export const lessons: Lesson[] = [
     slug: "demos-and-exercises",
     moduleId: "ex-content",
     title: "Demos & exercises",
-    order: 2,
     contentRef: "ex-content-l2",
     estimatedMinutes: 10,
   },
@@ -97,8 +95,17 @@ export const lessons: Lesson[] = [
     slug: "putting-it-together",
     moduleId: "ex-assess",
     title: "Putting it together",
-    order: 1,
     contentRef: "ex-assess-l1",
     estimatedMinutes: 7,
+  },
+  // Inline-only: rendered inside the "ex-paper-attention" paper via its
+  // insertions. Deliberately NOT in any module's itemIds — no standalone page.
+  {
+    id: "ex-paper-note-l1",
+    slug: "reading-guide",
+    moduleId: "ex-content",
+    title: "Reading guide",
+    contentRef: "ex-paper-note-l1",
+    estimatedMinutes: 4,
   },
 ];

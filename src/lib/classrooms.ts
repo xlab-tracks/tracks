@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import {
   getAssessmentForModule,
   getModulesForTrack,
-  getTrackLessonIds,
+  getTrackProgressContentIds,
   tracks,
 } from "@/lib/content";
 
@@ -70,17 +70,19 @@ export async function getClassroomRoster(
   const userIds = members.map((m) => m.userId);
 
   const scopeTrackIds = trackId ? [trackId] : tracks.map((t) => t.id);
-  const scopeLessonIds = scopeTrackIds.flatMap((id) => getTrackLessonIds(id));
+  const scopeContentIds = scopeTrackIds.flatMap((id) =>
+    getTrackProgressContentIds(id),
+  );
   const scopeAssessmentIds = scopeTrackIds.flatMap((id) =>
     getModulesForTrack(id)
       .map((m) => getAssessmentForModule(m.id)?.id)
       .filter((x): x is string => Boolean(x)),
   );
-  const total = scopeLessonIds.length;
+  const total = scopeContentIds.length;
 
   const [progress, submissions] = await Promise.all([
     prisma.lessonProgress.findMany({
-      where: { userId: { in: userIds }, lessonId: { in: scopeLessonIds } },
+      where: { userId: { in: userIds }, lessonId: { in: scopeContentIds } },
       select: { userId: true, status: true, lastViewedAt: true },
     }),
     prisma.submission.findMany({

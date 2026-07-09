@@ -146,6 +146,7 @@ async function convertFromRaw(
 
     paper = {
       html: result.html,
+      toc: result.toc,
       warnings: [
         ...main.warnings.map((detail) => ({ code: "source", detail, count: 1 })),
         ...result.warnings,

@@ -46,13 +46,24 @@ pages render without any of this; auth + persistence do not.
 
 **Content is code; user data is Postgres.** This split is the core mental model:
 
-- The content graph (tracks, modules, lessons, exercises, assessments, resources)
-  is static and code-defined in `src/content/*.data.ts` plus MDX bodies in
-  `src/content/lessons/*.mdx`. Access it **only** through `src/lib/content/`
+- The content graph (tracks, modules, lessons, papers, exercises, assessments,
+  resources) is static and code-defined in `src/content/*.data.ts` plus MDX
+  bodies in `src/content/lessons/*.mdx`. Modules order lessons and papers
+  together via `itemIds`. Access it **only** through `src/lib/content/`
   (in-memory indexes + accessors). Never store curriculum in the DB.
 - `prisma/schema.prisma` holds **only** user/stateful data (progress, submissions,
   classrooms), keyed by **string content IDs** — there are no FKs into
-  the content graph.
+  the content graph. `LessonProgress.lessonId` holds generic content ids
+  (lessons, papers, and papers' inserted lessons each count as one unit).
+
+**Papers.** A `Paper` (`src/content/papers.data.ts`) is a module item that
+renders an arXiv paper full-page from its precomputed artifact, with exercises
+and inline lessons spliced in at section ends (`insertions`, keyed by the
+artifact's toc section ids). `src/lib/papers/split-paper.ts` slices the
+artifact HTML; `src/lib/papers/paper-nav.ts` builds the sidebar's per-paper
+section tree (scroll-spy in `src/components/layout/use-scroll-spy.ts`).
+Artifacts precompute at authoring time via `npm run arxiv:build` (also prints
+section ids; `-- --toc <id>` re-prints from the committed artifact).
 
 **MDX pipeline.** `src/mdx-components.tsx` wires the global component map from
 `src/components/mdx/mdx-components.tsx`. `LessonContent` dynamically imports

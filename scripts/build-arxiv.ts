@@ -1,8 +1,9 @@
 /**
- * Convert every <ArxivPaper id="..."/> embedded in lessons into committed
- * artifacts the site reads at runtime:
+ * Convert every arXiv paper the content references — <ArxivPaper id="..."/>
+ * embeds in lessons AND Paper sources in src/content/papers.data.ts — into
+ * committed artifacts the site reads at runtime:
  *
- *   src/content/arxiv/{id}.json     PaperArtifact (rendered HTML or a
+ *   src/content/arxiv/{id}.json     PaperArtifact (rendered HTML + toc, or a
  *                                   terminal state like pdf-only)
  *   public/arxiv/{id}/assets/{path} figure bytes referenced by the HTML
  *
@@ -11,14 +12,17 @@
  * ARXIV_CACHE_DIR (default: OS temp dir) so re-runs skip the network.
  *
  * Usage:
- *   npm run arxiv:build                    # all ids found in lessons
- *   npm run arxiv:build -- --id 2301.12345v2
+ *   npm run arxiv:build                       # all ids found in lessons + papers.data.ts
+ *   npm run arxiv:build -- --id 2301.12345v2  # build one paper
+ *   npm run arxiv:build -- --toc 2301.12345v2 # print a committed artifact's
+ *                                             # section ids (for Paper.insertions)
  *
  * Transient failures (network blips) exit nonzero without writing an
  * artifact — only deterministic outcomes get committed. 3s spacing between
  * papers (arXiv rate courtesy).
  */
 import {
+  existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -26,10 +30,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { papers } from "../src/content/papers.data";
 import { parseArxivId } from "../src/lib/arxiv/id";
 import { getOrConvertPaperUncached } from "../src/lib/arxiv/pipeline";
 import { getAsset } from "../src/lib/arxiv/store";
-import type { PaperArtifact } from "../src/lib/arxiv/types";
+import type { PaperArtifact, PaperTocEntry } from "../src/lib/arxiv/types";
 
 const LESSONS_DIR = join(process.cwd(), "src", "content", "lessons");
 const ARTIFACTS_DIR = join(process.cwd(), "src", "content", "arxiv");
@@ -44,7 +49,13 @@ function idsFromLessons(): string[] {
       ids.add(m[1]);
     }
   }
-  return [...ids].sort();
+  return [...ids];
+}
+
+function idsFromPapers(): string[] {
+  return papers
+    .filter((p) => p.source.kind === "arxiv")
+    .map((p) => p.source.arxivId);
 }
 
 function argValue(flag: string): string | undefined {
@@ -53,6 +64,39 @@ function argValue(flag: string): string | undefined {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function printToc(toc: PaperTocEntry[]): void {
+  for (const entry of toc) {
+    const label = entry.number ? `§${entry.number} ${entry.title}` : entry.title;
+    console.log(`  ${label.padEnd(48)} →  ${entry.id}`);
+  }
+}
+
+/** Print a committed artifact's section ids without any network/conversion. */
+function tocCommand(idString: string): void {
+  const id = parseArxivId(idString);
+  if (!id) {
+    console.error(`✗ ${idString}: invalid id (pinned version required)`);
+    process.exitCode = 1;
+    return;
+  }
+  const path = join(ARTIFACTS_DIR, `${id.id}.json`);
+  if (!existsSync(path)) {
+    console.error(
+      `✗ ${id.id}: no committed artifact — run \`npm run arxiv:build -- --id ${id.id}\` first`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+  const artifact = JSON.parse(readFileSync(path, "utf8")) as PaperArtifact;
+  if (artifact.state !== "ready") {
+    console.error(`✗ ${id.id}: artifact state is "${artifact.state}" — no toc`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`${id.id} (converter v${artifact.paper.converterVersion}):`);
+  printToc(artifact.paper.toc);
+}
 
 async function buildOne(idString: string): Promise<boolean> {
   const id = parseArxivId(idString);
@@ -98,6 +142,9 @@ async function buildOne(idString: string): Promise<boolean> {
       `✓ ${id.id}: ready — ${artifact.paper.assets.length} assets, ` +
         `${warnings} approximated elements`,
     );
+    // Section ids are what Paper.insertions key on — surface them here so
+    // authors don't have to dig through the JSON.
+    printToc(artifact.paper.toc);
   } else {
     console.log(`✓ ${id.id}: recorded terminal state "${artifact.state}"`);
   }
@@ -105,10 +152,20 @@ async function buildOne(idString: string): Promise<boolean> {
 }
 
 async function main(): Promise<void> {
+  const tocId = argValue("--toc");
+  if (tocId) {
+    tocCommand(tocId);
+    return;
+  }
+
   const single = argValue("--id");
-  const ids = single ? [single] : idsFromLessons();
+  const ids = single
+    ? [single]
+    : [...new Set([...idsFromLessons(), ...idsFromPapers()])].sort();
   if (ids.length === 0) {
-    console.log("No <ArxivPaper/> embeds found in src/content/lessons/.");
+    console.log(
+      "No <ArxivPaper/> embeds in src/content/lessons/ and no arXiv sources in src/content/papers.data.ts.",
+    );
     return;
   }
 

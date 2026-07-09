@@ -59,7 +59,7 @@ export default async function ClassroomPage({
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">Your progress in {track.shortTitle ?? track.title}</span>
               <span className="text-muted-foreground">
-                {progress.completed} / {progress.total} lessons
+                {progress.completed} / {progress.total} items
               </span>
             </div>
             <Progress value={progress.percent} className="mt-2" />
