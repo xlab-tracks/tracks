@@ -70,6 +70,14 @@ export function assembleReaderMdx(sections: string[]): string {
 }
 
 /**
+ * Numbering stops at three components (x.x.x): level-1 lesson titles, their
+ * level-2 sections, and level-3 subsections are numbered and listed; deeper
+ * headings still render in the body but get no number and no toc entry. Keep
+ * this in sync with the `.reader-body` heading counters in globals.css.
+ */
+export const READER_TOC_DEPTH = 3;
+
+/**
  * Build the numbered section tree from a combined reader MDX. Numbers are
  * assigned per heading level (level 1 = lesson title = "1", "2", …; each deeper
  * level nests below), and ids use the same github-slugger rehype-slug uses, in
@@ -90,10 +98,14 @@ export function buildReaderToc(mdx: string): ReaderTocEntry[] {
     if (!m) continue;
     const level = m[1].length;
     const title = m[2].trim();
+    // Slug EVERY heading in document order (even ones past the depth cap) so the
+    // dedup suffixes stay aligned with rehype-slug on the rendered page.
+    const id = slugger.slug(title);
+    if (level > READER_TOC_DEPTH) continue;
     counters[level] += 1;
     for (let k = level + 1; k < counters.length; k++) counters[k] = 0;
     toc.push({
-      id: slugger.slug(title),
+      id,
       title,
       number: counters.slice(1, level + 1).join("."),
       level,

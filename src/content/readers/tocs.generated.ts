@@ -83,34 +83,10 @@ export const readerTocs: Record<string, ReaderTocEntry[]> = {
     "level": 3
   },
   {
-    "id": "avoid-using-untrusted-models",
-    "title": "Avoid Using Untrusted Models",
-    "number": "3.1.1.1",
-    "level": 4
-  },
-  {
-    "id": "upfront-auditing",
-    "title": "Upfront Auditing",
-    "number": "3.1.1.2",
-    "level": 4
-  },
-  {
     "id": "trusted-monitoring",
     "title": "Trusted Monitoring",
     "number": "3.1.2",
     "level": 3
-  },
-  {
-    "id": "qualitative-analysis",
-    "title": "Qualitative Analysis",
-    "number": "3.1.2.1",
-    "level": 4
-  },
-  {
-    "id": "extending-trusted-monitoring-with-untrusted-justification",
-    "title": "Extending Trusted Monitoring With Untrusted Justification",
-    "number": "3.1.2.2",
-    "level": 4
   },
   {
     "id": "results-ii--defer-to-trusted-untrusted-monitoring--trusted-editing",
@@ -177,18 +153,6 @@ export const readerTocs: Record<string, ReaderTocEntry[]> = {
     "title": "Difficulties and Limitations of AI Control",
     "number": "5.1.1",
     "level": 3
-  },
-  {
-    "id": "difficulties-with-using-control-evaluations-in-practice",
-    "title": "Difficulties With Using Control Evaluations in Practice",
-    "number": "5.1.1.1",
-    "level": 4
-  },
-  {
-    "id": "difficulties-with-scaling-control-techniques",
-    "title": "Difficulties With Scaling Control Techniques",
-    "number": "5.1.1.2",
-    "level": 4
   },
   {
     "id": "why-we-didnt-consider-strategies-that-involve-training-the-model",

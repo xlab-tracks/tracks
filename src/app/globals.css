@@ -161,12 +161,10 @@
 }
 .reader-body h3 {
   counter-increment: rh3;
-  counter-reset: rh4;
 }
-.reader-body h4 {
-  counter-increment: rh4;
-}
-.reader-body :is(h1, h2, h3, h4)::before {
+/* Numbering caps at three levels (x.x.x) — h4 and deeper render unnumbered.
+   Keep in sync with READER_TOC_DEPTH in src/lib/readers/generate.ts. */
+.reader-body :is(h1, h2, h3)::before {
   color: var(--muted-foreground);
   font-weight: 500;
   margin-right: 0.6ch;
@@ -179,9 +177,6 @@
 }
 .reader-body h3::before {
   content: counter(rh1) "." counter(rh2) "." counter(rh3);
-}
-.reader-body h4::before {
-  content: counter(rh1) "." counter(rh2) "." counter(rh3) "." counter(rh4);
 }
 
 .footnote-marker {
