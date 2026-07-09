@@ -68,6 +68,9 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
    <Demo id="sample-demo" />
 
    <Exercise id="ex-mc-3" />
+
+   A claim that needs a source.<Footnote>The footnote body — can hold prose, links,
+   `code`, etc.</Footnote>
    ```
 
    - `<Video src … title? provider? poster? />` — provider (`youtube`/`vimeo`/`file`)
@@ -86,6 +89,10 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
      production cache so students never wait on the cold fetch-and-convert
      path: `ARXIV_WARM_TOKEN=… npm run warm:arxiv -- --site https://<site>`
      (the token lives in the Netlify env).
+   - `<Footnote>…</Footnote>` — drop it right after the word/claim it annotates, no
+     id needed. It numbers itself automatically (in document order) and renders as
+     a sidenote in the right margin on wide screens, or a tap-to-expand marker on
+     narrower ones — no separate "References" section at the bottom of the lesson.
 
 The lesson is now live at `/tracks/<trackSlug>/<moduleSlug>/<lessonSlug>` and shows
 in the sidebar + prev/next.

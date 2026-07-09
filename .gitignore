@@ -49,3 +49,4 @@ cloudflare-env.d.ts
 .claude/
 .netlify/
 .agents/
+scrap
