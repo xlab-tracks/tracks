@@ -211,11 +211,36 @@ function SidebarItemRow({
   );
 }
 
+/** True when the current page is a paper whose section tree is showing. */
+function hasActivePaperNav(
+  { outline, paperNavs = {} }: TrackSidebarProps,
+  pathname: string,
+): boolean {
+  const base = `/tracks/${outline.track.slug}`;
+  return outline.modules.some(({ module, items }) =>
+    items.some(
+      (item) =>
+        item.kind === "paper" &&
+        pathname === `${base}/${module.slug}/${item.paper.slug}` &&
+        (paperNavs[item.paper.id]?.length ?? 0) > 0,
+    ),
+  );
+}
+
 export function TrackSidebar(props: TrackSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  // Section titles need more room than lesson titles — widen the bar while
+  // a paper's section tree is open.
+  const paperExpanded = hasActivePaperNav(props, pathname);
   return (
     <>
-      <aside className="border-border bg-card/40 sticky top-14 hidden h-[calc(100vh-3.5rem)] w-72 shrink-0 overflow-y-auto border-r lg:block">
+      <aside
+        className={cn(
+          "border-border bg-card/40 sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 overflow-y-auto border-r transition-[width] duration-300 lg:block",
+          paperExpanded ? "w-96" : "w-72",
+        )}
+      >
         <SidebarNav {...props} />
       </aside>
 

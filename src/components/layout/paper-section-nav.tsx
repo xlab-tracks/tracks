@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { CheckCircle2, Circle, PencilLine } from "lucide-react";
 import type { PaperNavItem } from "@/lib/papers/paper-nav";
@@ -37,13 +38,36 @@ export function PaperSectionNav({
   onNavigate?: () => void;
 }) {
   const activeId = useScrollSpy(items.map(anchorOf));
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // Follow the reader: long papers cap this pane's height (it scrolls on its
+  // own), so keep the active row centered inside it. Scroll the pane's
+  // scrollTop directly — scrollIntoView could also scroll the document and
+  // fight the user's reading position.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || !activeId) return;
+    const row = list.querySelector<HTMLElement>(
+      `[data-spy-anchor="${CSS.escape(activeId)}"]`,
+    );
+    if (!row) return;
+    const listRect = list.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (rowRect.top < listRect.top || rowRect.bottom > listRect.bottom) {
+      list.scrollTop +=
+        rowRect.top - listRect.top - list.clientHeight / 2 + row.clientHeight / 2;
+    }
+  }, [activeId]);
 
   return (
-    <ul className="border-border/70 mt-0.5 mb-1 ml-4 space-y-0.5 border-l pl-1.5">
+    <ul
+      ref={listRef}
+      className="border-border/70 mt-0.5 mb-1 ml-4 max-h-[60vh] space-y-0.5 overflow-y-auto overscroll-contain border-l pl-1.5"
+    >
       {items.map((item) => {
         const anchor = anchorOf(item);
         return (
-          <li key={anchor}>
+          <li key={anchor} data-spy-anchor={anchor}>
             <Link
               href={`${pathname}#${anchor}`}
               onClick={onNavigate}
