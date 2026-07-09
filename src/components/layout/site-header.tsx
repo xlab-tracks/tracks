@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/tracks", label: "Tracks" },
@@ -39,19 +40,29 @@ export function SiteHeader() {
   return (
     <header className="border-border/80 bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-6 px-4 lg:px-6">
-        <Link href="/" className="font-serif text-lg font-bold tracking-tight">
-          XLab<span className="text-primary"> · </span>Tracks
+        <Link href="/" className="text-lg font-bold tracking-tight">
+          XLab<span className="text-destructive"> · </span>Tracks
         </Link>
         <nav className="text-muted-foreground hidden items-center gap-1 text-sm sm:flex">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="hover:text-foreground hover:bg-muted rounded-md px-3 py-1.5 transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            const active =
+              pathname === item.href || pathname?.startsWith(item.href + "/");
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "relative rounded-md px-3 py-1.5 transition-colors",
+                  active
+                    ? "text-foreground after:bg-destructive after:absolute after:inset-x-3 after:-bottom-1 after:h-0.5 after:rounded-full"
+                    : "hover:text-foreground hover:bg-muted",
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="ml-auto flex items-center gap-2">
           {loading ? null : user ? (

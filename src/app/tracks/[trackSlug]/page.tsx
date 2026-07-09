@@ -4,14 +4,18 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, FileText, Lock } from "lucide-react";
 import {
   getAssessmentForModule,
-  getLessonHref,
-  getTrackLessonIds,
+  getContentLocation,
+  getItemProgressContentIds,
   getTrackOutline,
+  getTrackProgressContentIds,
+  itemIdOf,
+  itemSlugOf,
+  itemTitleOf,
 } from "@/lib/content";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getCompletedLessonIds,
-  getLastViewedLessonId,
+  getLastViewedContentId,
   getTrackProgress,
 } from "@/lib/progress";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
@@ -50,11 +54,17 @@ export default async function TrackOverviewPage({
   const user = await getCurrentUser();
   const progress = user ? await getTrackProgress(user.id, track.id) : null;
   const completedSet = new Set(
-    user ? await getCompletedLessonIds(user.id, getTrackLessonIds(track.id)) : [],
+    user
+      ? await getCompletedLessonIds(user.id, getTrackProgressContentIds(track.id))
+      : [],
   );
-  const lastViewedId = user ? await getLastViewedLessonId(user.id, track.id) : null;
-  const continueLessonId = lastViewedId ?? modules[0]?.lessons[0]?.id;
-  const continueHref = continueLessonId ? getLessonHref(continueLessonId) : null;
+  const lastViewedId = user ? await getLastViewedContentId(user.id, track.id) : null;
+  const firstItem = modules[0]?.items[0];
+  // An inserted-lesson id resolves to its containing paper's page.
+  const continueId = lastViewedId ?? (firstItem ? itemIdOf(firstItem) : null);
+  const continueHref = continueId
+    ? (getContentLocation(continueId)?.href ?? null)
+    : null;
 
   return (
     <div className="max-w-5xl px-4 py-8 lg:px-8">
@@ -82,7 +92,7 @@ export default async function TrackOverviewPage({
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">Your progress</span>
                 <span className="text-muted-foreground">
-                  {progress.completed} / {progress.total} lessons
+                  {progress.completed} / {progress.total} items
                 </span>
               </div>
               <Progress value={progress.percent} className="mt-2" />
@@ -106,10 +116,10 @@ export default async function TrackOverviewPage({
       )}
 
       <ol className="mt-8 space-y-4">
-        {modules.map(({ module, lessons }) => {
+        {modules.map(({ module, items }) => {
           const assessment = getAssessmentForModule(module.id);
           const moduleHref = `/tracks/${track.slug}/${module.slug}`;
-          const firstLesson = lessons[0];
+          const firstModuleItem = items[0];
           return (
             <li key={module.id}>
               <Card className="shadow-soft">
@@ -133,13 +143,13 @@ export default async function TrackOverviewPage({
                 </CardHeader>
                 <CardContent>
                   <ul className="text-muted-foreground space-y-1 text-sm">
-                    {lessons.map((lesson) => {
-                      const done = completedSet.has(lesson.id);
+                    {items.map((item) => {
+                      const done = getItemProgressContentIds(item).every((id) =>
+                        completedSet.has(id),
+                      );
                       return (
-                        <li key={lesson.id} className="flex items-center gap-2">
-                          {lesson.optional ? (
-                            <span className="border-muted-foreground/40 size-3.5 shrink-0 rounded-full border border-dashed" />
-                          ) : done ? (
+                        <li key={itemIdOf(item)} className="flex items-center gap-2">
+                          {done ? (
                             <CheckCircle2
                               className="text-foreground size-3.5 shrink-0"
                               aria-hidden
@@ -148,16 +158,17 @@ export default async function TrackOverviewPage({
                             <span className="border-muted-foreground/40 size-3.5 shrink-0 rounded-full border" />
                           )}
                           <Link
-                            href={getLessonHref(lesson.id) ?? moduleHref}
+                            href={`${moduleHref}/${itemSlugOf(item)}`}
                             className="hover:text-foreground transition-colors"
                           >
-                            {lesson.title}
-                            {lesson.optional && (
-                              <span className="text-muted-foreground/80 ml-1.5 text-[10px] font-medium tracking-wide uppercase">
-                                Optional
-                              </span>
-                            )}
+                            {itemTitleOf(item)}
                           </Link>
+                          {item.kind === "paper" && (
+                            <FileText
+                              className="size-3 shrink-0 opacity-60"
+                              aria-hidden
+                            />
+                          )}
                         </li>
                       );
                     })}
@@ -176,7 +187,13 @@ export default async function TrackOverviewPage({
                 </CardContent>
                 <CardFooter className="gap-2">
                   <Button asChild>
-                    <Link href={(firstLesson && getLessonHref(firstLesson.id)) || moduleHref}>
+                    <Link
+                      href={
+                        firstModuleItem
+                          ? `${moduleHref}/${itemSlugOf(firstModuleItem)}`
+                          : moduleHref
+                      }
+                    >
                       Start module
                     </Link>
                   </Button>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, Source_Serif_4, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
@@ -7,8 +8,16 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ variable: "--font-sans", subsets: ["latin"] });
-const sourceSerif = Source_Serif_4({ variable: "--font-serif", subsets: ["latin"] });
+// Inter, self-hosted (not via next/font/google). The variable woff2 covers the
+// full 100–900 weight axis; we serve it from src/app/fonts/.
+const inter = localFont({
+  src: [
+    { path: "./fonts/InterVariable.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/InterVariable-Italic.woff2", weight: "100 900", style: "italic" },
+  ],
+  variable: "--font-sans",
+  display: "swap",
+});
 const jetbrainsMono = JetBrains_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -43,7 +52,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${sourceSerif.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col">
         <AuthKitProvider initialAuth={initialAuth}>

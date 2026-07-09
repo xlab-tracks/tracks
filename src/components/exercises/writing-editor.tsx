@@ -110,7 +110,7 @@ export function WritingEditor({
       ))}
 
       <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs">
-        <span className={cn((belowMin || aboveMax) && "text-amber-400")}>
+        <span className={cn((belowMin || aboveMax) && "text-amber-600")}>
           {totalWords} words
           {minWords ? ` · min ${minWords}` : ""}
           {maxWords ? ` · max ${maxWords}` : ""}

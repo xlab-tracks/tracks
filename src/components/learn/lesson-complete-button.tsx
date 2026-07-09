@@ -9,9 +9,11 @@ import { setLessonComplete } from "@/app/actions/progress";
 export function LessonCompleteButton({
   lessonId,
   initialCompleted,
+  toastLabel = "Lesson marked complete",
 }: {
   lessonId: string;
   initialCompleted: boolean;
+  toastLabel?: string;
 }) {
   const [completed, setCompleted] = useState(initialCompleted);
   const [pending, startTransition] = useTransition();
@@ -27,7 +29,7 @@ export function LessonCompleteButton({
       try {
         await setLessonComplete(lessonId, next);
         setCompleted(next);
-        if (next) toast.success("Lesson marked complete");
+        if (next) toast.success(toastLabel);
       } catch {
         toast.error("Couldn't update progress");
       }

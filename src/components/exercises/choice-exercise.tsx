@@ -114,7 +114,7 @@ export function ChoiceExerciseBody({
         <div
           className={cn(
             "mt-4 rounded-lg p-3 text-sm",
-            result.correct ? "bg-emerald-500/10 text-emerald-200" : "bg-muted",
+            result.correct ? "bg-emerald-500/10 text-emerald-700" : "bg-muted",
           )}
         >
           <p className="font-medium">{result.correct ? "Correct" : "Not quite"}</p>

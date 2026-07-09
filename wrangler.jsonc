@@ -1,0 +1,45 @@
+// Cloudflare Workers config for Tracks (Next.js 16 via @opennextjs/cloudflare).
+// Deploys are git-connected (Workers Builds): push to main → `npx
+// opennextjs-cloudflare build` + `npx opennextjs-cloudflare deploy`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tracks",
+  "main": ".open-next/worker.js",
+  // ≥ 2025-04-01 so nodejs_compat auto-populates process.env from vars/secrets
+  // (AuthKit reads WORKOS_* at module import).
+  "compatibility_date": "2025-05-05",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "tracks" }
+  ],
+  // PlanetScale Postgres via Hyperdrive (caching disabled — this app reads user
+  // state immediately after server-action writes, and Hyperdrive never
+  // invalidates its query cache on writes). Local dev bypasses this binding and
+  // uses DATABASE_URL from .env instead (see src/lib/db.ts).
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "d886793d2b944bfbbfce13909c25cd31",
+      // Placeholder, never dialed in prod: build/deploy tooling (miniflare)
+      // refuses to start without a local string for the binding. For local
+      // `npm run preview` against a real DB, override it with the
+      // CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE env var.
+      "localConnectionString": "postgresql://user:password@localhost:5432/postgres"
+    }
+  ],
+  "vars": {
+    // Public by nature (appears in OAuth URLs). Also set as a Workers Builds
+    // build variable so NEXT_PUBLIC_ inlining picks it up at build time.
+    "NEXT_PUBLIC_WORKOS_REDIRECT_URI": "https://tracks.xlabtracks.workers.dev/callback"
+  },
+  // Secrets (set via `wrangler secret put`, never here): WORKOS_API_KEY,
+  // WORKOS_CLIENT_ID, WORKOS_COOKIE_PASSWORD.
+  "observability": { "enabled": true },
+  // Every request hits the DB (us-east-1); smart placement moves the worker
+  // near it instead of near the visitor.
+  "placement": { "mode": "smart" }
+}

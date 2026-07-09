@@ -34,8 +34,8 @@ export interface Module {
   order: number;
   /** Module IDs that should be completed first; may live in another track. */
   prerequisiteModuleIds: string[];
-  /** Ordered unit IDs. Lessons live one level down, inside units. */
-  unitIds: string[];
+  /** Ordered content item IDs — lessons and papers, interleaved. */
+  itemIds: string[];
   /** End-of-module written assessment, if any. */
   assessmentId?: string;
   /** Resource-hub topic tags surfaced as "Further reading". */
@@ -43,53 +43,66 @@ export interface Module {
   estimatedMinutes?: number;
 }
 
-/**
- * A navigable grouping of lessons within a module — the layer between module
- * and lesson. Has its own slug and overview page
- * (`/tracks/<track>/<module>/<unit>`); lessons hang off it. A module always
- * has at least one unit, even if that unit just holds every lesson.
- */
-export interface Unit {
-  id: string;
-  slug: string;
-  moduleId: string;
-  title: string;
-  /** One-line description shown on the module and unit overview pages. */
-  summary?: string;
-  /** 1-based order within the module. */
-  order: number;
-  /** Ordered lesson IDs. */
-  lessonIds: string[];
-  estimatedMinutes?: number;
-  /**
-   * When every lesson in the unit is optional this may be set for labelling;
-   * it does not change progress accounting (that keys off each lesson).
-   */
-  optional?: boolean;
-}
-
 export interface Lesson {
   id: string;
   slug: string;
-  /** Owning module (denormalized for convenience; equals the unit's module). */
   moduleId: string;
-  /** Owning unit. */
-  unitId: string;
   title: string;
-  /** 1-based order within the unit. */
-  order: number;
   /**
    * Path (without extension) under `src/content/lessons` to the MDX body,
    * e.g. "foundations-fundamentals-intro".
    */
   contentRef: string;
   estimatedMinutes?: number;
-  /**
-   * Optional lessons are excluded from progress tracking: no completion is
-   * recorded and they don't count toward module or track completion.
-   */
-  optional?: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Papers (full-page inline readings with embedded activities)
+// ---------------------------------------------------------------------------
+
+/** Where a paper's rendered artifact comes from. Extend by adding kinds. */
+export type PaperSource = { kind: "arxiv"; arxivId: string };
+
+/** An activity spliced into the paper flow: an exercise card or an inline lesson. */
+export interface PaperInsertionItem {
+  kind: "lesson" | "exercise";
+  id: string;
+}
+
+export interface PaperInsertion {
+  /**
+   * Heading id in the converted paper HTML ("ax-sec-…", or a landmark id like
+   * "ax-abstract"). The insertion renders at the END of that (sub)section's
+   * subtree — before the next heading of the same or shallower level.
+   * Discover ids with `npm run arxiv:build -- --toc <arxivId>`; validated
+   * against the committed artifact's toc by content.test.ts.
+   */
+  sectionId: string;
+  /** Rendered top-to-bottom in array order. */
+  items: PaperInsertionItem[];
+}
+
+export interface Paper {
+  /** Globally unique across ALL content ids (lessons included). */
+  id: string;
+  /** Unique among the module's items; shares the /tracks/t/m/<slug> namespace. */
+  slug: string;
+  moduleId: string;
+  title: string;
+  source: PaperSource;
+  /**
+   * Inline activities at section boundaries. Inserted lessons are regular
+   * Lesson entries that are NOT listed in any module's itemIds — they render
+   * inside the paper and have no standalone page.
+   */
+  insertions?: PaperInsertion[];
+  estimatedMinutes?: number;
+}
+
+/** A module's ordered content items (Module.itemIds resolved). */
+export type ModuleItem =
+  | { kind: "lesson"; lesson: Lesson }
+  | { kind: "paper"; paper: Paper };
 
 // ---------------------------------------------------------------------------
 // Exercises

@@ -1,33 +1,30 @@
 # Authoring guide
 
 How to add content to Tracks. **Content is code**: the graph (tracks → modules →
-units → lessons, plus exercises, assessments, resources) is defined in typed TS data
-files under `src/content/`, and lesson bodies are MDX under `src/content/lessons/`.
-There is **no database or CMS for content** and **no route files to add** — pages
-resolve by slug automatically.
+lessons and papers, plus exercises, assessments, resources) is defined in typed TS
+data files under `src/content/`, and lesson bodies are MDX under
+`src/content/lessons/`. There is **no database or CMS for content** and **no route
+files to add** — pages resolve by slug automatically.
 
 A few rules that apply throughout:
 
-- **Hierarchy:** `Track → Module → Unit → Lesson`. A track holds ordered **modules**;
-  a module holds ordered **units**; a **unit** holds ordered **lessons**; a lesson
-  points at one MDX body. A unit is the navigable grouping between a module and its
-  lessons — it has its own overview page. **Every module has at least one unit**; a
-  module that needs no real grouping just gets a single unit that holds all its
-  lessons (see `ex-content-u` / `ex-assess-u` for the one-unit pattern).
-- **The `*Ids` arrays drive everything.** Adding a `Lesson`/`Unit`/`Module`/`Track`
-  object is not enough — you must also list its `id` in the parent's `lessonIds` /
-  `unitIds` / `moduleIds` array. Those arrays set order (sidebar, prev/next) and
-  membership.
+- **Hierarchy:** `Track → Module → items`. A track holds ordered **modules**; a
+  module holds ordered **items** — lessons (an MDX page) and papers (a full-page
+  inline arXiv reading, §2), interleaved in any order. (In Khan terms a module is
+  a "lesson/unit" and an item is a "sublesson" — the page learners read.)
+- **The `*Ids` arrays drive everything.** Adding a `Lesson`/`Paper`/`Module`/`Track`
+  object is not enough — you must also list its `id` in the parent's `itemIds` /
+  `moduleIds` array. Those arrays set order (sidebar, prev/next) and membership.
 - **`id` is globally unique; `slug` is unique within its parent.** URLs use slugs:
-  a lesson lives at `/tracks/<trackSlug>/<moduleSlug>/<unitSlug>/<lessonSlug>` and a
-  unit's own overview page at `/tracks/<trackSlug>/<moduleSlug>/<unitSlug>`. (The
-  module-level `assessment` page stays a sibling of the units.)
+  `/tracks/<trackSlug>/<moduleSlug>/<itemSlug>` (lessons and papers share the
+  namespace; `assessment` is reserved).
 - **Verify after editing:** `npm run typecheck` (catches shape errors) and
   `npm run test` — `src/lib/content/content.test.ts` checks referential integrity
-  (every `moduleIds`/`unitIds`/`lessonIds`/`prerequisiteModuleIds`/`assessmentId`
-  resolves, and each lesson's `unitId`/`moduleId` matches its containing unit).
+  (every `moduleIds`/`itemIds`/`prerequisiteModuleIds`/`assessmentId` resolves,
+  paper artifacts are built at the current converter version, and every paper
+  insertion resolves to a real section/exercise/lesson).
 - Placeholder copy is lorem ipsum — keep it lorem or leave it empty; don't invent
-  real curriculum.
+  real curriculum. (Paper titles/authors are factual — they come from arXiv.)
 
 ---
 
@@ -42,25 +39,20 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
    ```ts
    {
      id: "g-intro-l3",        // globally unique
-     slug: "frameworks",      // unique within the unit; used in the URL
-     moduleId: "g-intro",     // the module it belongs to (denormalized)
-     unitId: "g-intro-u1",    // the unit it belongs to
+     slug: "frameworks",      // unique within the module; used in the URL
+     moduleId: "g-intro",     // the module it belongs to
      title: "Governance frameworks",
-     order: 3,                // 1-based position within the unit
      contentRef: "g-intro-l3", // MDX filename (without .mdx); convention: same as id
      estimatedMinutes: 12,
-     optional: true,           // optional; excludes the lesson from progress
-                               // tracking and module/track completion, and
-                               // shows an "Optional" badge in the UI
    }
    ```
 
-2. **Register it in the unit's `lessonIds`** (same file, in the `units` array) —
-   append the `id` in the position you want it to appear:
+2. **Register it in the module's `itemIds`** (same file) — insert the `id` at the
+   position you want it to appear (order in the array is the order learners see):
 
    ```ts
-   // unit "g-intro-u1"
-   lessonIds: ["g-intro-l1", "g-intro-l2", "g-intro-l3"],
+   // module "g-intro"
+   itemIds: ["g-intro-l1", "g-intro-l2", "g-intro-l3"],
    ```
 
 3. **Create the MDX body** at `src/content/lessons/<contentRef>.mdx`
@@ -87,53 +79,106 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
    - `<Video src … title? provider? poster? />` — provider (`youtube`/`vimeo`/`file`)
      is inferred from the URL when omitted.
    - `<Callout variant?="note|tip|warning" title?>…</Callout>` (defaults to `note`).
-   - `<Demo id="…" />` — a demo registered in the demo registry (see §2–3).
-   - `<Exercise id="…" />` — an exercise defined in `src/content/exercises.data.ts`
-     (see §5 for the available types).
-   - `<ExerciseSequence ids={["…", "…"]} label?="…" />` — several exercises as one
-     stepped card (see §5).
+   - `<Demo id="…" />` — a demo registered in the demo registry (see §3–4).
+   - `<Exercise id="…" />` — an exercise defined in `src/content/exercises.data.ts`.
+   - `<ArxivPaper id="1706.03762v7" defaultOpen? />` — embeds an arXiv paper,
+     rendered from its LaTeX source with KaTeX math (collapsible card).
+     **The version suffix (`v7`) is required**: it pins an immutable snapshot,
+     which is what makes caching and (future) highlight anchors safe. Rendering
+     is best-effort by design — TikZ diagrams and vector-PDF/EPS figures show
+     placeholders linking to the PDF, exotic packages degrade with a warning
+     chip in the card footer. Papers without LaTeX source (PDF-only
+     submissions) render a link card instead. After adding a paper, build its
+     committed artifact locally and commit the result — papers convert at
+     authoring time, never in production: `npm run arxiv:build`, then commit
+     the generated `src/content/arxiv/{id}.json` and `public/arxiv/{id}/…`
+     files alongside the lesson. For a **full-page paper** with exercises and
+     lessons interleaved into its sections, use a `Paper` module item instead —
+     see §2.
    - `<Footnote>…</Footnote>` — drop it right after the word/claim it annotates, no
      id needed. It numbers itself automatically (in document order) and renders as
      a sidenote in the right margin on wide screens, or a tap-to-expand marker on
      narrower ones — no separate "References" section at the bottom of the lesson.
-   - `$inline math$` and `$$block math$$` — LaTeX math via `remark-math` +
-     `rehype-katex`, rendered with KaTeX. Plain markdown, no component needed.
-   - `<TracksAddition label?="…">…</TracksAddition>` — wrap **text only** (an
-     editorial aside, framing for what follows) that Tracks added on top of a
-     verbatim source reproduction, so it reads as clearly separate from the source.
-     Defaults `label` to "Tracks addition".
-     **Rule: never put a `<Demo>`/`<Exercise>`/`<ExerciseSequence>` inside a
-     `<TracksAddition>`.** Those components carry their own card chrome in the same
-     tint, so nesting them produces an ugly brown-on-brown box, and they're already
-     self-evidently not part of the source paper. Put the framing text in the
-     `<TracksAddition>`, then place the demo/exercise immediately **after** the
-     closing tag. See `src/content/lessons/c-paper-l4.mdx` around
-     `<Demo id="safety-usefulness-frontier" />` for the pattern.
 
-The lesson is now live at `/tracks/<trackSlug>/<moduleSlug>/<unitSlug>/<lessonSlug>`
-and shows in the sidebar + prev/next.
+The lesson is now live at `/tracks/<trackSlug>/<moduleSlug>/<itemSlug>` and shows
+in the sidebar + prev/next.
 
-**Adding a new unit** (a grouping of lessons within a module) is the same shape one
-level up: add a `Unit` to the `units` array (`id`, `slug` unique within the module,
-`moduleId`, `title`, `order`, `lessonIds: []`, optional `summary` / `estimatedMinutes`
-/ `optional`), add its `id` to the module's `unitIds`, then add lessons as above. A
-unit gets its own overview page automatically at
-`/tracks/<trackSlug>/<moduleSlug>/<unitSlug>`. In the sidebar, a unit's title only
-shows as a sub-header when its module has more than one unit; single-unit modules
-render their lessons directly, so the extra layer stays invisible where it isn't
-needed.
-
-**Adding a new module** is one level up again: add a `Module` to the `modules` array
-(`id`, `slug`, `trackId`, `title`, `summary`, `order`, `prerequisiteModuleIds: []`,
-`unitIds: []`, optional `assessmentId` / `furtherReadingTopics` / `estimatedMinutes`),
-add its `id` to the track's `moduleIds`, then add **at least one unit** and its
-lessons as above. To attach an end-of-module assessment, add an `Assessment` to
-`src/content/assessments.data.ts` with `moduleId` set to the module (assessments
-attach to the module, not a unit), and set the module's `assessmentId` to match.
+**Adding a new module** (a new unit / top-level "lesson" in the track) is the same
+shape one level up: add a `Module` to the `modules` array (`id`, `slug`, `trackId`,
+`title`, `summary`, `order`, `prerequisiteModuleIds: []`, `itemIds: []`, optional
+`assessmentId` / `furtherReadingTopics` / `estimatedMinutes`), add its `id` to the
+track's `moduleIds`, then add lessons as above. To attach an end-of-module
+assessment, add an `Assessment` to `src/content/assessments.data.ts` with
+`moduleId` set to the module, and set the module's `assessmentId` to match.
 
 ---
 
-## 2. Create a new demo
+## 2. Add an arXiv paper to a module
+
+A `Paper` is a first-class module item: the arXiv paper renders **full-page**
+inline (LaTeX → HTML with KaTeX), the sidebar grows a per-paper section tree with
+scroll-synced highlighting, and you can splice **activities** — exercise cards and
+inline lessons — into the reading at the end of any (sub)section. Papers count
+toward progress exactly like lessons.
+
+1. **Add the paper object** to `src/content/papers.data.ts`:
+
+   ```ts
+   {
+     id: "g-intro-p1",                 // globally unique (shared space with lessons)
+     slug: "some-paper",               // unique within the module; used in the URL
+     moduleId: "g-intro",
+     title: "Paper Title (factual, from arXiv)",
+     source: { kind: "arxiv", arxivId: "2301.12345v2" }, // pinned version required
+     estimatedMinutes: 45,             // optional; fold into module.estimatedMinutes
+     insertions: [                     // optional activities, see step 4
+       {
+         sectionId: "ax-sec-some-section",
+         items: [
+           { kind: "exercise", id: "some-exercise" },
+           { kind: "lesson", id: "g-intro-p1-note" },
+         ],
+       },
+     ],
+   }
+   ```
+
+2. **Register it in the module's `itemIds`** (in `curriculum.data.ts`), interleaved
+   wherever it belongs: `itemIds: ["g-intro-l1", "g-intro-p1", "g-intro-l2"]`.
+
+3. **Build + commit the artifact**: `npm run arxiv:build` (it discovers arXiv ids
+   from `papers.data.ts` and from `<ArxivPaper/>` embeds in lessons), then commit
+   `src/content/arxiv/{id}.json` and `public/arxiv/{id}/…`.
+
+4. **Choosing insertion `sectionId`s**: the build prints each paper's section tree
+   (`§3.2 Multi-Head Attention → ax-sec-multi-head-attention`); re-print anytime
+   from the committed artifact — no network — with
+   `npm run arxiv:build -- --toc 2301.12345v2`. An insertion renders at the **end
+   of that section's subtree** (after its subsections, before the next
+   same-or-shallower heading); landmark ids (`ax-abstract`, `ax-references`) work
+   too. Ids are stable for a pinned arXiv version + converter version.
+
+5. **Insertion items**:
+   - `kind: "exercise"` — an id from `src/content/exercises.data.ts`; renders the
+     standard exercise card in the paper flow. An exercise can be inserted at
+     most once per paper (its block gets a DOM anchor id; reusing it across
+     different papers is fine).
+   - `kind: "lesson"` — a regular `Lesson` in `curriculum.data.ts` with its own MDX
+     body, but **not** listed in any module's `itemIds` (it renders only inside the
+     paper, completes on scroll-past, and shows in the paper's sidebar tree). A
+     lesson can be inserted into at most one paper.
+
+6. **Rebuild on converter bumps**: when `CONVERTER_VERSION` changes, `npm run test`
+   fails on stale artifacts — re-run `npm run arxiv:build` and recommit. Section
+   ids can change across bumps/versions; the tests name any insertion that broke.
+
+Degradation: a paper whose artifact isn't `ready` (PDF-only, unbuilt, failed)
+renders a link-out fallback page, with its activities stacked below so progress
+stays completable.
+
+---
+
+## 3. Create a new demo
 
 A demo is a **self-contained client component** with no app dependencies and **no
 required props** (the registry renders it as `<Component />`).
@@ -176,11 +221,11 @@ demo renders inside a titled `DemoFrame` by default.
 
 ---
 
-## 3. Add a demo to a track
+## 4. Add a demo to a track
 
 Demos attach to a track by being embedded in one of its lessons:
 
-1. Make sure the demo is registered (see §2) and note its `id`.
+1. Make sure the demo is registered (see §3) and note its `id`.
 2. In the target lesson's MDX (`src/content/lessons/<contentRef>.mdx`), drop the tag
    where you want it:
 
@@ -195,7 +240,7 @@ touching any track.)
 
 ---
 
-## 4. Create a new track
+## 5. Create a new track
 
 1. **Add the track** to the `tracks` array in `src/content/curriculum.data.ts`:
 
@@ -232,77 +277,3 @@ Governance one.
 > `src/lib/content/types.ts`. To add a kind beyond foundations/technical/governance,
 > extend that union **and** add a label to the `KIND_LABEL` map in
 > `src/app/tracks/page.tsx`.
-
----
-
-## 5. Exercises
-
-Exercises live in `src/content/exercises.data.ts` (typed as `Exercise` from
-`src/lib/content/types.ts`) and are embedded in lesson MDX by id via
-`<Exercise id="…" />`. Ids are globally unique. The Example track contains one
-exercise of every type with self-describing copy — the first entries of
-`exercises.data.ts` (`multiple-choice`, `multi-select`, `true-false`,
-`understanding-check`, `tap-reveal`, `writing-prompt`, `short-answer`) double as
-authoring templates.
-
-There are two families. **Closed** exercises (`ClosedExerciseType`) are graded or
-self-assessed in place; **open** exercises (`OpenExerciseType`) are written
-deliverables with drafts and an explicit submit. Everything works signed-out;
-attempts are only persisted (as `Submission` rows) for signed-in users.
-
-### Closed types
-
-- **`multiple-choice`** — `options` plus `correctOptionIds` with exactly one
-  entry. Graded instantly on the server (`gradeExercise`); an optional
-  `explanation` is shown after answering. Set `monospaceOptions: true` to render
-  option labels in code style ("pick the line" questions).
-- **`multi-select`** — same shape, several `correctOptionIds`. Grading is
-  exact-match: every correct option selected and no incorrect ones.
-- **`true-false`** — a choice exercise whose two options are conventionally
-  `{ id: "true", label: "True" }` / `{ id: "false", label: "False" }`.
-- **`understanding-check`** — "answer in your own words, then compare". The
-  learner self-attempts, then reveals `sampleAnswer`. Not auto-graded and not
-  persisted.
-- **`tap-reveal`** — a recall card: short `prompt`, hidden `answer` revealed on
-  tap, then a yes / partial / no self-rating. The rating is persisted
-  (score 1 / 0.5 / 0) with `updatedAt` as the review timestamp, intended to
-  drive spaced repetition later.
-- **`flowchart`** — the learner reconstructs one or more flowcharts by dragging
-  blocks from a `palette` (shared across all `stages`, so wrong-but-plausible
-  picks exist). Blocks are `step`, `branch` (with `branchLabels` naming the
-  arms), or `terminal`. Each stage has a prose `description` (behind a reveal
-  toggle), a `solution` tree, and an optional `explanation`. Stages are graded
-  server-side by structural equality; after repeated misses the UI offers a
-  solution reveal. The per-stage attempts persist in one submission row with a
-  fractional score.
-
-### Open (writing) types
-
-`short-answer`, `writing-prompt`, `memo`, and `essay` all share the
-`WritingExercise` shape and differ only in intent and expected length. Each has
-a `format` (`DeliverableFormat`: `free-form`, `memo`, `essay`,
-`research-summary`, `policy-memo`, `bill-draft`, `briefing`), optional
-`minWords` / `maxWords`, an optional `rubric` (criteria shown to the learner —
-there is no auto-grading), and optional `sections`: when present the editor is
-split into labelled sections with per-section placeholder/guidance; when
-omitted it is a single free-form editor. Drafts autosave (`saveWritingDraft`)
-and the learner submits explicitly (`submitWriting`). End-of-module
-**assessments** (`assessments.data.ts`) are a specialized written deliverable
-that reuses the same `WritingEditor`, not an exercise type.
-
-### Sequences
-
-`<ExerciseSequence ids={[…]} label?="…" />` groups several exercises into one
-stepped card, shown one part at a time, each unlocked by completing the
-previous. Only `understanding-check`, `tap-reveal`, and the choice types are
-sequence-compatible; flowchart and writing exercises must be embedded
-standalone.
-
-### Answer keys are server-only
-
-`correctOptionIds`, `explanation`, and flowchart `solution` / stage
-`explanation` never reach the client: the server dispatcher
-(`src/components/mdx/exercise.tsx`) strips them via `toPublicChoice` /
-`toPublicFlowchart` (`src/lib/content/exercise-view.ts`), and grading happens
-in server actions (`src/app/actions/exercises.ts`) that re-validate their
-payloads. Never pass a raw `Exercise` object into a client component.

@@ -4,14 +4,21 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Driver adapters: on Cloudflare Workers the client runs through
+  // @prisma/adapter-pg over the Hyperdrive binding (see src/lib/db.ts). Keep
+  // the default output dir — @opennextjs/cloudflare patches the generated
+  // client at build and can't if output is customized.
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
-  // Netlify Database (GA) injects NETLIFY_DB_URL into builds, functions, and
-  // local dev. Schema migrations live in netlify/database/migrations and are
-  // applied by the Netlify deploy — never by `prisma migrate` against this DB.
-  url      = env("NETLIFY_DB_URL")
+  // PlanetScale for Postgres. In prod the connection comes from the Hyperdrive
+  // binding, not this env var. DATABASE_URL is for local dev only: the *pooled*
+  // string (PgBouncer, port 6432) in .env. Schema migrations live in
+  // db/migrations and are applied manually with psql against the *direct* port
+  // (5432, admin role) — never by `prisma migrate` against prod.
+  url      = env("DATABASE_URL")
 }
 
 model User {

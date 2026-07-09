@@ -7,9 +7,11 @@ and a curated resource hub.
 
 ## Features
 
-- **Modular, lesson-style content** with a persistent module/lesson sidebar.
-- **Four content types**: embedded video (media-chrome), text, interactive demos
-  embedded inline, and exercises.
+- **Modular, lesson-style content** with a persistent module sidebar that also
+  carries per-paper section navigation.
+- **Content types**: embedded video (media-chrome), text, interactive demos
+  embedded inline, exercises, and full-page arXiv papers with exercises and
+  lessons interleaved into their sections.
 - **Exercises** — closed-ended (multiple-choice, multi-select, true/false,
   understanding checks) graded server-side, and open-ended writing.
 - **End-of-module assessments** that mirror real deliverables (policy memo, bill
@@ -45,19 +47,22 @@ Prisma · Vitest.
    cp .env.example .env
    ```
 
-   - **`DATABASE_URL`** — a Postgres connection string (Neon, Supabase Postgres,
-     RDS, or local Docker).
+   - **`DATABASE_URL`** — a Postgres connection string for local dev (local
+     Docker, or a PlanetScale dev branch — pooled port-6432 string). Production
+     doesn't use this var; it connects through Cloudflare Hyperdrive.
    - **WorkOS** — create a project at the [WorkOS dashboard](https://dashboard.workos.com),
      enable **Google** as the only connection, register the redirect URI
      `http://localhost:3000/callback`, then set `WORKOS_API_KEY`,
      `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD` (32+ chars:
      `openssl rand -base64 32`), and `NEXT_PUBLIC_WORKOS_REDIRECT_URI`.
 
-3. Create the database schema:
+3. Create the database schema by applying the SQL migrations in order:
 
    ```bash
-   npx prisma migrate dev --name init
+   for f in db/migrations/*.sql; do psql "$DATABASE_URL" -f "$f"; done
    ```
+
+   (Against PlanetScale, run these over the *direct* port-5432 connection.)
 
 4. Run the dev server:
 
@@ -108,6 +113,11 @@ Placeholder copy is lorem ipsum — replace it with real curriculum.
 
 ## Deploy
 
-Deploy on Vercel with a managed Postgres (e.g. Neon). Set the same env vars in
-the hosting dashboard, update the WorkOS redirect URI to the production
-`/callback` URL, and run `prisma migrate deploy` against the production database.
+The site deploys to Cloudflare Workers (worker `tracks`) via git-connected
+Workers Builds: pushes to `main` run `npx opennextjs-cloudflare build` and
+`npx opennextjs-cloudflare deploy`. The database is PlanetScale for Postgres,
+reached through a Hyperdrive binding (`wrangler.jsonc`); WorkOS secrets live on
+the worker (`wrangler secret put`), and the WorkOS redirect URI must point at
+the production `/callback` URL. Apply new SQL migrations from `db/migrations/`
+manually with psql over the direct port 5432 (admin role) — never
+`prisma migrate` against production.

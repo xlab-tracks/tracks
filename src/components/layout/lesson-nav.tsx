@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import type { LessonRef } from "@/lib/content";
+import type { ItemRef } from "@/lib/content";
 import { cn } from "@/lib/utils";
 
-function hrefFor(ref: LessonRef) {
-  return `/tracks/${ref.trackSlug}/${ref.moduleSlug}/${ref.lessonSlug}`;
+function hrefFor(ref: ItemRef) {
+  return `/tracks/${ref.trackSlug}/${ref.moduleSlug}/${ref.itemSlug}`;
 }
 
 export function LessonNav({
   prev,
   next,
 }: {
-  prev: LessonRef | null;
-  next: LessonRef | null;
+  prev: ItemRef | null;
+  next: ItemRef | null;
 }) {
   return (
     <div className="border-border mt-10 grid grid-cols-2 gap-3 border-t pt-6">
