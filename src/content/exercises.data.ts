@@ -840,4 +840,63 @@ export const exercises: Exercise[] = [
     sampleAnswer:
       "Both raising the monitor's AUROC and widening the defer band raise safety, but they pay for it differently. Raising monitor quality improves the true-positive rate at the fixed 2% audit threshold, so more attacks are caught outright — this costs no usefulness (auditing doesn't change what ships), but its leverage is limited by the tail behavior discussed earlier and by the fixed budget. Widening the defer band is the reliable way to buy large safety gains, because it neutralizes the concentrated mid-suspicion attack mass cheaply, but it does cost usefulness (T rewrites the deferred, mostly innocent code). The efficient route to 90% is usually to spend whatever free monitor quality is available first, then widen the defer band just enough to close the gap — and to watch the frontier point climb along the safety/usefulness curve rather than jumping off it, since the red team is best-responding to every move.",
   },
+  // --- Control: threat-modeling readings (c-threats-l1 / c-threats-l2)
+  // recall cards ---
+  {
+    id: "c-threats-l1-recall-control",
+    type: "tap-reveal",
+    prompt: "In the control literature, what does \"ensuring control\" mean?",
+    answer:
+      "Preventing AIs from being able to cause existential problems, even if the AIs attempt to subvert our countermeasures.",
+  },
+  {
+    id: "c-threats-l1-recall-rogue-deployment",
+    type: "tap-reveal",
+    prompt: "What is a rogue deployment?",
+    answer: "A deployment of the AI where the safety measures are absent.",
+  },
+  {
+    id: "c-threats-l1-recall-security-invariant",
+    type: "tap-reveal",
+    prompt: "What is an internal security invariant? Give an example.",
+    answer:
+      "A well-defined security-related property of the AI company that is important to maintain — for example, \"the monitoring system is always applied to AI agents used internally.\"",
+  },
+  {
+    id: "c-threats-l1-recall-internal-vs-external",
+    type: "tap-reveal",
+    prompt:
+      "What distinguishes an internal rogue deployment from an external one?",
+    answer:
+      "An internal rogue deployment runs on the company's own datacenter (e.g. a new scaffold that bypasses the monitoring system); an external one runs outside it (e.g. after self-exfiltration).",
+  },
+  {
+    id: "c-threats-l1-recall-internal-vs-exfiltration",
+    type: "tap-reveal",
+    prompt:
+      "Why can a rogue internal deployment be worse than self-exfiltration?",
+    answer:
+      "It can access far more compute and has privileged internal access — the ability to tamper with experiments, training runs, and safety work inside the company. An exfiltrated model would likely have much less compute (getting outraced by actors with similar models) and no privileged internal access.",
+  },
+  {
+    id: "c-threats-l2-recall-research-sabotage",
+    type: "tap-reveal",
+    prompt: "What is research sabotage?",
+    answer:
+      "Misaligned AIs making safety research go poorly — e.g. by withholding their best ideas or putting subtle bugs in experiments.",
+  },
+  {
+    id: "c-threats-l2-recall-diffuse",
+    type: "tap-reveal",
+    prompt: "What two properties define a \"diffuse\" threat model?",
+    answer:
+      "Catastrophe requires numerous bad actions, and each bad action is only weak evidence of malign intent when investigated.",
+  },
+  {
+    id: "c-threats-l2-recall-incrimination-diffuse",
+    type: "tap-reveal",
+    prompt: "Why does incrimination fail at the diffuse end of the spectrum?",
+    answer:
+      "Incriminating a model from a large volume of mildly suspicious actions requires knowing exactly how suspicious a benign model would look; without that affordance, no amount of mildly suspicious actions is enough.",
+  },
 ];
