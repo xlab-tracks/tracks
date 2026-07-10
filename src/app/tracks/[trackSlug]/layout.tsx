@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import {
   getExerciseById,
   getLessonById,
+  getReaderToc,
   getTrackOutline,
   getTrackProgressContentIds,
   type Paper,
+  type Reader,
 } from "@/lib/content";
 import {
   EXERCISE_TYPE_LABELS,
@@ -62,9 +64,16 @@ export default async function TrackLayout({
   const papers = outline.modules.flatMap(({ items }) =>
     items.flatMap((item) => (item.kind === "paper" ? [item.paper] : [])),
   );
+  const readers = outline.modules.flatMap(({ items }) =>
+    items.flatMap((item) => (item.kind === "reader" ? [item.reader] : [])),
+  );
+  // Papers and readers both dock a section panel keyed by item id in one map.
   const paperNavs: Record<string, PaperNavItem[]> = {};
   for (const paper of papers) {
     paperNavs[paper.id] = await buildNavForPaper(paper);
+  }
+  for (const reader of readers) {
+    paperNavs[reader.id] = buildNavForReader(reader);
   }
 
   return (
@@ -111,4 +120,18 @@ async function buildNavForPaper(paper: Paper): Promise<PaperNavItem[]> {
 function exerciseLabel(exerciseId: string): string {
   const exercise = getExerciseById(exerciseId);
   return exercise ? getExerciseDisplayTitle(exercise) : "Exercise";
+}
+
+// A reader's markdown toc has no inserted activities, so it maps straight to
+// section nav items. Levels are bumped by one (a reader's level-1 lesson title
+// sits where a paper's level-2 top section does) so PaperSectionNav indents it
+// consistently with papers.
+function buildNavForReader(reader: Reader): PaperNavItem[] {
+  return getReaderToc(reader.id).map((entry) => ({
+    kind: "section",
+    id: entry.id,
+    title: entry.title,
+    number: entry.number,
+    level: entry.level + 1,
+  }));
 }

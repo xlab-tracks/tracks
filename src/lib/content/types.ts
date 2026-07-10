@@ -143,10 +143,49 @@ export interface Paper {
   estimatedMinutes?: number;
 }
 
+// ---------------------------------------------------------------------------
+// Readers (several lessons concatenated into one long, numbered page)
+// ---------------------------------------------------------------------------
+
+/**
+ * A reader stitches an ordered set of lessons into a single scrollable page —
+ * each lesson's title becomes a top-level `#` section and its own headings
+ * nest below, with generated 1.1.1 numbering. The combined body and its section
+ * tree are precomputed at authoring time by `scripts/build-readers.ts` into
+ * `src/content/readers/<id>.mdx` and `readers/tocs.generated.ts` (compiling as
+ * one document keeps heading anchor ids unique). The section tree feeds the
+ * same sidebar panel papers use. Referenced lessons are regular Lesson entries
+ * NOT listed in any module's itemIds — they render only inside the reader.
+ */
+export interface Reader {
+  /** Globally unique across ALL content ids. */
+  id: string;
+  /** Unique among the module's items; shares the /tracks/t/m/<slug> namespace. */
+  slug: string;
+  moduleId: string;
+  title: string;
+  /** Lessons concatenated into the page, in reading order. */
+  lessonIds: string[];
+  estimatedMinutes?: number;
+}
+
+/** One heading in a reader's precomputed section tree (sidebar + numbering). */
+export interface ReaderTocEntry {
+  /** Heading anchor id — matches rehype-slug on the combined document. */
+  id: string;
+  /** Heading text with any manual leading number stripped. */
+  title: string;
+  /** Generated hierarchical number, e.g. "2.1.3". */
+  number: string;
+  /** Markdown heading level: 1 (a lesson title) through 3 (depth-capped). */
+  level: number;
+}
+
 /** A module's ordered content items (Module.itemIds resolved). */
 export type ModuleItem =
   | { kind: "lesson"; lesson: Lesson }
-  | { kind: "paper"; paper: Paper };
+  | { kind: "paper"; paper: Paper }
+  | { kind: "reader"; reader: Reader };
 
 // ---------------------------------------------------------------------------
 // Exercises

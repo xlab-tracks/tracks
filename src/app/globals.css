@@ -154,6 +154,44 @@
   counter-reset: footnote;
 }
 
+/* ============================================================
+   Reader numbering — generated 1.1.1 section numbers for the
+   concatenated reader pages (article.reader-body). Each lesson
+   title renders as an <h1> (level 1) and its own headings nest
+   below; the sidebar toc uses the same numbers (build-readers.ts).
+   Numbering caps at three levels (x.x.x); h4+ render unnumbered.
+   Keep in sync with READER_TOC_DEPTH in src/lib/readers/generate.ts.
+   reader-body also carries .lesson-body, so re-reset footnote here.
+   ============================================================ */
+.reader-body {
+  counter-reset: footnote rh1;
+}
+.reader-body h1 {
+  counter-increment: rh1;
+  counter-reset: rh2 rh3;
+}
+.reader-body h2 {
+  counter-increment: rh2;
+  counter-reset: rh3;
+}
+.reader-body h3 {
+  counter-increment: rh3;
+}
+.reader-body :is(h1, h2, h3)::before {
+  color: var(--muted-foreground);
+  font-weight: 500;
+  margin-right: 0.6ch;
+}
+.reader-body h1::before {
+  content: counter(rh1);
+}
+.reader-body h2::before {
+  content: counter(rh1) "." counter(rh2);
+}
+.reader-body h3::before {
+  content: counter(rh1) "." counter(rh2) "." counter(rh3);
+}
+
 .footnote-marker {
   counter-increment: footnote;
   cursor: pointer;

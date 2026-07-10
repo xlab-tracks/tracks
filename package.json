@@ -12,7 +12,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "arxiv:build": "tsx scripts/build-arxiv.ts"
+    "arxiv:build": "tsx scripts/build-arxiv.ts",
+    "readers:build": "tsx scripts/build-readers.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.1",

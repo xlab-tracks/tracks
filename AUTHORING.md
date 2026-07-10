@@ -9,14 +9,17 @@ files to add** — pages resolve by slug automatically.
 A few rules that apply throughout:
 
 - **Hierarchy:** `Track → Module → items`. A track holds ordered **modules**; a
-  module holds ordered **items** — lessons (an MDX page) and papers (a full-page
-  inline arXiv reading, §2), interleaved in any order. (In Khan terms a module is
-  a "lesson/unit" and an item is a "sublesson" — the page learners read.)
-- **The `*Ids` arrays drive everything.** Adding a `Lesson`/`Paper`/`Module`/`Track`
-  object is not enough — you must also list its `id` in the parent's `itemIds` /
-  `moduleIds` array. Those arrays set order (sidebar, prev/next) and membership.
-  (`Module.order` is display-only — it renders "Module N" labels; keep it in sync
-  with the `moduleIds` position by hand.)
+  module holds ordered **items** — lessons (an MDX page), papers (a full-page
+  inline arXiv reading, §2), and readers (several lessons stitched into one
+  numbered page, §6), interleaved in any order. (In Khan terms a module is a
+  "lesson/unit" and an item is a "sublesson" — the page learners read.)
+- **The `*Ids` arrays drive everything.** Adding a `Lesson`/`Paper`/`Reader`/
+  `Module`/`Track` object is not enough — you must also list its `id` in the
+  parent's `itemIds` / `moduleIds` array. Those arrays set order (sidebar,
+  prev/next) and membership. (A reader's own lessons are the exception: they live
+  in `readers.data.ts` and stay OUT of `itemIds`.) (`Module.order` is display-only
+  — it renders "Module N" labels; keep it in sync with the `moduleIds` position by
+  hand.)
 - **`id` is globally unique; `slug` is unique within its parent.** Lessons and
   papers share one id space and one slug namespace. URLs:
   `/tracks/<trackSlug>/<moduleSlug>/<itemSlug>`; the segment `assessment` is
@@ -24,8 +27,10 @@ A few rules that apply throughout:
 - **Verify after editing:** `npm run typecheck` (catches shape errors) and
   `npm run test` — `src/lib/content/content.test.ts` checks referential integrity
   (every `moduleIds`/`itemIds`/`prerequisiteModuleIds`/`assessmentId` resolves),
-  and for papers **with edits** also that the artifact is built at the current
-  converter version and every edit target resolves with a matching snippet.
+  for papers **with edits** also that the artifact is built at the current
+  converter version and every edit target resolves with a matching snippet, and
+  `readers.test.ts` checks reader integrity and that the committed reader output
+  is not stale.
 - Placeholder copy is lorem ipsum — keep it lorem or leave it empty; don't invent
   real curriculum. (Paper titles/authors are factual — they come from arXiv.)
 - **Not everything is test-enforced.** Lesson+paper ids/slugs are; uniqueness of
@@ -523,3 +528,40 @@ modules.
 > `src/lib/content/types.ts` (currently foundations/technical/governance/example).
 > To add another, extend that union **and** add a label to the `KIND_LABEL` map in
 > `src/app/tracks/page.tsx`.
+
+---
+
+## 6. Bundle lessons into a reader
+
+A **reader** stitches an ordered set of lessons into one long, scrollable page:
+each lesson's title becomes a top-level `#` section and its own headings nest
+below, with **generated `1.1.1` numbering** (capped at three levels) in both the
+body and the sidebar's docked section panel — the same "In this …" panel papers
+use, just fed from markdown headers instead of the arXiv toc. The referenced
+lessons have **no standalone page**; they render only inside the reader. Because
+the page must compile as one MDX document for anchor ids to stay unique, the
+combined body and its toc are **precomputed** at authoring time.
+
+1. **Define the reader** in `src/content/readers.data.ts` (`id`, `slug` unique in
+   the module, `moduleId`, `title`, ordered `lessonIds`, optional
+   `estimatedMinutes`). The lessons are ordinary `Lesson` entries in
+   `curriculum.data.ts` — authored exactly like any lesson (§1), with embedded
+   `<Demo>`/`<Exercise>`/`<Footnote>` and `$math$`.
+
+2. **Add the reader's `id` to its module's `itemIds`** (in `curriculum.data.ts`).
+   Do **not** add the reader's lessons to `itemIds` — that is what keeps them
+   reader-only.
+
+3. **Build the combined document:** `npm run readers:build`. This regenerates
+   `src/content/readers/<id>.mdx` (the concatenated body) and
+   `readers/tocs.generated.ts` (the numbered section tree). **Commit both.** The
+   transform, per lesson: shift its headings so the shallowest becomes `##`, strip
+   any manual `N.` section number from headings (the reader supplies its own),
+   drop a leading heading that merely repeats the lesson title, then prepend the
+   title as `#`. Re-run it after editing the reader or **any lesson it includes**;
+   `readers.test.ts` fails if the committed output is stale.
+
+The reader is live at `/tracks/<trackSlug>/<moduleSlug>/<readerSlug>`, with the
+numbered section tree docked in the sidebar and matching `1.1.1` numbers rendered
+in the body via CSS counters (`.reader-body`, globals.css). A reader counts as one
+completion unit.

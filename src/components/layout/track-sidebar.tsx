@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CheckCircle2, Circle, FileText, ListTree, Lock } from "lucide-react";
+import { BookOpen, CheckCircle2, Circle, FileText, ListTree, Lock } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -18,7 +18,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import type { ModuleItem, Paper, TrackOutline } from "@/lib/content";
+import type { ModuleItem, TrackOutline } from "@/lib/content";
 import type { PaperNavItem } from "@/lib/papers/paper-nav";
 import { cn } from "@/lib/utils";
 import { navItemClass, PaperSectionNav } from "./paper-section-nav";
@@ -34,21 +34,25 @@ export interface TrackSidebarProps {
 }
 
 /**
- * The paper the current page shows, with its section nav — drives the docked
- * "In this paper" panel. Resolved from props (the outline carries the full
- * paper objects), never from content accessors: this is a client component.
+ * The paper or reader the current page shows, with its section nav — drives the
+ * docked section panel (the same UI for both; only the label differs). Resolved
+ * from props (the outline carries the full objects), never from content
+ * accessors: this is a client component.
  */
-function activePaperNavOf(
+function activeSectionNavOf(
   { outline, paperNavs = {} }: TrackSidebarProps,
   pathname: string,
-): { paper: Paper; nav: PaperNavItem[] } | null {
+): { nav: PaperNavItem[]; label: string } | null {
   const base = `/tracks/${outline.track.slug}`;
   for (const { module, items } of outline.modules) {
     for (const item of items) {
-      if (item.kind !== "paper") continue;
-      if (pathname !== `${base}/${module.slug}/${item.paper.slug}`) continue;
-      const nav = paperNavs[item.paper.id];
-      return nav && nav.length > 0 ? { paper: item.paper, nav } : null;
+      if (item.kind === "lesson") continue;
+      const id = item.kind === "paper" ? item.paper.id : item.reader.id;
+      const slug = item.kind === "paper" ? item.paper.slug : item.reader.slug;
+      if (pathname !== `${base}/${module.slug}/${slug}`) continue;
+      const nav = paperNavs[id];
+      if (!nav || nav.length === 0) return null;
+      return { nav, label: item.kind === "paper" ? "In this paper" : "In this reader" };
     }
   }
   return null;
@@ -67,7 +71,7 @@ function SidebarNav({
   const activeModuleSlug = segments[2];
   const completed = new Set(completedContentIds);
   const locked = new Set(lockedModuleSlugs);
-  const activePaperNav = activePaperNavOf(
+  const activeSectionNav = activeSectionNavOf(
     { outline, completedContentIds, lockedModuleSlugs, paperNavs },
     pathname,
   );
@@ -165,13 +169,13 @@ function SidebarNav({
 
       {/* Docked section navigation for the paper being read: always visible
           on paper pages, with its own scroll + scroll-spy follow. */}
-      {activePaperNav && (
+      {activeSectionNav && (
         <div className="border-border bg-card/60 flex max-h-[55%] shrink-0 flex-col border-t">
           <p className="text-muted-foreground shrink-0 truncate px-4 pt-3 pb-1.5 text-xs font-medium tracking-wide uppercase">
-            In this paper
+            {activeSectionNav.label}
           </p>
           <PaperSectionNav
-            items={activePaperNav.nav}
+            items={activeSectionNav.nav}
             pathname={pathname}
             completedContentIds={completed}
             onNavigate={onNavigate}
@@ -183,10 +187,19 @@ function SidebarNav({
 }
 
 function itemKey(item: ModuleItem): string {
-  return item.kind === "lesson" ? item.lesson.id : item.paper.id;
+  if (item.kind === "lesson") return item.lesson.id;
+  if (item.kind === "reader") return item.reader.id;
+  return item.paper.id;
 }
 function itemSlug(item: ModuleItem): string {
-  return item.kind === "lesson" ? item.lesson.slug : item.paper.slug;
+  if (item.kind === "lesson") return item.lesson.slug;
+  if (item.kind === "reader") return item.reader.slug;
+  return item.paper.slug;
+}
+function itemTitle(item: ModuleItem): string {
+  if (item.kind === "lesson") return item.lesson.title;
+  if (item.kind === "reader") return item.reader.title;
+  return item.paper.title;
 }
 /**
  * An item is "done" only when all its progress units are — for a paper that
@@ -195,6 +208,7 @@ function itemSlug(item: ModuleItem): string {
  */
 function itemDone(item: ModuleItem, completed: Set<string>): boolean {
   if (item.kind === "lesson") return completed.has(item.lesson.id);
+  if (item.kind === "reader") return completed.has(item.reader.id);
   if (!completed.has(item.paper.id)) return false;
   return (item.paper.edits ?? []).every(
     (edit) =>
@@ -231,11 +245,15 @@ function SidebarItemRow({
         ) : (
           <Circle className="mt-0.5 size-3.5 shrink-0 opacity-30" aria-hidden />
         )}
-        <span className="line-clamp-2">
-          {item.kind === "lesson" ? item.lesson.title : item.paper.title}
-        </span>
+        <span className="line-clamp-2">{itemTitle(item)}</span>
         {item.kind === "paper" && (
           <FileText
+            className="text-muted-foreground mt-0.5 ml-auto size-3 shrink-0"
+            aria-hidden
+          />
+        )}
+        {item.kind === "reader" && (
+          <BookOpen
             className="text-muted-foreground mt-0.5 ml-auto size-3 shrink-0"
             aria-hidden
           />
@@ -249,8 +267,8 @@ export function TrackSidebar(props: TrackSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   // Section titles need more room than lesson titles — widen the bar while
-  // the paper panel is docked.
-  const paperExpanded = activePaperNavOf(props, pathname) !== null;
+  // the paper/reader section panel is docked.
+  const paperExpanded = activeSectionNavOf(props, pathname) !== null;
   return (
     <>
       <aside

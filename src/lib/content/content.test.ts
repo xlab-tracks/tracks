@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it, expect } from "vitest";
 import { lessons } from "@/content/curriculum.data";
+import { readers } from "@/content/readers.data";
 import { exercises } from "@/content/exercises.data";
 import { ARGUE_REVEAL_DEFAULTS } from "@/lib/content/types";
 import { featuredExercises } from "@/app/exercises/featured";
@@ -35,21 +36,30 @@ describe("content integrity", () => {
     }
   });
 
-  it("every module item resolves to exactly one lesson or paper", () => {
+  it("every module item resolves to exactly one lesson, paper, or reader", () => {
     const lessonIds = new Set(lessons.map((l) => l.id));
     const paperIds = new Set(papers.map((p) => p.id));
+    const readerIds = new Set(readers.map((r) => r.id));
     for (const track of tracks) {
       for (const m of getModulesForTrack(track.id)) {
         expect(getItemsForModule(m.id).length).toBe(m.itemIds.length);
         for (const id of m.itemIds) {
-          expect(lessonIds.has(id) !== paperIds.has(id)).toBe(true);
+          const kinds =
+            Number(lessonIds.has(id)) +
+            Number(paperIds.has(id)) +
+            Number(readerIds.has(id));
+          expect(kinds, `${id} should resolve to exactly one kind`).toBe(1);
         }
       }
     }
   });
 
-  it("content ids are globally unique across lessons and papers", () => {
-    const ids = [...lessons.map((l) => l.id), ...papers.map((p) => p.id)];
+  it("content ids are globally unique across lessons, papers, and readers", () => {
+    const ids = [
+      ...lessons.map((l) => l.id),
+      ...papers.map((p) => p.id),
+      ...readers.map((r) => r.id),
+    ];
     expect(new Set(ids).size).toBe(ids.length);
   });
 
