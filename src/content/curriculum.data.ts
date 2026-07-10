@@ -66,8 +66,10 @@ export const modules: Module[] = [
       "c-game-l3",
       "c-game-l7",
       "c-game-l8",
+      "c-threats-l1",
+      "c-threats-l2",
     ],
-    estimatedMinutes: 190,
+    estimatedMinutes: 215,
   },
   {
     id: "ex-content",
@@ -163,6 +165,25 @@ export const lessons: Lesson[] = [
     moduleId: "c-intro",
     title: "The control game: the whole picture",
     contentRef: "c-game-l8",
+    estimatedMinutes: 12,
+  },
+  // --- Control: threat-modeling readings (reproduced verbatim with
+  // permission from Redwood Research) ---
+  {
+    id: "c-threats-l1",
+    slug: "prioritizing-threats-for-ai-control",
+    moduleId: "c-intro",
+    title: "Prioritizing threats for AI control",
+    contentRef: "c-threats-l1",
+    estimatedMinutes: 15,
+  },
+  {
+    id: "c-threats-l2",
+    slug: "diffuse-threats-research-sabotage",
+    moduleId: "c-intro",
+    title:
+      "How can we solve diffuse threats like research sabotage with AI control?",
+    contentRef: "c-threats-l2",
     estimatedMinutes: 12,
   },
   {
