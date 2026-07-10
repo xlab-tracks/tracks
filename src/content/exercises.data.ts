@@ -879,6 +879,35 @@ export const exercises: Exercise[] = [
       "It can access far more compute and has privileged internal access — the ability to tamper with experiments, training runs, and safety work inside the company. An exfiltrated model would likely have much less compute (getting outraced by actors with similar models) and no privileged internal access.",
   },
   {
+    id: "c-threats-l1-reprioritize",
+    type: "writing-prompt",
+    format: "free-form",
+    prompt:
+      "Greenblatt's prioritization assumes a rushed but reasonable developer — one willing and able to spend something like a six-month pause on mitigating misalignment risk. Choose a different world: either very low political will (no meaningful pause is on the table), or high political will (a pause of more than five years looks likely). Re-derive the top three control priorities for your chosen world, and justify each departure from the original ordering. Engage with the two arguments the post itself leans on: what a rogue internal deployment is actually worth to a misaligned AI in your world, and how the value of preventing self-exfiltration depends on whether anyone was going to pause.",
+    minWords: 150,
+    maxWords: 500,
+    rubric: [
+      {
+        id: "engagement",
+        label: "Engages the post's arguments",
+        description:
+          "Uses the compute/privileged-access logic and the pause-dependence of self-exfiltration, rather than asserting a new ordering from scratch.",
+      },
+      {
+        id: "conditioning",
+        label: "Conditions on the world",
+        description:
+          "The priority changes actually follow from the chosen level of political will.",
+      },
+      {
+        id: "tradeoffs",
+        label: "Acknowledges costs",
+        description:
+          "Says what the new ordering gives up, not only what it gains.",
+      },
+    ],
+  },
+  {
     id: "c-threats-l2-recall-research-sabotage",
     type: "tap-reveal",
     prompt: "What is research sabotage?",
