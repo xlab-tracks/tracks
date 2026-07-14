@@ -236,6 +236,10 @@ unlock in order. Sequence-compatible types: `tap-reveal`, the choice types, and
 `understanding-check` (not flowchart/allocation/argue-reveal/writing). Exercise `prompt`/`answer`/
 `sampleAnswer` strings support `$…$` math everywhere (rendered by `MathText`),
 and lesson MDX bodies support `$…$`/`$$…$$` via remark-math + rehype-katex.
+Writing-type `prompt`s additionally render as block markdown (paragraphs,
+lists, `$…$` math — `src/lib/content/writing-prompt-html.ts`), so a structured
+multi-part prompt can be authored directly instead of flattened into one
+paragraph; see `c-areas-l1-theory-of-change`.
 
 ---
 

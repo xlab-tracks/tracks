@@ -12,6 +12,7 @@ import {
   type ArgueRevealConstructionEntry,
   type ArgueRevealItemEntry,
 } from "@/lib/content/exercise-view";
+import { writingPromptHtml } from "@/lib/content/writing-prompt-html";
 import { getCurrentUser } from "@/lib/auth";
 import { getSubmission } from "@/lib/progress";
 import { saveWritingDraft, submitWriting } from "@/app/actions/submissions";
@@ -131,14 +132,16 @@ export async function Exercise({ id }: ExerciseProps) {
   }
 
   if (isWritingExercise(exercise)) {
+    const promptHtml = writingPromptHtml(exercise.prompt);
     const user = await getCurrentUser();
     if (!user) {
-      return <WritingExerciseCard exercise={exercise} />;
+      return <WritingExerciseCard exercise={exercise} promptHtml={promptHtml} />;
     }
     const submission = await getSubmission(user.id, exercise.id, "exercise");
     return (
       <WritingExerciseCard
         exercise={exercise}
+        promptHtml={promptHtml}
         initialValues={(submission?.responseJson as WritingValues | null) ?? undefined}
         submitted={submission?.status === "submitted"}
         onSaveDraft={saveWritingDraft.bind(null, exercise.id, "exercise", exercise.format)}

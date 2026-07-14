@@ -928,4 +928,78 @@ export const exercises: Exercise[] = [
     answer:
       "Incriminating a model from a large volume of mildly suspicious actions requires knowing exactly how suspicious a benign model would look; without that affordance, no amount of mildly suspicious actions is enough.",
   },
+  // --- Control: areas of control work (c-areas-l1) — a two-part written
+  // sequence: build a theory of change for one area, then find its crux.
+  // Writing prompts are markdown (see writing-prompt-html.ts).
+  {
+    id: "c-areas-l1-theory-of-change",
+    type: "writing-prompt",
+    format: "free-form",
+    prompt: [
+      "**Part 1 — Constructing a theory of change.** Choose one area of control work from the post, or a specific project within one. Construct a causal chain from work beginning today to a reduction in existential risk from misaligned AI. Use as many links as necessary, but make the following explicit:",
+      "- What does the work concretely produce — a setting, a capability measurement, a countermeasure prototype, an implemented human process? Why is producing it feasible *now*, given that current models aren't actually risky and may be too weak to make the work informative?",
+      "- Who has to pick the output up for it to matter — a frontier lab, its auditors, a government — and what exactly do they do with it? Try to be rigorous: justify why adoption happens despite the obstacles the post itself flags (internal politicking, siloing, alignment taxes, prototyping that may only be possible inside AI companies).",
+      "- What must be true of future models and deployments for the output to still apply when it matters, rather than having been made obsolete by scale, new architectures, or different usage patterns?",
+      "- Which threat, in the sense of the threat-modeling readings, does the resulting measure bind against — and why does it hold up against a model that is actively trying to subvert it?",
+      "- How does that cash out as a reduction in the risk of catastrophe?",
+      "Make clear why each link follows from the previous one. Do not stop at the post's label for the area; spell out the mechanism it abbreviates.",
+    ].join("\n\n"),
+    minWords: 200,
+    maxWords: 600,
+    rubric: [
+      {
+        id: "mechanism",
+        label: "Link-by-link mechanism",
+        description:
+          "Each link states why it follows from the previous one; the post's label for the area is unpacked into a concrete mechanism, not restated.",
+      },
+      {
+        id: "adoption",
+        label: "Adoption justified",
+        description:
+          "Engages the frictions the post itself names (politicking, siloing, alignment taxes, inside-company work) rather than assuming uptake.",
+      },
+      {
+        id: "threat-binding",
+        label: "Binds against a threat",
+        description:
+          "The chain terminates in a specific threat from the threat-modeling readings and says why the measure survives an adversarial model.",
+      },
+    ],
+  },
+  {
+    id: "c-areas-l1-crux",
+    type: "writing-prompt",
+    format: "free-form",
+    prompt: [
+      "**Part 2 — Identifying a crux.** Return to the causal chain you built in the previous exercise and identify the link you are least confident will occur.",
+      "Then answer:",
+      "1. Why are you uncertain about this link?",
+      "2. Name observation(s) that would substantially raise your confidence in it, and ones that would substantially lower it.",
+      "3. If this link failed, would the case for prioritizing this area collapse? Why?",
+      "4. Could the area still deliver most of its value through another route? If so, describe the alternative chain.",
+    ].join("\n\n"),
+    minWords: 120,
+    maxWords: 450,
+    rubric: [
+      {
+        id: "load-bearing",
+        label: "Load-bearing crux",
+        description:
+          "The chosen link is genuinely the weakest in the chain, and the chain actually depends on it.",
+      },
+      {
+        id: "evidence",
+        label: "Evidence cuts both ways",
+        description:
+          "Names concrete observations that would raise confidence and ones that would lower it.",
+      },
+      {
+        id: "failure-analysis",
+        label: "Failure analysis",
+        description:
+          "Says whether the case collapses if the link fails, and whether an alternative route to the same value exists.",
+      },
+    ],
+  },
 ];

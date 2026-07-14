@@ -15,7 +15,7 @@ export const tracks: Track[] = [
     description:
       "Hands-on technical track on controlling and evaluating AI systems. The introductory module works through Redwood Research's \"AI Control: Improving Safety Despite Intentional Subversion\" paper and then rebuilds its trusted-monitoring result as an interactive, model-backed demo.",
     kind: "technical",
-    moduleIds: ["c-intro"],
+    moduleIds: ["c-intro", "c-mod2", "c-areas"],
     prerequisiteEnforcement: "hard",
   },
   {
@@ -56,9 +56,38 @@ export const modules: Module[] = [
     // The paper item, then the demo lessons merged into one multi-section
     // lesson (its section order preserves the designed reading order — "best
     // response" deliberately comes after the sections that introduce its
-    // levers).
-    itemIds: ["c-paper-ai-control", "c-game"],
-    estimatedMinutes: 215,
+    // levers), then the two threat-modeling readings (both build on the
+    // paper, so they come last).
+    itemIds: ["c-paper-ai-control", "c-game", "c-threats-l1", "c-threats-l2"],
+    estimatedMinutes: 242,
+  },
+  {
+    // Placeholder — content for this module is not written yet. Rename the
+    // id/slug/title when the real curriculum lands (module ids are not
+    // persisted anywhere, so renaming is safe).
+    id: "c-mod2",
+    slug: "module-2",
+    trackId: "control",
+    title: "Coming soon",
+    summary: "Content for this module is in development.",
+    order: 2,
+    prerequisiteModuleIds: ["c-intro"],
+    itemIds: [],
+  },
+  {
+    id: "c-areas",
+    slug: "areas-of-control-work",
+    trackId: "control",
+    title: "Areas of control work",
+    summary:
+      "Ryan Greenblatt's survey of the areas of control research and implementation that seem most promising, reproduced verbatim from the Redwood Research blog.",
+    order: 3,
+    // c-mod2 is empty for now, so it counts as complete and only c-intro
+    // actually gates; listing both keeps the chain correct once c-mod2 gets
+    // content.
+    prerequisiteModuleIds: ["c-intro", "c-mod2"],
+    itemIds: ["c-areas-l1"],
+    estimatedMinutes: 40,
   },
   {
     id: "ex-content",
@@ -118,6 +147,16 @@ export const lessons: Lesson[] = [
       "How can we solve diffuse threats like research sabotage with AI control?",
     contentRef: "c-threats-l2",
     estimatedMinutes: 12,
+  },
+  // --- Control: areas of control work (reproduced verbatim with permission
+  // from Redwood Research) ---
+  {
+    id: "c-areas-l1",
+    slug: "an-overview-of-areas-of-control-work",
+    moduleId: "c-areas",
+    title: "An overview of areas of control work",
+    contentRef: "c-areas-l1",
+    estimatedMinutes: 40,
   },
   {
     id: "ex-content-l1",
