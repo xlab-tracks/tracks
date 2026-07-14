@@ -30,6 +30,7 @@ import { LessonCompleteButton } from "@/components/learn/lesson-complete-button"
 import { LessonTracker } from "@/components/learn/lesson-tracker";
 import { PaperReader } from "@/components/papers/paper-reader";
 import { Button } from "@/components/ui/button";
+import { getVerificationExerciseForLesson } from "@/lib/verification/exercises";
 
 // Dispatching route: a module item slug resolves to either a lesson or a
 // paper (they share the /tracks/t/m/<slug> namespace; the static `assessment`
@@ -137,7 +138,16 @@ async function LessonItemPage({
         <LessonContent contentRef={lesson.contentRef} />
       </div>
 
-      {userId ? <LessonTracker lessonId={lesson.id} completed={completed} /> : null}
+      {userId ? (
+        <LessonTracker
+          lessonId={lesson.id}
+          completed={completed}
+          // Bridged interactives complete when the widget itself reports a
+          // finish (via onComplete) — not by scrolling past a one-line body.
+          // Unbridged explorables keep normal scroll-to-complete.
+          autoComplete={!getVerificationExerciseForLesson(lesson.id)?.bridged}
+        />
+      ) : null}
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         {userId ? (

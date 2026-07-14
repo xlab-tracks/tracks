@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { FileText } from "lucide-react";
 import { getAssessmentForModule, getModuleBySlugs } from "@/lib/content";
 import { DELIVERABLE_FORMAT_LABELS } from "@/lib/content/types";
+import { isAccessLocked } from "@/lib/content/prerequisites";
 import { getCurrentUser } from "@/lib/auth";
-import { getSubmission } from "@/lib/progress";
+import { getPrerequisiteStatus, getSubmission } from "@/lib/progress";
 import { saveWritingDraft, submitWriting } from "@/app/actions/submissions";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { WritingEditor, type WritingValues } from "@/components/exercises/writing-editor";
@@ -36,6 +37,22 @@ export default async function AssessmentPage({
   if (!assessment) notFound();
 
   const user = await getCurrentUser();
+
+  // Hard prerequisite enforcement: a locked module's assessment is off-limits
+  // to signed-in learners too (mirrors the item and module pages). Signed-out
+  // visitors may preview.
+  if (user && track.prerequisiteEnforcement === "hard") {
+    const prereqStatuses = await getPrerequisiteStatus(user.id, module.id);
+    if (
+      isAccessLocked(
+        track.prerequisiteEnforcement,
+        prereqStatuses.map((s) => s.completed),
+      )
+    ) {
+      redirect(`/tracks/${track.slug}/${module.slug}`);
+    }
+  }
+
   const submission = user
     ? await getSubmission(user.id, assessment.id, "assessment")
     : null;

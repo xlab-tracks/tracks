@@ -109,12 +109,6 @@ export function usefulness(levers: Levers): number {
   return 1 - deferFrac
 }
 
-/** Raw expected correctness (for the stage-13 capability-gap reveal). */
-export function rawCorrectness(levers: Levers): number {
-  const deferFrac = clamp(levers.d - levers.b, 0, 1)
-  return (1 - deferFrac) * PARAMS.uU + deferFrac * levers.uT
-}
-
 /**
  * Upfront-auditing baseline (stage 3; PLAN §4.5 note).
  * Audit the first bN problems positionally; no monitor. Red is memoryless:

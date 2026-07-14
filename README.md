@@ -2,8 +2,8 @@
 
 An AI-safety learning platform by XLab — a Khan Academy–style home that
 de-centralizes the messy AI-safety onboarding pipeline. It offers structured
-**tracks** (Control and Governance), interactive demos, real writing practice,
-and a curated resource hub.
+**tracks** (Control, Governance, and Verification), interactive demos, real
+writing practice, and a curated resource hub.
 
 ## Features
 
@@ -12,8 +12,10 @@ and a curated resource hub.
 - **Content types**: embedded video (media-chrome), text, interactive demos
   embedded inline, exercises, and full-page arXiv papers with exercises and
   lessons interleaved into their sections.
-- **Exercises** — closed-ended (multiple-choice, multi-select, true/false,
-  understanding checks) graded server-side, and open-ended writing.
+- **Exercises** — choice types (multiple-choice, multi-select, true/false) and
+  flowcharts graded server-side against server-only answer keys; tap-reveal,
+  understanding checks, allocation, and argue-reveal are self-assessed; plus
+  open-ended writing.
 - **End-of-module assessments** that mirror real deliverables (policy memo, bill
   draft, research summary, briefing, essay) with section scaffolds + rubrics.
 - **Prerequisites** per module, including cross-track gating, with soft (warn) or
@@ -103,8 +105,10 @@ Placeholder copy is lorem ipsum — replace it with real curriculum.
 
 ## Architecture notes
 
-- Auth: WorkOS AuthKit. `src/proxy.ts` (Next 16's renamed middleware) refreshes
-  the session; pages/actions call `getCurrentUser()` / `requireUser()` from
+- Auth: WorkOS AuthKit. `src/middleware.ts` refreshes the session — deliberately
+  the deprecated `middleware.ts` convention, not Next 16's `proxy.ts` (which
+  compiles to Node middleware that `@opennextjs/cloudflare` rejects; see
+  `CLAUDE.md`). Pages/actions call `getCurrentUser()` / `requireUser()` from
   `src/lib/auth.ts`, which upserts the WorkOS user into the local `User` table.
 - Mutations are React Server Actions in `src/app/actions/`; closed-exercise
   answer keys never reach the client (graded in `gradeExercise`).

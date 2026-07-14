@@ -140,7 +140,7 @@ export function BestResponseDemo() {
             attack rarely
           </text>
           <text x={M.left + PW / 2} y={H - 5} fontSize={8} fill="var(--muted-foreground)" textAnchor="middle">
-            attack rate &rarr;
+            opportunity cutoff g* &rarr;
           </text>
           <text
             x={11}

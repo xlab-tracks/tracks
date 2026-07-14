@@ -31,7 +31,15 @@ function ResourceItem({ resource }: { resource: ExternalResource }) {
         className="border-border hover:bg-muted shadow-soft block rounded-xl border p-4 transition-colors"
       >
         <div className="flex items-start justify-between gap-3">
-          <span className="font-medium">{resource.title}</span>
+          <span className="font-medium">
+            {resource.title}
+            {resource.author && (
+              <span className="text-muted-foreground font-normal">
+                {" "}
+                · {resource.author}
+              </span>
+            )}
+          </span>
           <ExternalLink
             className="text-muted-foreground mt-0.5 size-4 shrink-0"
             aria-hidden
@@ -103,7 +111,8 @@ export function ResourceHub({ resources }: { resources: ExternalResource[] }) {
     if (level !== "all" && r.level !== level) return false;
     if (type !== "all" && r.type !== type) return false;
     if (query) {
-      const haystack = `${r.title} ${r.note ?? ""} ${r.topics.join(" ")}`.toLowerCase();
+      const haystack =
+        `${r.title} ${r.author ?? ""} ${r.note ?? ""} ${r.topics.join(" ")}`.toLowerCase();
       if (!haystack.includes(query.toLowerCase())) return false;
     }
     return true;
@@ -153,6 +162,7 @@ export function ResourceHub({ resources }: { resources: ExternalResource[] }) {
       <div className="mt-3 flex flex-wrap gap-1.5">
         <button
           type="button"
+          aria-pressed={topic === null}
           onClick={() => setTopic(null)}
           className={cn(
             "rounded-full border px-3 py-1 text-xs transition-colors",
@@ -167,6 +177,7 @@ export function ResourceHub({ resources }: { resources: ExternalResource[] }) {
           <button
             key={t}
             type="button"
+            aria-pressed={topic === t}
             onClick={() => setTopic(topic === t ? null : t)}
             className={cn(
               "rounded-full border px-3 py-1 text-xs transition-colors",

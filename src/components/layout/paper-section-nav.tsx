@@ -73,6 +73,7 @@ export function PaperSectionNav({
             <Link
               href={`${pathname}#${anchor}`}
               onClick={onNavigate}
+              aria-current={anchor === activeId ? "location" : undefined}
               className={cn(
                 navItemClass(anchor === activeId),
                 "py-1 text-[13px] leading-snug",

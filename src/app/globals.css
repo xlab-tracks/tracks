@@ -45,6 +45,16 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
+  /* Verification data-encoding accents (Okabe-Ito, colour-blind safe). Used
+     ONLY to encode meaning in the Verification widgets (comply/defect/hide/
+     exaggerate/free-ride), always paired with a label/icon/shape — never colour
+     alone. Opacity modifiers (e.g. bg-comply/10) give soft surfaces. */
+  --color-comply: var(--comply);
+  --color-defect: var(--defect);
+  --color-hide: var(--hide);
+  --color-exaggerate: var(--exaggerate);
+  --color-free-ride: var(--free-ride);
+
   /* Radius — XLab Tracks: 8px buttons/inputs/chips, 14px cards, 16px panels. */
   --radius-xs: 6px;
   --radius-sm: 8px;
@@ -79,7 +89,7 @@
   --secondary: #f5f5f5; /* neutral-100 grey surface */
   --secondary-foreground: #2c3e60; /* lifted navy */
   --muted: #f5f5f5; /* neutral-100 */
-  --muted-foreground: #737373; /* mid grey (neutral-500) */
+  --muted-foreground: #6b6b6b; /* grey — AA (4.5:1) on muted #f5f5f5 surfaces */
   --accent: #f5f5f5; /* neutral hover surface (keeps red sparse) */
   --accent-foreground: #233554;
   --destructive: #dc2626; /* red-600 */
@@ -101,6 +111,13 @@
   --sidebar-accent-foreground: #233554;
   --sidebar-border: #e5e5e5; /* hairline */
   --sidebar-ring: #dc2626;
+
+  /* Okabe-Ito data-encoding accents (see @theme above). */
+  --comply: #009e73; /* green — comply / honest */
+  --defect: #d55e00; /* vermillion — defect / cheat */
+  --hide: #0072b2; /* blue — hide / conceal */
+  --exaggerate: #e69f00; /* amber — exaggerate / overstate */
+  --free-ride: #cc79a7; /* reddish-purple — free-ride */
 
   --radius: 0.875rem;
 }
@@ -196,7 +213,7 @@
 }
 
 @media (max-width: 95.99rem) {
-  .footnote-marker:has(.footnote-toggle:checked) .footnote-content {
+  .footnote:has(.footnote-toggle:checked) .footnote-content {
     display: block;
     margin: 0.5rem 0;
     padding: 0.625rem 0.875rem;

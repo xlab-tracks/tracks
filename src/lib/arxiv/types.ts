@@ -49,8 +49,14 @@
  * v20: \cellcolor/\rowcolor nested inside \multirow/\multicolumn content
  *      resolve to cell backgrounds instead of leaking as literal text
  *      ("gray!15 Never happens").
+ * v21: converter-fidelity fixes — \tag argument consumed (no stray group),
+ *      \tabularnewline splits tabular/longtable rows, wrapfigure/SCfigure/
+ *      subcaptionbox \labels bind to figures (not the section), \def keeps
+ *      the LAST definition, \let/\renewcommand cycles are broken (no
+ *      duplication), \multirow nested in \multicolumn unwraps, and stripped
+ *      counter-manipulation (\setcounter/\numberwithin/…) now warns.
  */
-export const CONVERTER_VERSION = 20;
+export const CONVERTER_VERSION = 21;
 
 export interface ConversionWarning {
   /** Stable machine code, e.g. "unknown-macro", "katex-error". */

@@ -37,8 +37,11 @@ export function toPublicChoice(exercise: ChoiceExercise): PublicChoiceExercise {
 /** Exact-match grading: every selected option must be correct, and vice versa. */
 export function gradeChoice(exercise: ChoiceExercise, selected: string[]): boolean {
   const correct = new Set(exercise.correctOptionIds);
-  if (selected.length !== correct.size) return false;
-  return selected.every((id) => correct.has(id));
+  // Dedupe first: a direct POST of ["a","a"] must not pass as {"a","b"}.
+  const chosen = new Set(selected);
+  if (chosen.size !== correct.size) return false;
+  for (const id of chosen) if (!correct.has(id)) return false;
+  return true;
 }
 
 export interface GradeResult {
@@ -108,6 +111,39 @@ export function gradeFlowchartStage(
   const stage = exercise.stages.find((s) => s.id === stageId);
   if (!stage) return false;
   return flowchartEquals(stage.solution, attempt);
+}
+
+/**
+ * Structurally re-validates a posted flowchart attempt (reachable by direct
+ * POST): only known block ids, bounded breadth (≤20 nodes, ≤5 arms) and depth
+ * (≤8). Returns the cleaned tree or null. Lives here beside its tested
+ * siblings; the grade action calls it before grading/persisting.
+ */
+export function sanitizeFlowchartAttempt(
+  value: unknown,
+  validBlockIds: Set<string>,
+  depth = 0,
+): FlowchartNode[] | null {
+  if (!Array.isArray(value) || value.length > 20 || depth > 8) return null;
+  const nodes: FlowchartNode[] = [];
+  for (const item of value) {
+    if (typeof item !== "object" || item === null) return null;
+    const { blockId, branches } = item as Record<string, unknown>;
+    if (typeof blockId !== "string" || !validBlockIds.has(blockId)) return null;
+    const node: FlowchartNode = { blockId };
+    if (branches !== undefined) {
+      if (!Array.isArray(branches) || branches.length > 5) return null;
+      const arms: FlowchartNode[][] = [];
+      for (const arm of branches) {
+        const sanitized = sanitizeFlowchartAttempt(arm, validBlockIds, depth + 1);
+        if (!sanitized) return null;
+        arms.push(sanitized);
+      }
+      node.branches = arms;
+    }
+    nodes.push(node);
+  }
+  return nodes;
 }
 
 export interface FlowchartStageResult {
@@ -336,4 +372,39 @@ export function sanitizeArgueRevealConstruction(
     bestResponse: cleanBestResponse,
     residual: cleanResidual,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Writing (assessments and open-ended exercises)
+// ---------------------------------------------------------------------------
+
+/** Hard cap on a single writing section's persisted length. */
+export const WRITING_MAX_SECTION_CHARS = 20_000;
+
+/** Learner responses per section id, as persisted in `responseJson`. */
+export type WritingValues = Record<string, string>;
+
+/**
+ * Validates a posted set of writing responses against the deliverable's known
+ * section ids (reachable by direct POST): a flat object whose keys are all
+ * real section ids and whose values are storable strings within the length
+ * cap. Missing sections are allowed (partial drafts); unknown keys, non-string
+ * values, oversized or non-storable text reject the whole payload. Returns the
+ * cleaned record or null.
+ */
+export function sanitizeWritingValues(
+  value: unknown,
+  allowedSectionIds: Set<string>,
+): WritingValues | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const clean: WritingValues = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (!allowedSectionIds.has(key)) return null;
+    if (typeof raw !== "string" || !isStorableText(raw)) return null;
+    if (raw.length > WRITING_MAX_SECTION_CHARS) return null;
+    clean[key] = raw;
+  }
+  return clean;
 }

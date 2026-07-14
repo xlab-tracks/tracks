@@ -36,7 +36,7 @@ model User {
 }
 
 enum ProgressStatus {
-  not_started
+  not_started // reserved — never written; absence of a row means not-started
   in_progress
   completed
 }
@@ -63,7 +63,7 @@ enum SubmissionKind {
 enum SubmissionStatus {
   draft
   submitted
-  graded
+  graded // reserved for the planned instructor/automated feedback flow
 }
 
 model Submission {
@@ -78,8 +78,8 @@ model Submission {
   responseText String?
   status       SubmissionStatus @default(draft)
   score        Float?
-  feedback     String?
-  version      Int              @default(1)
+  feedback     String? // reserved for the planned feedback flow (with status=graded)
+  version      Int              @default(1) // reserved — not yet used for revision history
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 

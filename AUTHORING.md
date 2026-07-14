@@ -96,6 +96,14 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
      grading is exact-match server-side; an understanding-check's `sampleAnswer`
      **is** sent to the client (revealed on demand) — don't put gated content
      there. An unknown id renders an inline error card (same for `<Demo>`).
+   - `<VerificationExercise id="…" />` — renders one of the Verification
+     track's native React widgets (`src/components/verification/widgets/<id>.tsx`,
+     keyed in `widgets/registry.tsx`). The id must exist in
+     `src/lib/verification/exercises.ts` and the hosting lesson's id must be
+     `v-<id>` (both enforced by `src/lib/verification/widgets.test.ts`). An
+     unknown id renders an inline error card. Data/copy lives in
+     `src/lib/verification/data/`; shared primitives (drag, `[[term]]` tooltips,
+     the completion hook) are in `src/components/verification/kit/`.
    - `<ArxivPaper id="1706.03762v7" defaultOpen? />` — embeds an arXiv paper as a
      **collapsible card**, rendered from its LaTeX source with KaTeX math.
      **The version suffix (`v7`) is required**: it pins an immutable snapshot,

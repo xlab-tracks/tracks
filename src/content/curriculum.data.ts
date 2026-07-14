@@ -30,6 +30,23 @@ export const tracks: Track[] = [
     prerequisiteEnforcement: "soft",
   },
   {
+    id: "verification",
+    slug: "verification",
+    title: "Verification",
+    shortTitle: "Verification",
+    description:
+      "Interactive modules, primers, and exercises on verifying international AI agreements — from why the problem matters, to the compute supply chain, to the game theory that makes verification the hinge of any deal.",
+    kind: "governance",
+    moduleIds: [
+      "v-foundations",
+      "v-primers",
+      "v-supply-chain",
+      "v-games",
+      "v-facilitator",
+    ],
+    prerequisiteEnforcement: "soft",
+  },
+  {
     id: "example",
     slug: "example",
     title: "Example Track",
@@ -59,6 +76,81 @@ export const modules: Module[] = [
     // levers).
     itemIds: ["c-paper-ai-control", "c-game"],
     estimatedMinutes: 215,
+  },
+  // --- Verification: each item is a self-contained HTML interactive from
+  // public/verification/, embedded via <VerificationExercise/>. Module
+  // grouping and every title/blurb mirror the site's own nav.js manifest. ---
+  {
+    id: "v-foundations",
+    slug: "foundations",
+    trackId: "verification",
+    title: "Foundations",
+    summary:
+      "Why verification matters and what an agreement is made of: what the people building frontier AI say about superintelligence, a field map of the verification problem space, and a pause agreement scoped, priced, dissected, drilled, and re-read as a cast list.",
+    order: 1,
+    prerequisiteModuleIds: [],
+    itemIds: [
+      "v-what-do-they-say",
+      "v-verification-landscape",
+      "v-policy-scoping",
+      "v-policy-cost",
+      "v-dissection-table",
+      "v-anatomy-drill",
+      "v-protocol-actors",
+    ],
+  },
+  {
+    id: "v-primers",
+    slug: "primers",
+    trackId: "verification",
+    title: "Primers & Pre-work",
+    summary:
+      "The background the exercises lean on: the game theory behind verification, how states actually behave, and two labs — one where a verification slider flips a Prisoner's Dilemma into an Assurance Game, one where priced verifiers fight for survival in an evolutionary tournament.",
+    order: 2,
+    prerequisiteModuleIds: [],
+    itemIds: [
+      "v-game-theory-primer",
+      "v-ir-primer",
+      "v-change-the-game",
+      "v-evolution-of-verification",
+    ],
+  },
+  {
+    id: "v-supply-chain",
+    slug: "supply-chain",
+    trackId: "verification",
+    title: "Supply Chain",
+    summary:
+      "The world map of AI compute — who makes what, where it flows, and where verification can grab hold, with a look inside the chip itself — then an inspector's notebook and the three desks that will each act on a different piece of it.",
+    order: 3,
+    prerequisiteModuleIds: [],
+    itemIds: ["v-interactive-map", "v-report-constructor"],
+  },
+  {
+    id: "v-games",
+    slug: "games",
+    trackId: "verification",
+    title: "Exercises & Games",
+    summary:
+      "Adversarial play: tamper with the hardware and trace the evidence, price deterrence with two inspection teams across five sites, and build a verification regime while the decade 2026–2034 keeps moving.",
+    order: 4,
+    prerequisiteModuleIds: [],
+    itemIds: [
+      "v-tamper-trace",
+      "v-inspection-game",
+      "v-verification-timeline-game",
+    ],
+  },
+  {
+    id: "v-facilitator",
+    slug: "facilitator",
+    trackId: "verification",
+    title: "Facilitator",
+    summary:
+      "Run the room, don't run the lecture — session plans, timing, and lenses for teaching the track.",
+    order: 5,
+    prerequisiteModuleIds: [],
+    itemIds: ["v-facilitator-guide"],
   },
   {
     id: "ex-content",
@@ -90,6 +182,129 @@ export const modules: Module[] = [
 ];
 
 export const lessons: Lesson[] = [
+  // --- Verification: one lesson per interactive; contentRef === id; the MDX
+  // body is the page's authored blurb plus <VerificationExercise/> (the
+  // protocol-actors blurb is lightly adapted: the site's copy says "Module 0",
+  // which is the Foundations module here). ---
+  {
+    id: "v-what-do-they-say",
+    slug: "what-do-they-say",
+    moduleId: "v-foundations",
+    title: "Why Are We Concerned About Superintelligence?",
+    contentRef: "v-what-do-they-say",
+  },
+  {
+    id: "v-verification-landscape",
+    slug: "verification-landscape",
+    moduleId: "v-foundations",
+    title: "The Verification Landscape",
+    contentRef: "v-verification-landscape",
+  },
+  {
+    id: "v-policy-scoping",
+    slug: "policy-scoping",
+    moduleId: "v-foundations",
+    title: "Scoping an Anti-ASI Policy",
+    contentRef: "v-policy-scoping",
+  },
+  {
+    id: "v-policy-cost",
+    slug: "policy-cost",
+    moduleId: "v-foundations",
+    title: "Everything Comes With a Cost",
+    contentRef: "v-policy-cost",
+  },
+  {
+    id: "v-dissection-table",
+    slug: "dissection-table",
+    moduleId: "v-foundations",
+    title: "The Dissection Table",
+    contentRef: "v-dissection-table",
+  },
+  {
+    id: "v-anatomy-drill",
+    slug: "anatomy-drill",
+    moduleId: "v-foundations",
+    title: "The Anatomy Drill",
+    contentRef: "v-anatomy-drill",
+  },
+  {
+    id: "v-protocol-actors",
+    slug: "protocol-actors",
+    moduleId: "v-foundations",
+    title: "Who's in the Treaty?",
+    contentRef: "v-protocol-actors",
+  },
+  {
+    id: "v-game-theory-primer",
+    slug: "game-theory-primer",
+    moduleId: "v-primers",
+    title: "Game Theory for Verification",
+    contentRef: "v-game-theory-primer",
+  },
+  {
+    id: "v-ir-primer",
+    slug: "ir-primer",
+    moduleId: "v-primers",
+    title: "IR for People Who Build Things",
+    contentRef: "v-ir-primer",
+  },
+  {
+    id: "v-change-the-game",
+    slug: "change-the-game",
+    moduleId: "v-primers",
+    title: "Change the Game: The Race Dilemma Lab",
+    contentRef: "v-change-the-game",
+  },
+  {
+    id: "v-evolution-of-verification",
+    slug: "evolution-of-verification",
+    moduleId: "v-primers",
+    title: "The Evolution of Verification",
+    contentRef: "v-evolution-of-verification",
+  },
+  {
+    id: "v-interactive-map",
+    slug: "interactive-map",
+    moduleId: "v-supply-chain",
+    title: "The Compute Supply Chain",
+    contentRef: "v-interactive-map",
+  },
+  {
+    id: "v-report-constructor",
+    slug: "report-constructor",
+    moduleId: "v-supply-chain",
+    title: "One Inspection, Three Readers",
+    contentRef: "v-report-constructor",
+  },
+  {
+    id: "v-tamper-trace",
+    slug: "tamper-trace",
+    moduleId: "v-games",
+    title: "Tamper & Trace",
+    contentRef: "v-tamper-trace",
+  },
+  {
+    id: "v-inspection-game",
+    slug: "inspection-game",
+    moduleId: "v-games",
+    title: "The Inspection Game",
+    contentRef: "v-inspection-game",
+  },
+  {
+    id: "v-verification-timeline-game",
+    slug: "verification-timeline-game",
+    moduleId: "v-games",
+    title: "The Verification Game",
+    contentRef: "v-verification-timeline-game",
+  },
+  {
+    id: "v-facilitator-guide",
+    slug: "facilitator-guide",
+    moduleId: "v-facilitator",
+    title: "Facilitator Field Guide",
+    contentRef: "v-facilitator-guide",
+  },
   // --- Control: the trusted-monitoring demo, one multi-section lesson (its
   // ## sections give it a paper-style section nav in the sidebar). ---
   {

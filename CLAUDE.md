@@ -4,9 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @AGENTS.md
 
-Tracks is an AI-safety learning platform (Khan Academy–style) with two tracks —
-**Control** (technical) and **Governance**. Content is placeholder lorem ipsum;
-do not invent real curriculum. The **Example track** (`ex-content`/`ex-assess`)
+Tracks is an AI-safety learning platform (Khan Academy–style) with three
+tracks — **Control** (technical), **Governance**, and **Verification**. The
+Control track's first module carries real curriculum (an authored lesson on
+the control game, the Redwood AI Control paper, and two readings reproduced
+with permission); the Verification track is fully populated by the 17
+native React interactive widgets (see "Verification
+interactives" below); everything else is placeholder. **Never invent or
+fabricate curriculum content** — real content is human-authored or reproduced
+with permission; otherwise use lorem ipsum or leave it empty. The **Example track** (`ex-content`/`ex-assess`)
 is the live reference for every content feature; `AUTHORING.md` is the
 step-by-step guide for adding content (its rules are enforced by
 `src/lib/content/content.test.ts`).
@@ -75,7 +81,8 @@ on stable `data-anchor`/`data-s` values plus a required `snippet` drift
 tripwire (validated by content.test.ts). `src/lib/papers/apply-edits.ts`
 patches only edited sections (HAST tree ops; unedited papers keep the string
 fast path via `split-paper.ts`); `paper-nav.ts` builds the sidebar's per-paper
-section tree (scroll-spy in `src/components/layout/use-scroll-spy.ts`). The
+section tree (scroll-spy in `src/components/layout/use-scroll-spy.ts`;
+multi-heading lessons get the same docked nav — see MDX pipeline). The
 LaTeX→HTML converter lives in `src/lib/arxiv/` and runs ONLY at authoring time
 (`npm run arxiv:build`) — never in the deployed worker. When changing converter
 output shape, bump `CONVERTER_VERSION` (`src/lib/arxiv/types.ts`) and ship the
@@ -94,6 +101,13 @@ via `usePathname()` (layouts can't see deeper params).
 `src/content/lessons/${contentRef}.mdx`, so authors embed `<Video/>`, `<Demo/>`,
 `<Exercise/>`, `<Callout/>`, `<ArxivPaper/>` (collapsible card — distinct from
 full-page Paper items), and `<Footnote/>` by name inside lesson text.
+A lesson body with 2+ top-level `##`/`###` headings automatically gets a
+paper-style "In this lesson" sidebar nav: `src/lib/mdx/rehype-lesson-sections.mjs`
+compiles a `sections` export into every lesson module (read via
+`getLessonSections`, assembled into `itemNavs` in the `[trackSlug]` layout).
+The plugin is registered in `next.config.ts` and must stay AFTER `rehype-slug`
+(it reads the ids slug assigns); Turbopack takes MDX plugins as strings only,
+and local plugin paths must be absolute.
 
 **Exercises & writing (security-relevant).** Closed-exercise answer keys are
 server-only: `toPublicChoice()` / `toPublicFlowchart()` strip `correctOptionIds`
@@ -113,6 +127,9 @@ passing them as props. Exercise prompt/answer strings render `$…$` math via
 `src/lib/control-model/` is the pure closed-form model behind the Control
 track's demos — its calibration test pins the paper's headline numbers (±4pp);
 plan-level rationale lives in the demos, the code + test are normative.
+`bestResponse` is memoized at module scope, keyed on the levers `evaluateGame`
+reads (`q|b|d|attackSd`): never mutate its returned object, and extend the key
+if `evaluateGame` grows a new lever dependency.
 
 **Auth & mutations.** WorkOS AuthKit. `src/middleware.ts` only refreshes the session.
 `getCurrentUser()` / `requireUser()` (`src/lib/auth.ts`, `cache()`-wrapped per
@@ -149,6 +166,24 @@ file under `db/migrations/`, apply it, then push. Deploys are git-connected via
 self-contained client component registered by id, embeddable in MDX, the `/demos`
 gallery, a standalone page, and the chrome-less `/demos/[id]/embed` iframe route
 (which is excluded from the proxy matcher).
+
+**Verification interactives.** The Verification track's 17 exercises are
+**native React widgets** (`src/components/verification/widgets/<id>.tsx`) in the
+app design system, keyed by id in `widgets/registry.tsx`. Copy/data is lifted
+verbatim into `src/lib/verification/data/*` (human-authored curriculum —
+**never regenerate content**); six have pure engines in
+`src/lib/verification/engines/*` (+ vitest suites). Each is a content-graph
+lesson (`v-<id>`) whose MDX embeds `<VerificationExercise id/>` — an async
+server component that resolves the user and renders the client widget host
+(`verification-widget-host.tsx`); the registry of metadata (id/title/bridged)
+is `src/lib/verification/exercises.ts`. `bridged` widgets call `onComplete`
+(→ `setLessonComplete` via `kit/use-completion.ts`) at their finish event and
+their lessons disable scroll auto-complete; unbridged explorables keep normal
+scroll-to-complete. Shared kit in `src/components/verification/kit/`
+(drag, `[[term]]` tooltips, completion hook). `src/lib/verification/widgets.test.ts`
+enforces the registry ↔ graph ↔ MDX ↔ widget mapping. (The originals were
+standalone HTML pages; only `public/verification/assets/` remains, for the
+what-do-they-say portraits.)
 
 **Prerequisites & progress.** `Track.prerequisiteEnforcement` is `soft` (warn)
 or `hard` (lock); `isAccessLocked()` (pure, tested) + `getPrerequisiteStatus()`

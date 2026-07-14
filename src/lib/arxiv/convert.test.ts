@@ -1,10 +1,7 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { gunzipSync } from "node:zlib";
+import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { convertLatexToHtml } from "./convert";
-import { extractTarball } from "./extract";
 import { parseArxivId } from "./id";
-import { resolveMainTex } from "./main-tex";
 
 const id = parseArxivId("2301.12345v1")!;
 
@@ -754,6 +751,136 @@ describe("convertLatexToHtml", () => {
     expect(new Set(anchors).size).toBe(anchors.length);
     expect(anchors).toEqual([...anchors].sort());
   });
+
+  it("strips a manual \\tag without leaking its argument as text", () => {
+    // stripManualTags removes the author's \tag AND its {…} argument, so the
+    // imposed equation number is the only one shown (no stray "star" group).
+    const { html } = convert(
+      DOC("\\begin{equation}E = mc^2 \\tag{star}\\end{equation}"),
+    );
+    expect(html).not.toContain("star");
+    expect(html).toContain("katex");
+    // Our single imposed number still renders.
+    expect(html).toContain('class="tag"');
+  });
+
+  it("splits tabular rows on \\tabularnewline (LyX terminator)", () => {
+    const { html } = convert(
+      DOC(
+        "\\begin{tabular}{cc}a & b\\tabularnewline c & d\\tabularnewline\\end{tabular}",
+      ),
+    );
+    // Two data rows, four cells — not one fused <tr>.
+    expect((html.match(/<tr/g) ?? []).length).toBe(2);
+    expect((html.match(/<td/g) ?? []).length).toBe(4);
+    expect(html).not.toContain("tabularnewline");
+  });
+
+  it("splits longtable rows on \\tabularnewline too", () => {
+    const { html } = convert(
+      DOC(
+        [
+          "\\begin{longtable}{cc}",
+          "A & B\\tabularnewline",
+          "C & D\\tabularnewline",
+          "\\end{longtable}",
+        ].join("\n"),
+      ),
+    );
+    expect((html.match(/<tr/g) ?? []).length).toBe(2);
+    expect(html).not.toContain("tabularnewline");
+  });
+
+  it("binds a \\label inside a wrapfigure to a figure, not the section", () => {
+    // wrapfigure becomes an unnumbered layout div, but its \label must still
+    // resolve to a Figure (kind + number) — never to the enclosing section.
+    const { html, warnings } = convert(
+      DOC(
+        [
+          "\\section{Intro}",
+          "\\begin{wrapfigure}{r}{0.4\\textwidth}",
+          "\\caption{Cap}\\label{fig:wrap}",
+          "\\end{wrapfigure}",
+          "See \\cref{fig:wrap}.",
+        ].join("\n"),
+      ),
+    );
+    expect(html).toContain("figure 1</a>"); // not "section 1"
+    expect(html).toContain('href="#ax-fig-1"');
+    expect(warnings.filter((w) => w.code === "unresolved-ref")).toEqual([]);
+  });
+
+  it("keeps the LAST \\def when a name is redefined (TeX last-wins)", () => {
+    const { html } = convert(DOC("\\def\\x{FIRST}\\def\\x{SECOND}\\x"));
+    expect(html).toContain("SECOND");
+    expect(html).not.toContain("FIRST");
+  });
+
+  it("breaks a \\let/\\renewcommand definition cycle without duplicating", () => {
+    // \let\oldc\cmd then \renewcommand\cmd{…\oldc…} is a cycle; leaving it in
+    // would partially unroll and duplicate the body across expansion rounds.
+    const { html, warnings } = convert(
+      DOC("\\let\\oldc\\cmd\\renewcommand{\\cmd}[1]{X-\\oldc{#1}-Y}\\cmd{Z}"),
+    );
+    // Content isn't duplicated (no "X-X-" style doubling).
+    expect((html.match(/X-/g) ?? []).length).toBeLessThanOrEqual(1);
+    expect(warnings.some((w) => w.code === "macro-cycle")).toBe(true);
+  });
+
+  it("still expands a \\let alias to a protected command (hyperref \\label)", () => {
+    // \label is protected, so \let\oldlabel\label is NOT a real cycle — the
+    // alias must keep expanding (regression guard for the cycle detector).
+    const { html, warnings } = convert(
+      "\\documentclass{article}\\let\\oldlabel\\label" +
+        "\\renewcommand{\\label}[1]{\\oldlabel{#1}}" +
+        "\\begin{document}\\section{Setup}\\label{sec:s}As in \\cref{sec:s}." +
+        "\\end{document}",
+    );
+    expect(html).toContain("section 1</a>");
+    expect(html).not.toContain("oldlabel");
+    expect(warnings.filter((w) => w.code === "macro-cycle")).toEqual([]);
+  });
+
+  it("unwraps a \\multirow nested inside a \\multicolumn cell", () => {
+    const { html } = convert(
+      DOC(
+        [
+          "\\begin{tabular}{cc}",
+          "\\multicolumn{2}{c}{\\multirow{2}{*}{Header}} \\\\",
+          "a & b \\\\",
+          "\\end{tabular}",
+        ].join("\n"),
+      ),
+    );
+    // The nested \multirow content shows as the cell text, args don't leak.
+    expect(html).toContain(">Header</td>");
+    expect(html).not.toContain("2*Header");
+    expect(html).toContain('colspan="2"');
+  });
+
+  it("warns when counter-manipulation commands are stripped", () => {
+    const { html, warnings } = convert(
+      DOC(
+        "\\setcounter{foo}{3}\\addtocounter{foo}{1}\\stepcounter{foo}" +
+          "\\refstepcounter{foo}\\numberwithin{equation}{section} Kept text.",
+      ),
+    );
+    const stripped = warnings
+      .filter((w) => w.code === "counter-manipulation")
+      .map((w) => w.detail);
+    for (const name of [
+      "setcounter",
+      "addtocounter",
+      "stepcounter",
+      "refstepcounter",
+      "numberwithin",
+    ]) {
+      expect(stripped.some((d) => d.includes(`\\${name}`))).toBe(true);
+    }
+    // Strip behavior is unchanged: no counter names leak, prose survives.
+    expect(html).not.toContain("foo");
+    expect(html).toContain("Kept text.");
+  });
 });
 
 // Real-paper regression: flattened source of "Attention Is All You Need",
@@ -794,16 +921,7 @@ describe("real paper: 1706.03762v7 (fixture)", () => {
   });
 });
 
-// Full-tarball path (fetch classification aside): runs only where the
-// downloaded e-print exists.
-const REAL_PAPER = "/Users/akallu/.claude/jobs/c514fbda/tmp/1706.03762v7.bin";
-
-describe.skipIf(!existsSync(REAL_PAPER))("real paper: 1706.03762v7 (tarball)", () => {
-  it("extracts and finds the main file", () => {
-    const tar = gunzipSync(readFileSync(REAL_PAPER));
-    const { files: extracted } = extractTarball(new Uint8Array(tar));
-    const main = resolveMainTex(extracted);
-    expect(main?.mainFile).toBe("ms.tex");
-    expect(main!.texSource).toContain("\\begin{thebibliography}");
-  });
-});
+// The full-tarball extract → resolveMainTex path is covered by
+// extract.test.ts and main-tex.test.ts with committed synthetic fixtures.
+// (A machine-specific `describe.skipIf` on a vanished agent-temp tarball used
+// to live here and ran nowhere.)

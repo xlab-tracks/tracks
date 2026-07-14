@@ -60,7 +60,10 @@ export function RaceDemo() {
         </label>
         <input
           type="range"
-          min={0}
+          // Start at 1: at k=0 there are no decisive problems, so the model
+          // returns a degenerate raceFactor of 0, which would render a
+          // misleading "race odds 0%" against this demo's k-independent lesson.
+          min={1}
           max={K_MAX}
           step={1}
           value={k}

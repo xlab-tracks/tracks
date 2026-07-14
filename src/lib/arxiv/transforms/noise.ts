@@ -1,7 +1,21 @@
 import type * as Ast from "@unified-latex/unified-latex-types";
 import { attachMacroArgs } from "@unified-latex/unified-latex-util-arguments";
 import { match } from "@unified-latex/unified-latex-util-match";
+import type { WarningCollector } from "../warnings";
 import { walkNodeArrays } from "./tex-utils";
+
+/**
+ * Counter-manipulation commands we strip: their effect on displayed numbers
+ * can't be tracked statically, so removing them silently would let our numbers
+ * diverge from the PDF. Strip anyway, but surface a warning naming each one.
+ */
+const COUNTER_MANIPULATION = new Set([
+  "numberwithin",
+  "setcounter",
+  "addtocounter",
+  "stepcounter",
+  "refstepcounter",
+]);
 
 /**
  * Layout-only macros that carry no meaning in HTML. Removing them keeps the
@@ -157,7 +171,7 @@ const BOOKTABS_STRIP: Record<string, string> = {
   addlinespace: "o",
 };
 
-export function stripNoise(tree: Ast.Root): void {
+export function stripNoise(tree: Ast.Root, warnings: WarningCollector): void {
   attachMacroArgs(tree, {
     ...Object.fromEntries(
       Object.entries(STRIP_WITH_SIGNATURE)
@@ -179,6 +193,12 @@ export function stripNoise(tree: Ast.Root): void {
       const name = node.content;
 
       if (name in STRIP_WITH_SIGNATURE || STRIP_BARE.has(name) || name in BOOKTABS_STRIP) {
+        if (COUNTER_MANIPULATION.has(name)) {
+          warnings.add(
+            "counter-manipulation",
+            `\\${name} stripped — displayed numbers may diverge from the PDF`,
+          );
+        }
         nodes.splice(i, 1);
       } else if (GLUE_MACROS.has(name)) {
         nodes.splice(i, 1 + glueRunLength(nodes, i + 1));

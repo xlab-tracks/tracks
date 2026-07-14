@@ -23,29 +23,44 @@ function displayName(user: WorkosUserShape): string | null {
   return name || null;
 }
 
+const USER_SELECT = {
+  id: true,
+  workosUserId: true,
+  email: true,
+  name: true,
+  imageUrl: true,
+} as const;
+
 // WorkOS owns identity/sessions; mirror the signed-in user into our DB so app
-// data (progress, submissions, classrooms) can reference a local ID.
+// data (progress, submissions, classrooms) can reference a local ID. Read
+// first and only write when the row is missing or a mirrored field actually
+// changed — this runs on every authenticated request, and on Workers each
+// upsert is a DB round-trip through Hyperdrive (caching disabled).
 async function upsertUser(workosUser: WorkosUserShape): Promise<AppUser> {
+  const email = workosUser.email;
+  const name = displayName(workosUser);
+  const imageUrl = workosUser.profilePictureUrl ?? null;
+
+  const existing = await prisma.user.findUnique({
+    where: { workosUserId: workosUser.id },
+    select: USER_SELECT,
+  });
+  if (
+    existing &&
+    existing.email === email &&
+    existing.name === name &&
+    existing.imageUrl === imageUrl
+  ) {
+    return existing;
+  }
+
+  // Missing row or drifted fields: upsert keeps the rare concurrent
+  // first-insert safe via the workosUserId unique constraint.
   return prisma.user.upsert({
     where: { workosUserId: workosUser.id },
-    create: {
-      workosUserId: workosUser.id,
-      email: workosUser.email,
-      name: displayName(workosUser),
-      imageUrl: workosUser.profilePictureUrl ?? null,
-    },
-    update: {
-      email: workosUser.email,
-      name: displayName(workosUser),
-      imageUrl: workosUser.profilePictureUrl ?? null,
-    },
-    select: {
-      id: true,
-      workosUserId: true,
-      email: true,
-      name: true,
-      imageUrl: true,
-    },
+    create: { workosUserId: workosUser.id, email, name, imageUrl },
+    update: { email, name, imageUrl },
+    select: USER_SELECT,
   });
 }
 

@@ -137,7 +137,8 @@ const LONGTABLE_MARKERS = new Set([
   "endfoot",
   "endlastfoot",
   "kill",
-  "tabularnewline",
+  // NB: \tabularnewline is NOT dropped here — it's a row terminator that
+  // buildTable's parseAlignEnvironment must see (dropping it fuses rows).
   "pagebreak",
   "nopagebreak",
 ]);
@@ -228,10 +229,11 @@ function buildTable(
   let rows: { cells: Ast.Node[][] }[];
   let colStyles: ColumnStyle[];
   try {
-    // Row separators are `\\`/`\cr` only. The default list also treats
-    // `\hline` as a separator and CONSUMES it — which would discard the rule
-    // entirely; keep it as cell content so we can place a border there.
-    rows = parseAlignEnvironment(env.content, ["&"], ["\\", "cr"]);
+    // Row separators are `\\`/`\cr`/`\tabularnewline` (LyX papers emit the
+    // last). The default list also treats `\hline` as a separator and
+    // CONSUMES it — which would discard the rule entirely; keep it as cell
+    // content so we can place a border there.
+    rows = parseAlignEnvironment(env.content, ["&"], ["\\", "cr", "tabularnewline"]);
     colStyles = parseColumnSpec(columnSpecArg(env));
   } catch {
     warnings.add("tables", "table could not be parsed");
@@ -339,7 +341,11 @@ function interpretCell(
   if (first && match.anyMacro(first) && first.content === "multicolumn") {
     const args = getArgsContent(first);
     const colspan = Math.max(1, parseInt(printRaw(args[0] ?? []).trim(), 10) || 1);
-    const inner = extractCellDecorations(args[2] ?? [], colors);
+    // The content arg may itself hold a \multirow (e.g.
+    // `\multicolumn{2}{c}{\multirow{2}{*}{Header}}`) — recurse so it's
+    // unwrapped to its content instead of leaking "2*Header" as text. The
+    // multirow's own colspan (always 1) is ignored; multicolumn wins.
+    const inner = interpretCell(args[2] ?? [], warnings, colors);
     // The 2nd arg is a one-column spec (e.g. `|c|`) carrying align + dividers.
     return {
       colspan,

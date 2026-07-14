@@ -82,7 +82,7 @@ export function convertLatexToHtml(
     tree,
     scanTheoremDefs(tree, warnings),
   );
-  stripNoise(tree);
+  stripNoise(tree, warnings);
   applyItemLabels(tree);
   const numbering = numberDocument(tree, theoremDefs, warnings);
   processCitations(tree, warnings);

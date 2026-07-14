@@ -17,6 +17,7 @@ import {
   sanitizeAllocationScenario,
   sanitizeArgueRevealConstruction,
   sanitizeArgueRevealItem,
+  sanitizeFlowchartAttempt,
   type AllocationScenarioEntry,
   type ArgueRevealConstructionEntry,
   type ArgueRevealItemEntry,
@@ -88,35 +89,6 @@ export async function gradeExercise(
 /** Shape persisted in `Submission.responseJson` for flowchart exercises. */
 interface FlowchartResponseJson {
   stages: Record<string, { attempt: FlowchartNode[]; correct: boolean }>;
-}
-
-// Reachable by direct POST, so re-validate the wire payload structurally
-// (known block ids, sane size) before grading or persisting it.
-function sanitizeFlowchartAttempt(
-  value: unknown,
-  validBlockIds: Set<string>,
-  depth = 0,
-): FlowchartNode[] | null {
-  if (!Array.isArray(value) || value.length > 20 || depth > 8) return null;
-  const nodes: FlowchartNode[] = [];
-  for (const item of value) {
-    if (typeof item !== "object" || item === null) return null;
-    const { blockId, branches } = item as Record<string, unknown>;
-    if (typeof blockId !== "string" || !validBlockIds.has(blockId)) return null;
-    const node: FlowchartNode = { blockId };
-    if (branches !== undefined) {
-      if (!Array.isArray(branches) || branches.length > 5) return null;
-      const arms: FlowchartNode[][] = [];
-      for (const arm of branches) {
-        const sanitized = sanitizeFlowchartAttempt(arm, validBlockIds, depth + 1);
-        if (!sanitized) return null;
-        arms.push(sanitized);
-      }
-      node.branches = arms;
-    }
-    nodes.push(node);
-  }
-  return nodes;
 }
 
 /**

@@ -18,7 +18,7 @@ export default async function NewClassroomPage() {
       />
       <h1 className="text-3xl font-semibold tracking-tight">Create a classroom</h1>
       <p className="text-muted-foreground mt-2">
-        You'll be the instructor. Share the join code with your students.
+        You&apos;ll be the instructor. Share the join code with your students.
       </p>
       <Card className="shadow-soft mt-6">
         <CardContent className="pt-6">

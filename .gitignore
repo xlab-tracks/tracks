@@ -43,6 +43,7 @@ next-env.d.ts
 
 # cloudflare / opennext
 /.open-next/
+/.wrangler/
 .dev.vars*
 cloudflare-env.d.ts
 

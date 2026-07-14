@@ -46,7 +46,10 @@ export function buildPaperNav(
     const section = sectionIndexForAnchor(toc, activity.after.anchor);
     return {
       activity,
-      beforeIndex: section === -1 ? Math.min(1, toc.length) : section + 1,
+      // A preamble anchor (before the first toc entry) renders in the
+      // preamble; place its nav entry before toc[0], matching the reader's
+      // slice-key -1 (not after the first section).
+      beforeIndex: section === -1 ? 0 : section + 1,
       group: 0,
       sort: [anchorNum(activity.after.anchor), activity.after.s ?? Number.MAX_SAFE_INTEGER, configIndex],
       level: section === -1 ? 2 : toc[section].level,

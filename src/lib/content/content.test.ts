@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it, expect } from "vitest";
-import { lessons } from "@/content/curriculum.data";
+import { lessons, modules } from "@/content/curriculum.data";
 import { exercises } from "@/content/exercises.data";
+import { assessments } from "@/content/assessments.data";
 import { ARGUE_REVEAL_DEFAULTS } from "@/lib/content/types";
 import { featuredExercises } from "@/app/exercises/featured";
 import {
@@ -18,6 +19,7 @@ import {
   itemIdOf,
   itemSlugOf,
   papers,
+  resources,
   tracks,
 } from "@/lib/content";
 import { parseArxivId } from "@/lib/arxiv/id";
@@ -81,6 +83,38 @@ describe("content integrity", () => {
         }
       }
     }
+  });
+
+  // The content indexes are `new Map(xs.map(x => [x.id, x]))`, so a duplicate
+  // id silently shadows (last wins) — e.g. a duplicate exercise id would swap
+  // the answer key gradeExercise reads. Guard every id/slug space explicitly.
+  it("ids and slugs are unique across every content collection", () => {
+    const dupId = (xs: { id: string }[]) => {
+      const ids = xs.map((x) => x.id);
+      expect(new Set(ids).size, `duplicate id in ${JSON.stringify(ids)}`).toBe(
+        ids.length,
+      );
+    };
+    dupId(tracks);
+    dupId(modules);
+    dupId(exercises);
+    dupId(assessments);
+    dupId(resources);
+
+    const trackSlugs = tracks.map((t) => t.slug);
+    expect(new Set(trackSlugs).size).toBe(trackSlugs.length);
+
+    // Module slugs must be unique within their own track (they form the URL).
+    for (const track of tracks) {
+      const slugs = getModulesForTrack(track.id).map((m) => m.slug);
+      expect(new Set(slugs).size, `duplicate module slug in ${track.id}`).toBe(
+        slugs.length,
+      );
+    }
+
+    // At most one assessment per module.
+    const assessmentModuleIds = assessments.map((a) => a.moduleId);
+    expect(new Set(assessmentModuleIds).size).toBe(assessmentModuleIds.length);
   });
 });
 
@@ -339,9 +373,10 @@ describe("paper integrity", () => {
     }
   });
 
-  it("papers with edits have ready, current-version artifacts", () => {
+  it("every module-referenced paper has a ready, current-version artifact", () => {
+    // Not just edited papers: any paper in a module renders PaperUnavailable
+    // at runtime if its artifact is missing or stale, and CI should catch that.
     for (const paper of papers) {
-      if (!paper.edits?.length) continue;
       const artifact = readArtifact(paper.source.arxivId);
       expect(
         artifact.state,

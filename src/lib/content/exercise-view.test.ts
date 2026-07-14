@@ -1,12 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
   ALLOCATION_MAX_REASONING_CHARS,
+  WRITING_MAX_SECTION_CHARS,
   flowchartEquals,
   gradeChoice,
   gradeFlowchartStage,
   sanitizeAllocationScenario,
   sanitizeArgueRevealConstruction,
   sanitizeArgueRevealItem,
+  sanitizeFlowchartAttempt,
+  sanitizeWritingValues,
   toPublicChoice,
   toPublicFlowchart,
 } from "@/lib/content/exercise-view";
@@ -66,9 +69,85 @@ describe("gradeChoice", () => {
     expect(gradeChoice(ms, ["a", "b", "c"])).toBe(false);
   });
 
+  it("does not let duplicated ids satisfy a multi-select", () => {
+    // A direct POST of ["a","a"] must not pass as the set {"a","c"}.
+    expect(gradeChoice(ms, ["a", "a"])).toBe(false);
+    expect(gradeChoice(ms, ["a", "c", "c"])).toBe(true);
+  });
+
   it("grades true/false", () => {
     expect(gradeChoice(tf, ["false"])).toBe(true);
     expect(gradeChoice(tf, ["true"])).toBe(false);
+  });
+});
+
+describe("sanitizeFlowchartAttempt", () => {
+  const valid = new Set(["start", "check", "escalate"]);
+
+  it("accepts a bounded, known-id tree and preserves branch arms", () => {
+    const attempt = [
+      { blockId: "start" },
+      { blockId: "check", branches: [[{ blockId: "escalate" }], []] },
+    ];
+    expect(sanitizeFlowchartAttempt(attempt, valid)).toEqual(attempt);
+  });
+
+  it("rejects unknown block ids", () => {
+    expect(sanitizeFlowchartAttempt([{ blockId: "nope" }], valid)).toBeNull();
+  });
+
+  it("rejects non-arrays, oversized breadth, and excess depth", () => {
+    expect(sanitizeFlowchartAttempt({ blockId: "start" }, valid)).toBeNull();
+    expect(
+      sanitizeFlowchartAttempt(
+        Array.from({ length: 21 }, () => ({ blockId: "start" })),
+        valid,
+      ),
+    ).toBeNull();
+    // 9 levels of nesting exceeds the depth-8 cap.
+    let deep: unknown = [{ blockId: "start" }];
+    for (let i = 0; i < 9; i++) deep = [{ blockId: "start", branches: [deep] }];
+    expect(sanitizeFlowchartAttempt(deep, valid)).toBeNull();
+  });
+
+  it("rejects malformed nodes and over-wide branch sets", () => {
+    expect(sanitizeFlowchartAttempt([null], valid)).toBeNull();
+    expect(
+      sanitizeFlowchartAttempt(
+        [{ blockId: "check", branches: Array.from({ length: 6 }, () => []) }],
+        valid,
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("sanitizeWritingValues", () => {
+  const allowed = new Set(["intro", "body"]);
+
+  it("accepts a partial map of known sections", () => {
+    expect(sanitizeWritingValues({ intro: "hello" }, allowed)).toEqual({
+      intro: "hello",
+    });
+    expect(sanitizeWritingValues({}, allowed)).toEqual({});
+  });
+
+  it("rejects unknown keys, non-strings, arrays, and oversized text", () => {
+    expect(sanitizeWritingValues({ evil: "x" }, allowed)).toBeNull();
+    expect(sanitizeWritingValues({ intro: 42 }, allowed)).toBeNull();
+    expect(sanitizeWritingValues({ intro: { a: 1 } }, allowed)).toBeNull();
+    expect(sanitizeWritingValues([], allowed)).toBeNull();
+    expect(sanitizeWritingValues(null, allowed)).toBeNull();
+    expect(
+      sanitizeWritingValues(
+        { body: "y".repeat(WRITING_MAX_SECTION_CHARS + 1) },
+        allowed,
+      ),
+    ).toBeNull();
+  });
+
+  it("rejects text that cannot round-trip through jsonb", () => {
+    expect(sanitizeWritingValues({ intro: "ok" + String.fromCharCode(0) }, allowed)).toBeNull();
+    expect(sanitizeWritingValues({ intro: String.fromCharCode(0xd800) }, allowed)).toBeNull();
   });
 });
 

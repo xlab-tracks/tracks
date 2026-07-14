@@ -24,14 +24,12 @@ const MAX_SVG_BYTES = 2_000_000;
 const MAX_EMBEDDED_FONT_BYTES = 800_000;
 /**
  * Compile budgets. A spinning TeX loop is hard-TERMINATED per diagram; the
- * whole-paper budget leaves the rest as placeholders. Netlify's synchronous
- * function ceiling is tight, so budgets shrink there — the warm script (or
- * any later request, since raw bytes are already persisted) retries with
- * whatever budget remains. Real published diagrams compile in ~1–3s.
+ * whole-paper budget leaves the rest as placeholders. The converter runs only
+ * at authoring time (`npm run arxiv:build`, local tsx), so these are generous.
+ * Real published diagrams compile in ~1–3s.
  */
-const ON_NETLIFY = !!process.env.NETLIFY;
-const DIAGRAM_TIMEOUT_MS = ON_NETLIFY ? 6_000 : 25_000;
-const TOTAL_TIKZ_BUDGET_MS = ON_NETLIFY ? 18_000 : 90_000;
+const DIAGRAM_TIMEOUT_MS = 25_000;
+const TOTAL_TIKZ_BUDGET_MS = 90_000;
 
 /**
  * Locate node-tikzjax on disk WITHOUT module resolution: bundlers rewrite

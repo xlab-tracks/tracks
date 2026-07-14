@@ -41,7 +41,11 @@ function densityPath(mu: number, sd: number, yMax: number): string {
 }
 
 function DistPanel({ title, attackMu, attackSd, tpr }: { title: string; attackMu: number; attackSd: number; tpr: number }) {
-  const yMax = 0.9;
+  // Scale the y-axis to the taller of the two curves (a normal's peak is
+  // 1/(sd·√2π)) plus headroom, so a narrow attack density (small sd) doesn't
+  // clip flat against a hardcoded ceiling.
+  const peak = (sd: number) => 1 / (sd * Math.sqrt(2 * Math.PI));
+  const yMax = Math.max(0.45, peak(1), peak(attackSd)) * 1.05;
   const xPx = (x: number) => M.left + (x / 10) * PW;
   const innocent = densityPath(0, 1, yMax);
   const attack = densityPath(attackMu, attackSd, yMax);

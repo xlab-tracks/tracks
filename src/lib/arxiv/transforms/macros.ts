@@ -130,10 +130,19 @@ export function expandUserMacros(
   warnings: WarningCollector,
 ): void {
   const scanned = collectDefAndLetSpecs(tree, warnings);
+  // Names involved in a definition cycle, e.g. the classic aliasing idiom
+  // `\let\old\cmd` + `\renewcommand\cmd{…\old…}`: \old→\cmd→\old. Left in,
+  // the bounded expansion rounds partially unroll the cycle and DUPLICATE
+  // its content. Skip these names entirely (with a warning) instead.
+  const cyclic = findDefinitionCycles([...listNewcommands(tree), ...scanned]);
+  for (const name of cyclic) {
+    warnings.add("macro-cycle", `\\${name} forms a definition cycle`);
+  }
 
   for (let round = 0; round < EXPANSION_ROUNDS; round++) {
     const candidates = [...listNewcommands(tree), ...scanned].filter((c) => {
       if (PROTECTED_FROM_EXPANSION.has(c.name)) return false;
+      if (cyclic.has(c.name)) return false;
       if (hasConditionalBody(c.body)) {
         warnings.add("macro-conditional", `\\${c.name} uses TeX conditionals`);
         return false;
@@ -172,6 +181,77 @@ function hasConditionalBody(body: Ast.Node[]): boolean {
   });
 }
 
+/** Macro names referenced anywhere in a definition body. */
+function referencedMacroNames(body: Ast.Node[], into: Set<string>): void {
+  for (const node of body) {
+    if (match.anyMacro(node)) into.add(node.content);
+    if ("content" in node && Array.isArray(node.content)) {
+      referencedMacroNames(node.content as Ast.Node[], into);
+    }
+    if ("args" in node && Array.isArray((node as Ast.Macro).args)) {
+      for (const arg of (node as Ast.Macro).args ?? []) {
+        referencedMacroNames(arg.content, into);
+      }
+    }
+  }
+}
+
+/**
+ * Names caught in a definition cycle among EXPANDABLE user macros. Deduped by
+ * name (last definition wins, matching the expansion loop) so only each name's
+ * effective body is considered; then a name is "cyclic" if it can reach itself
+ * by following body references that are themselves expandable defined macros.
+ * Protected names (\label, \cite, …) never expand, so they terminate a chain
+ * and can't sustain a cycle — the `\let\oldlabel\label` +
+ * `\renewcommand\label{…\oldlabel…}` idiom is safe and left alone. The
+ * genuinely cyclic `\let\old\cmd` + `\renewcommand\cmd{…\old…}` yields
+ * \old ↔ \cmd and is dropped.
+ */
+function findDefinitionCycles(specs: MacroSpec[]): Set<string> {
+  const byName = new Map(
+    specs
+      .filter((s) => !PROTECTED_FROM_EXPANSION.has(s.name))
+      .map((s) => [s.name, s]),
+  );
+  const edges = new Map<string, string[]>();
+  for (const [name, spec] of byName) {
+    const refs = new Set<string>();
+    referencedMacroNames(spec.body, refs);
+    edges.set(
+      name,
+      [...refs].filter((r) => r !== name && byName.has(r)),
+    );
+  }
+
+  const cyclic = new Set<string>();
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color = new Map<string, number>();
+  const stack: string[] = [];
+
+  const visit = (name: string): void => {
+    color.set(name, GRAY);
+    stack.push(name);
+    for (const next of edges.get(name) ?? []) {
+      const c = color.get(next) ?? WHITE;
+      if (c === GRAY) {
+        // Back edge — every node from `next` up the stack is on the cycle.
+        for (let k = stack.lastIndexOf(next); k >= 0 && k < stack.length; k++) {
+          cyclic.add(stack[k]);
+        }
+      } else if (c === WHITE) {
+        visit(next);
+      }
+    }
+    stack.pop();
+    color.set(name, BLACK);
+  };
+
+  for (const name of byName.keys()) {
+    if ((color.get(name) ?? WHITE) === WHITE) visit(name);
+  }
+  return cyclic;
+}
+
 /**
  * Scan for `\def\name<params>{body}` and `\let\alias\target`, returning
  * newcommand-style specs and REMOVING the definition tokens from the tree.
@@ -186,6 +266,12 @@ function collectDefAndLetSpecs(
   const specs: MacroSpec[] = [];
 
   walkNodeArrays(tree, (nodes) => {
+    // We scan each array in REVERSE (so in-place splices don't shift the
+    // indices ahead of the cursor), which means specs are found in reverse
+    // document order. Buffer per-array and append in document order so a
+    // later \def/\let of the same name wins the Map dedupe (TeX semantics:
+    // "last definition wins").
+    const local: MacroSpec[] = [];
     for (let i = nodes.length - 1; i >= 0; i--) {
       const node = nodes[i];
       if (!match.anyMacro(node)) continue;
@@ -237,7 +323,7 @@ function collectDefAndLetSpecs(
             `\\def\\${name} uses delimited parameters`,
           );
         } else {
-          specs.push({
+          local.push({
             name,
             signature: Array(params).fill("m").join(" "),
             body: (nodes[bodyIndex] as Ast.Group).content,
@@ -262,9 +348,12 @@ function collectDefAndLetSpecs(
         if (targetAt === null || !match.anyMacro(nodes[targetAt])) continue;
         const alias = (nodes[aliasAt] as Ast.Macro).content;
         const target = nodes[targetAt] as Ast.Macro;
-        specs.push({
+        local.push({
           name: alias,
           signature: "",
+          // Reference the target BY NAME here; cycles introduced by the
+          // classic `\let\old\cmd` + `\renewcommand\cmd{…\old…}` idiom are
+          // broken later in expandUserMacros (see dropDefinitionCycles).
           body: [{ type: "macro", content: target.content }],
         });
         // The parser may have already attached following prose as the
@@ -276,6 +365,9 @@ function collectDefAndLetSpecs(
         nodes.splice(i, targetAt - i + 1, ...stolen);
       }
     }
+    // Appended in document order (buffer was filled in reverse) so the LAST
+    // definition of a name survives the by-name Map dedupe, like TeX.
+    for (let k = local.length - 1; k >= 0; k--) specs.push(local[k]);
   });
   return specs;
 }

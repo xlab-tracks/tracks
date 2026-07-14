@@ -35,27 +35,36 @@ export default async function TrackLayout({
   if (!outline) notFound();
 
   const user = await getCurrentUser();
-  const completedContentIds = user
-    ? await getCompletedLessonIds(
+  // The lesson/paper content itself is fully static; only the progress
+  // checkmarks and prerequisite locks need the DB. If that read fails, degrade
+  // to the signed-out view (no checkmarks, nothing locked) rather than crash a
+  // page that would otherwise render entirely from the static content graph.
+  let completedContentIds: string[] = [];
+  let lockedModuleSlugs: string[] = [];
+  if (user) {
+    try {
+      completedContentIds = await getCompletedLessonIds(
         user.id,
         getTrackProgressContentIds(outline.track.id),
-      )
-    : [];
-
-  let lockedModuleSlugs: string[] = [];
-  if (user && outline.track.prerequisiteEnforcement === "hard") {
-    const results = await Promise.all(
-      outline.modules.map(async ({ module }) => {
-        const statuses = await getPrerequisiteStatus(user.id, module.id);
-        return isAccessLocked(
-          outline.track.prerequisiteEnforcement,
-          statuses.map((s) => s.completed),
-        )
-          ? module.slug
-          : null;
-      }),
-    );
-    lockedModuleSlugs = results.filter((s): s is string => s !== null);
+      );
+      if (outline.track.prerequisiteEnforcement === "hard") {
+        const results = await Promise.all(
+          outline.modules.map(async ({ module }) => {
+            const statuses = await getPrerequisiteStatus(user.id, module.id);
+            return isAccessLocked(
+              outline.track.prerequisiteEnforcement,
+              statuses.map((s) => s.completed),
+            )
+              ? module.slug
+              : null;
+          }),
+        );
+        lockedModuleSlugs = results.filter((s): s is string => s !== null);
+      }
+    } catch {
+      completedContentIds = [];
+      lockedModuleSlugs = [];
+    }
   }
 
   // Per-item section navigation for the sidebar: papers get their toc plus
@@ -91,7 +100,7 @@ export default async function TrackLayout({
         lockedModuleSlugs={lockedModuleSlugs}
         itemNavs={itemNavs}
       />
-      <div className="min-w-0 flex-1">{children}</div>
+      <main className="min-w-0 flex-1">{children}</main>
     </div>
   );
 }

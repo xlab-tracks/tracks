@@ -42,7 +42,7 @@ export default async function ClassroomsPage() {
 
       {memberships.length === 0 ? (
         <p className="text-muted-foreground mt-8">
-          You're not in any classrooms yet. Create one as an instructor, or join
+          You&apos;re not in any classrooms yet. Create one as an instructor, or join
           with a code.
         </p>
       ) : (

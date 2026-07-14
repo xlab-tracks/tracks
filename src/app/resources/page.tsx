@@ -12,7 +12,7 @@ export default function ResourcesPage() {
       <h1 className="text-3xl font-semibold tracking-tight">Resource hub</h1>
       <p className="text-muted-foreground mt-2 max-w-2xl">
         One curated place for what to read to get good at AI safety — including
-        the background we deliberately don't teach. The whole point is to
+        the background we deliberately don&apos;t teach. The whole point is to
         de-centralize the messy onboarding pipeline.
       </p>
       <ResourceHub resources={resources} />

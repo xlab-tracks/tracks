@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CheckCircle2, Circle, FileText, ListTree, Lock } from "lucide-react";
@@ -82,19 +82,24 @@ function SidebarNav({
         ? [outline.modules[0].module.slug]
         : [],
   );
-  useEffect(() => {
-    if (activeModuleSlug) {
-      setOpen((prev) =>
-        prev.includes(activeModuleSlug) ? prev : [...prev, activeModuleSlug],
-      );
+  // Ensure the navigated-to module's accordion is open — adjust during render
+  // when the active slug changes (React's alternative to a state-syncing effect).
+  const [prevActive, setPrevActive] = useState(activeModuleSlug);
+  if (activeModuleSlug !== prevActive) {
+    setPrevActive(activeModuleSlug);
+    if (activeModuleSlug && !open.includes(activeModuleSlug)) {
+      setOpen([...open, activeModuleSlug]);
     }
-  }, [activeModuleSlug]);
+  }
 
   return (
     <div className="flex h-full flex-col">
       {/* Module navigation — scrolls on its own so the paper panel below
           keeps its share of the viewport regardless of how long this gets. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <nav
+        aria-label={`${outline.track.title} contents`}
+        className="min-h-0 flex-1 overflow-y-auto"
+      >
         <div className="px-3 py-4">
           <p className="text-muted-foreground px-2 text-xs font-medium tracking-wide uppercase">
             {outline.track.shortTitle ?? "Track"}
@@ -124,10 +129,13 @@ function SidebarNav({
                 <AccordionTrigger className="hover:bg-muted [&[data-state=open]]:bg-muted/50 rounded-lg px-2 py-2 text-sm hover:no-underline">
                   <span className="flex items-center gap-2 text-left">
                     {isLocked && (
-                      <Lock
-                        className="text-muted-foreground size-3.5 shrink-0"
-                        aria-hidden
-                      />
+                      <>
+                        <Lock
+                          className="text-muted-foreground size-3.5 shrink-0"
+                          aria-hidden
+                        />
+                        <span className="sr-only">Locked: </span>
+                      </>
                     )}
                     <span className="line-clamp-2">
                       {module.order}. {module.title}
@@ -164,7 +172,7 @@ function SidebarNav({
             );
           })}
         </Accordion>
-      </div>
+      </nav>
 
       {/* Docked section navigation for the paper or sectioned lesson being
           read: always visible on its page, with its own scroll + scroll-spy
@@ -226,7 +234,12 @@ function SidebarItemRow({
   const active = pathname === href;
   return (
     <li>
-      <Link href={href} onClick={onNavigate} className={navItemClass(active)}>
+      <Link
+        href={href}
+        onClick={onNavigate}
+        aria-current={active ? "page" : undefined}
+        className={navItemClass(active)}
+      >
         {done ? (
           <CheckCircle2
             className="text-foreground mt-0.5 size-3.5 shrink-0"
@@ -237,6 +250,7 @@ function SidebarItemRow({
         )}
         <span className="line-clamp-2">
           {item.kind === "lesson" ? item.lesson.title : item.paper.title}
+          {done && <span className="sr-only"> (completed)</span>}
         </span>
         {item.kind === "paper" && (
           <FileText

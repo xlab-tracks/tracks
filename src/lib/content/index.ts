@@ -3,6 +3,7 @@ import { papers } from "@/content/papers.data";
 import { exercises } from "@/content/exercises.data";
 import { assessments } from "@/content/assessments.data";
 import { resources } from "@/content/resources.data";
+import { isWritingExercise } from "./types";
 import type {
   Assessment,
   Exercise,
@@ -48,35 +49,43 @@ export type {
 
 // --- Basic lookups -------------------------------------------------------
 
-export function getTrackBySlug(slug: string): Track | undefined {
-  return trackBySlug.get(slug);
-}
 export function getTrackById(id: string): Track | undefined {
   return trackById.get(id);
-}
-export function getModuleById(id: string): Module | undefined {
-  return moduleById.get(id);
 }
 export function getLessonById(id: string): Lesson | undefined {
   return lessonById.get(id);
 }
-export function getPaperById(id: string): Paper | undefined {
-  return paperById.get(id);
-}
 export function getExerciseById(id: string): Exercise | undefined {
   return exerciseById.get(id);
-}
-export function getAssessmentById(id: string): Assessment | undefined {
-  return assessmentById.get(id);
 }
 export function getAssessmentForModule(moduleId: string): Assessment | undefined {
   return assessmentByModuleId.get(moduleId);
 }
 
-export function getExercisesByIds(ids: string[]): Exercise[] {
-  return ids
-    .map((id) => exerciseById.get(id))
-    .filter((e): e is Exercise => Boolean(e));
+/**
+ * Resolves a writing submission target (assessment or open-ended exercise) to
+ * its allowed section ids and server-derived format. Returns undefined for any
+ * content id that is not a real writing deliverable of the given kind — so the
+ * submission actions can reject direct-POST payloads with bogus ids the same
+ * way the choice/allocation actions do. A writing exercise with no explicit
+ * sections uses the single synthetic "response" section (see writing-exercise.tsx).
+ */
+export function getWritingTarget(
+  contentId: string,
+  kind: "assessment" | "exercise",
+): { sectionIds: string[]; format: string } | undefined {
+  if (kind === "assessment") {
+    const assessment = assessmentById.get(contentId);
+    if (!assessment) return undefined;
+    return {
+      sectionIds: assessment.sections.map((s) => s.id),
+      format: assessment.format,
+    };
+  }
+  const exercise = exerciseById.get(contentId);
+  if (!exercise || !isWritingExercise(exercise)) return undefined;
+  const sectionIds = (exercise.sections ?? [{ id: "response" }]).map((s) => s.id);
+  return { sectionIds, format: exercise.format };
 }
 
 // --- Module items (lessons and papers, interleaved) ----------------------
@@ -117,13 +126,6 @@ export function getItemsForModule(moduleId: string): ModuleItem[] {
   return mod.itemIds
     .map(resolveItem)
     .filter((item): item is ModuleItem => Boolean(item));
-}
-
-/** Only the module's standalone lessons, in item order. */
-export function getLessonsForModule(moduleId: string): Lesson[] {
-  return getItemsForModule(moduleId)
-    .filter((item) => item.kind === "lesson")
-    .map((item) => item.lesson);
 }
 
 export function getTrackForModule(moduleId: string): Track | undefined {

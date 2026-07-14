@@ -425,29 +425,6 @@ export type Exercise =
   | ArgueRevealExercise
   | WritingExercise;
 
-export const CLOSED_EXERCISE_TYPES: ClosedExerciseType[] = [
-  "multiple-choice",
-  "multi-select",
-  "true-false",
-  "understanding-check",
-  "flowchart",
-  "tap-reveal",
-  "allocation",
-  "argue-reveal",
-];
-
-export function isClosedExercise(
-  exercise: Exercise,
-): exercise is
-  | ChoiceExercise
-  | UnderstandingCheckExercise
-  | FlowchartExercise
-  | TapRevealExercise
-  | AllocationExercise
-  | ArgueRevealExercise {
-  return (CLOSED_EXERCISE_TYPES as string[]).includes(exercise.type);
-}
-
 export function isChoiceExercise(exercise: Exercise): exercise is ChoiceExercise {
   return (
     exercise.type === "multiple-choice" ||

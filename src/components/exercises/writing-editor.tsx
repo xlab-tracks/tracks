@@ -47,9 +47,16 @@ export function WritingEditor({
   const [pending, startTransition] = useTransition();
   const skipFirstSave = useRef(true);
   // Keep the latest save handler in a ref so a changed bound-action identity
-  // doesn't re-trigger the debounced autosave.
+  // doesn't re-trigger the debounced autosave. Written in an effect (not during
+  // render) — the ref is only read later, inside the debounced setTimeout.
   const saveDraftRef = useRef(onSaveDraft);
-  saveDraftRef.current = onSaveDraft;
+  useEffect(() => {
+    saveDraftRef.current = onSaveDraft;
+  });
+  // Monotonic save id: only the newest in-flight save may report "saved", so
+  // an earlier save that resolves late can't overwrite a newer one's status
+  // (the persisted rows still race, but the label stops lying).
+  const saveSeq = useRef(0);
 
   const totalWords = useMemo(
     () => sections.reduce((sum, s) => sum + countWords(values[s.id] ?? ""), 0),
@@ -64,8 +71,10 @@ export function WritingEditor({
     }
     setSaveState("saving");
     const handle = setTimeout(async () => {
+      const seq = ++saveSeq.current;
       await saveDraftRef.current?.(values);
-      setSaveState("saved");
+      // Ignore a stale save that resolved after a newer one started.
+      if (seq === saveSeq.current) setSaveState("saved");
     }, 800);
     return () => clearTimeout(handle);
   }, [values, isSubmitted]);

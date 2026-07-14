@@ -13,8 +13,10 @@ export function Footnote({ children }: { children: ReactNode }) {
     <span className="footnote not-prose">
       <label className="footnote-marker" aria-label="Footnote">
         <input type="checkbox" className="footnote-toggle" />
-        <span className="footnote-content">{children}</span>
       </label>
+      {/* Sibling of the toggle label, not a child — so tapping the revealed
+          note to read/select it doesn't re-toggle the checkbox and hide it. */}
+      <span className="footnote-content">{children}</span>
     </span>
   );
 }

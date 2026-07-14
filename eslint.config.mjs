@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored design-system prototype sandbox — not part of the app build.
+    "xlab-tracks-design-system/**",
+    // Cloudflare/OpenNext build output and generated files.
+    ".open-next/**",
+    "cloudflare-env.d.ts",
   ]),
 ]);
 

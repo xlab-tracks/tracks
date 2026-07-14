@@ -62,6 +62,15 @@ const MATH_ENV_BASES = new Set([
 const REF_MACROS = new Set(["ref", "eqref", "autoref", "cref", "Cref", "pageref"]);
 
 /**
+ * Float environments that consume the FIGURE counter. buildMiscEnvReplacements
+ * turns wrapfigure/SCfigure/subcaptionbox into unnumbered layout divs later, so
+ * numbering.ts must bind their \labels to a figure here — otherwise a loose
+ * \label inside one falls through to the section-binding path and a \ref shows
+ * the wrong kind/number.
+ */
+const FIGURE_FLOAT_BASES = new Set(["figure", "wrapfigure", "SCfigure", "subcaptionbox"]);
+
+/**
  * One document-order pass that drives every counter (sections, equations,
  * figures, tables, theorems), binds \label keys to what they follow, strips
  * the \label nodes, and injects \tag{N} into numbered display math so KaTeX
@@ -82,6 +91,9 @@ export function numberDocument(
     cref: { signature: "m" },
     Cref: { signature: "m" },
     pageref: { signature: "m" },
+    // Attach \tag's argument so stripManualTags removes the macro AND its
+    // {…}; otherwise the orphaned group renders as visible text in the eq.
+    tag: { signature: "m" },
   });
 
   const hasChapters = treeHasMacro(tree, "chapter");
@@ -271,8 +283,13 @@ export function numberDocument(
           }
           continue;
         }
-        if (base === "figure" || base === "table" || base === "longtable") {
-          const target = handleFloat(env, base === "figure" ? "figure" : "table");
+        if (
+          FIGURE_FLOAT_BASES.has(base) ||
+          base === "table" ||
+          base === "longtable"
+        ) {
+          const kind = base === "table" || base === "longtable" ? "table" : "figure";
+          const target = handleFloat(env, kind);
           const outer = currentTarget;
           currentTarget = target;
           stripLabels(env.content, target);

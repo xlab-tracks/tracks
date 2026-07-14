@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { useAuth } from "@workos-inc/authkit-nextjs/components";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -66,6 +66,33 @@ export function SiteHeader() {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="ring-offset-background focus-visible:ring-ring rounded-md p-1.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:hidden"
+                aria-label="Menu"
+              >
+                <Menu className="size-5" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {NAV.map((item) => (
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link
+                    href={item.href}
+                    aria-current={
+                      pathname === item.href ||
+                      pathname?.startsWith(item.href + "/")
+                        ? "page"
+                        : undefined
+                    }
+                  >
+                    {item.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {loading ? null : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

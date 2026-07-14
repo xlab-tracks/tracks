@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { convertLatexToHtml } from "./convert";
 import { classifyEprint, fetchEprint } from "./fetch";
 import { extractTarball } from "./extract";
@@ -205,6 +204,3 @@ async function tryFailPermanently(id: ArxivId, detail: string): Promise<void> {
     );
   }
 }
-
-/** Per-request deduplicated variant for server components. */
-export const getOrConvertPaper = cache(getOrConvertPaperUncached);

@@ -19,8 +19,17 @@ import { Progress } from "@/components/ui/progress";
 
 export const metadata: Metadata = { title: "Classroom" };
 
+// Rendered server-side (Workers locale is UTC/en-US), so pin the format
+// explicitly and label it UTC — otherwise "Last active" silently uses the
+// runtime timezone and reads a day off for non-UTC instructors.
+const DATE_FMT = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
 function fmtDate(d: Date | null): string {
-  return d ? new Date(d).toLocaleDateString() : "—";
+  return d ? `${DATE_FMT.format(new Date(d))} UTC` : "—";
 }
 
 export default async function ClassroomPage({

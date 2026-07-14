@@ -20,6 +20,18 @@ const nextConfig: NextConfig = {
     "pg",
     "pg-cloudflare",
   ],
+  async headers() {
+    return [
+      {
+        // Clickjacking hardening: only same-origin pages may frame the app.
+        // Carve-out: /demos/*/embed exists to be iframed by external sites.
+        source: "/((?!demos/.*/embed$).*)",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        ],
+      },
+    ];
+  },
 };
 
 // String-form plugins are required for Turbopack (Next 16 default), which

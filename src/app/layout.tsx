@@ -55,10 +55,18 @@ export default async function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col">
+        <a
+          href="#main-content"
+          className="bg-background text-foreground focus:ring-ring sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:border focus:px-4 focus:py-2 focus:ring-2 focus:outline-none"
+        >
+          Skip to content
+        </a>
         <AuthKitProvider initialAuth={initialAuth}>
           <TooltipProvider delayDuration={200}>
             <SiteHeader />
-            <div className="flex flex-1 flex-col">{children}</div>
+            <div id="main-content" className="flex flex-1 flex-col">
+              {children}
+            </div>
           </TooltipProvider>
           <Toaster />
         </AuthKitProvider>
