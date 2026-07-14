@@ -123,7 +123,9 @@ Standalone exercises can surface on the `/exercises` tab via the curated
 one editor reused by inline writing exercises and end-of-module assessments;
 persistence is done by `.bind()`-ing server actions in a server component and
 passing them as props. Exercise prompt/answer strings render `$…$` math via
-`MathText`; lesson MDX math uses remark-math + rehype-katex.
+`MathText`; writing-type prompts additionally render block markdown
+(`src/lib/content/writing-prompt-html.ts`); lesson MDX math uses remark-math +
+rehype-katex.
 `src/lib/control-model/` is the pure closed-form model behind the Control
 track's demos — its calibration test pins the paper's headline numbers (±4pp);
 plan-level rationale lives in the demos, the code + test are normative.

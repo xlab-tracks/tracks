@@ -321,4 +321,47 @@ export const papers: Paper[] = [
     source: { kind: "arxiv", arxivId: "2509.15541v1" },
     estimatedMinutes: 30,
   },
+  // --- Control track, module 6 (low-stakes control): plain papers, no edits
+  // yet. ---
+  {
+    id: "c-paper-adaptive-deployment",
+    slug: "adaptive-deployment-paper",
+    moduleId: "c-lowstakes",
+    title: "Adaptive Deployment of Untrusted LLMs Reduces Distributed Threats",
+    source: { kind: "arxiv", arxivId: "2411.17693v1" },
+    estimatedMinutes: 45,
+  },
+  {
+    id: "c-paper-password-locked",
+    slug: "password-locked-models-paper",
+    moduleId: "c-lowstakes",
+    title: "Stress-Testing Capability Elicitation With Password-Locked Models",
+    source: { kind: "arxiv", arxivId: "2405.19550v1" },
+    estimatedMinutes: 40,
+  },
+  {
+    id: "c-paper-exploration-hacking",
+    slug: "exploration-hacking-paper",
+    moduleId: "c-lowstakes",
+    title: "Exploration Hacking: Can LLMs Learn to Resist RL Training?",
+    source: { kind: "arxiv", arxivId: "2604.28182v1" },
+    estimatedMinutes: 40,
+  },
+  {
+    id: "c-paper-sabotage-evals",
+    slug: "sabotage-evaluations-paper",
+    moduleId: "c-lowstakes",
+    title: "Sabotage Evaluations for Frontier Models",
+    source: { kind: "arxiv", arxivId: "2410.21514v1" },
+    estimatedMinutes: 50,
+  },
+  {
+    id: "c-paper-auditing-sabotage-bench",
+    slug: "auditing-sabotage-bench-paper",
+    moduleId: "c-lowstakes",
+    title:
+      "Auditing Sabotage Bench: A Benchmark for Detecting and Fixing Research Sabotage in ML Codebases",
+    source: { kind: "arxiv", arxivId: "2604.16286v2" },
+    estimatedMinutes: 35,
+  },
 ];

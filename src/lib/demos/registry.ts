@@ -10,6 +10,7 @@ import { AttackRateDemo } from "@/components/demos/attack-rate-demo";
 import { SubtletyDemo } from "@/components/demos/subtlety-demo";
 import { DeferDemo } from "@/components/demos/defer-demo";
 import { ControlDashboardDemo } from "@/components/demos/control-dashboard-demo";
+import { SabotageFrontierDemo } from "@/components/demos/sabotage-frontier-demo";
 
 // Central demo registry — the single integration point. Reference a demo by ID
 // from MDX (<Demo id="…"/>), the gallery, standalone pages, or embeds.
@@ -107,6 +108,14 @@ export const demoRegistry: Record<string, DemoDefinition> = {
       "Three blue levers — audit budget, defer band, monitor quality — feeding one live world: the suspicion distributions with bands, and the safety/usefulness frontier with the current protocol ringed. The red team best-responds throughout.",
     component: ControlDashboardDemo,
     tags: ["control", "control-game"],
+  },
+  "sabotage-frontier": {
+    id: "sabotage-frontier",
+    title: "The diffuse-to-concentrated frontier",
+    description:
+      "Sabotage strategies as a Pareto frontier: fewer actions versus less incriminating actions. Move the deployer's three mitigations and watch which strategies survive — and where the schemer's best response migrates.",
+    component: SabotageFrontierDemo,
+    tags: ["control", "threat-modeling"],
   },
 };
 
