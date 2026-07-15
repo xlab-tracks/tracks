@@ -1002,4 +1002,535 @@ export const exercises: Exercise[] = [
       },
     ],
   },
+  // --- Control: "case for control" reading — "Why catching counts, and where
+  // evaluation runs out". Two free-text reasoning prompts with staged reveals;
+  // prompt/reveal copy is authored verbatim (do not paraphrase). Reveals open
+  // the questions just far enough to close the epistemic gap, then hand off —
+  // they must not grow into a control-game-theory or governance detour. ---
+  {
+    id: "why-catching-counts",
+    type: "staged-questions",
+    title: "Why catching counts, and where evaluation runs out",
+    prompt:
+      "Two reasoning prompts on the game theory of control: why a catch changes the game, and where capability evaluations stop being informative.",
+    placeholder: "Write your reasoning…",
+    parts: [
+      {
+        id: "part-a",
+        title: "Part A — Catching a model red-handed",
+        questions: [
+          {
+            id: "a1-catch-win",
+            title: "Why is a catch a win?",
+            framing:
+              "The reading claims that when evaluating control, catching an AI red-handed should count as a win condition. The same status as no catastrophe occurring at all. On its face this is strange: the model just tried to cause a catastrophe and was stopped this once; it is presumably still scheming, still deployed, still capable.",
+            question:
+              "Why should catching a scheming model count as a win? What changes after a catch? Shouldn't a near miss with catastrophe count more as failure?",
+            reveal:
+              "Before a catch, serious misalignment and dangerous scheming are an unconfirmed risk; after a catch, scheming becomes a demonstrated phenomenon that has occurred naturally. Efforts to pause or shut down models till safety research catches up will gain much more support and evidence. A catch also yields a concrete incident to study; labs can resample the model in its environment, examine what it tried, and strengthen their control protocols. From the model's perspective, being caught means that it has to be much more covert to avoid being caught, which might prevent high-stakes risks. Catching a model turns a diffuse, deniable, uncertain risk into legible, undeniable evidence.",
+            forward:
+              "You'll read the full version of this argument in Catching AIs red-handed later in this module.",
+            forwardLinkText: "Catching AIs red-handed",
+            forwardHref: "/tracks/control/introduction/catching-ais-red-handed",
+          },
+        ],
+      },
+      {
+        id: "part-b",
+        title: "Part B — When do capability evaluations stop being informative?",
+        questions: [
+          {
+            id: "b1-eval-ceiling",
+            title: "Where's the ceiling?",
+            framing:
+              "The reading argues control is evaluable: given a scary model and a protocol, you can robustly check whether the model is controlled by running capability evaluations.",
+            question:
+              "When does a dangerous capability evaluation stop being informative? What has to be true of the model for a control evaluation to not be useful?",
+            instruction:
+              "Describe a specific situation (or if possible multiple), or a specific capability, that would make a dangerous capability evaluation uninformative.",
+            acknowledgement:
+              "A good answer ties the ceiling to the eval's measurements coming apart from the model's real capability — and names a concrete way that happens.",
+            reveal:
+              "Fundamentally, a DC eval is informative as long as its results remain representative of the model's dangerous capabilities. The accuracy of a DC eval relies on the red team's ability to construct attacks at least as good as the model's, and on the capability measured during a DC eval being representative of its real capability. Thus, a DC eval loses its reliability when these aren't necessarily true.",
+            examplesIntro:
+              "Empirical examples of conditions that make DC evals less informative are:",
+            examples: [
+              {
+                label: "Sandbagging",
+                text: "A situationally aware model is capable of detecting evaluation conditions and deliberately failing, or fails selectively, so its measured capability understates real capability. This causes DC evals to underrepresent what models are truly capable of.",
+              },
+              {
+                label: "Red team ceiling",
+                text: "The model's attack strategies are qualitatively different or beyond what human red-teamers generate, and thus the attack space explored during a DC eval misrepresents or underrepresents the attack space of a scheming version of the model.",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  // --- Control: "case for control" reading — "Could useful models remain
+  // controllable?". One open question; the reveal deliberately does NOT
+  // answer it — it introduces the control window and the interactive control
+  // timeline. Reveal copy is authored verbatim (do not paraphrase). ---
+  {
+    id: "could-useful-models-remain-controllable",
+    type: "staged-questions",
+    title: "Could useful models remain controllable?",
+    prompt:
+      "Open question ahead of the control-window discussion: what determines whether a control window exists.",
+    placeholder: "Write your reasoning…",
+    parts: [
+      {
+        id: "part-1",
+        title: "Could useful models remain controllable?",
+        questions: [
+          {
+            id: "control-window-properties",
+            title: "Could useful models remain controllable?",
+            question:
+              "Could such highly capable, transformatively useful models still remain controllable? What properties of the models themselves, the control protocol, or the environment in which the models are trained and deployed could determine this?",
+            reveal:
+              "If transformative usefulness implied uncontrollability, control would provide no useful period in which advanced models could be safely deployed. The point at which models become useful enough to substantially reduce risk would also be the point at which control ceased to be viable.\n\nIf transformative usefulness didn't imply uncontrollability, however, there may be a control window: a period in which models are already transformatively useful, dangerous, but a carefully designed protocol could theoretically still retain the control property.\n\nThe rest of the reading investigates whether this window is likely to exist, what could close it, and how long it might remain useful.",
+            revealWidget: "control-timeline",
+          },
+        ],
+      },
+    ],
+  },
+  // --- Control: "case for control" reading — "Is inscrutability necessary?".
+  // Two segments: commit to a view (course-correction reveal), then construct
+  // a scrutable threat model (research-sabotage reveal). Copy is authored
+  // verbatim (do not paraphrase). The course correction must NOT introduce
+  // research sabotage or diffuse threats — that belongs to the 2B reveal. ---
+  {
+    id: "inscrutability-necessary",
+    type: "commit-construct",
+    title: "Is inscrutability necessary?",
+    prompt:
+      "Commit to a view on whether inscrutability is necessary for uncontrollability, then construct the strongest scrutable threat model you can.",
+    commit: {
+      partTitle: "Commit to a view",
+      framing:
+        "The authors have described highly inscrutable actions as one reason sufficiently capable models may become uncontrollable.",
+      question: "Do you think inscrutability is necessary for uncontrollability?",
+      supposition:
+        "Suppose every action a model took could be understood by a capable human team that examined it carefully. Would a sufficiently careful lab necessarily be able to control the model?",
+      instruction: "Commit to a view and explain your reasoning.",
+      options: [
+        { id: "necessary", label: "Inscrutability is necessary" },
+        { id: "not-necessary", label: "Inscrutability is not necessary" },
+      ],
+      confidencePrompt: "How confident are you in your answer?",
+      confidenceOptions: [
+        { id: "low", label: "Not confident" },
+        { id: "medium", label: "Somewhat confident" },
+        { id: "high", label: "Very confident" },
+      ],
+      reveal:
+        "Scrutability means that an action can be understood if it is examined carefully. This does not, by itself, imply that the model is controlled.\n\nAn understandable action might not be inspected. It might be understandable without being easy to evaluate. Its significance might depend on many other individually understandable actions. Reviewers might recognize what an action does without being able to determine whether it is part of a larger strategy.\n\nScrutability therefore removes one possible source of control failure, but it does not logically eliminate every other source. Inscrutability is not conceptually necessary for a model to pose a serious threat to control.\n\nThat leaves a harder question: can we construct a credible threat in which the model's actions remain scrutable?",
+    },
+    construct: {
+      partTitle: "Construct the threat model",
+      threatPrompt:
+        "Construct the strongest threat model you can: what unacceptable outcome could a scheming but scrutable model cause, and how does the model bring it about?",
+      constraint:
+        "The model's actions should remain scrutable: a capable human team could understand them if it examined them carefully. Do not assume that the model has qualitatively wildly superhuman skills in a problematic domain.",
+      guidanceByChoice: {
+        necessary:
+          "Try to construct the strongest counterexample to your original view, even if you remain unconvinced that it is realistic.",
+        "not-necessary":
+          "Turn your general intuition into the most credible concrete threat model you can.",
+      },
+      hint: "A single high-stakes action, such as attempting to exfiltrate model weights or inserting a clearly dangerous security backdoor, is often highly scrutinizable. Because the harm is concentrated, the action is more likely to appear suspicious and to be incriminating if a monitor or auditor catches it.\n\nWhat kinds or sequences of actions would be less individually incriminating? Could a model take actions that each appear ordinary, defensible, or low-stakes, but whose combined effect creates a serious threat? What properties would those actions need?",
+      revealLead: "One important example is research sabotage.",
+      reveal:
+        "A scheming model working on AI R&D might make thousands of individually understandable decisions: which experiments to prioritize, how to interpret ambiguous results, which safety concerns deserve further investigation, which research directions appear promising, and when an apparent failure justifies abandoning a project.\n\nEach action could be scrutable and locally defensible. A reviewer might understand exactly what the model did without being able to show that the decision was malicious. The threat arises from the aggregate direction of many actions: safety research is quietly slowed, misleading conclusions accumulate, or capabilities work advances faster than it otherwise would.\n\nThe harm is therefore not concentrated in one obviously catastrophic action. It is distributed across many actions that are less individually suspicious and less incriminating. This is a diffuse threat.",
+      compareIntro: "How does your construction compare?",
+      compareQuestions: [
+        "Is the harm concentrated in one action or distributed across many?",
+        "Are the actions difficult to understand, difficult to evaluate, or difficult to identify as evidence of scheming?",
+        "Does the construction demonstrate a serious control threat, the failure of one protocol, or full uncontrollability?",
+      ],
+      closing:
+        "The final distinction matters: research sabotage establishes a serious and credible threat without automatically proving that every affordable control protocol must fail.",
+    },
+  },
+  // --- Control: "case for control" reading — "Two worlds, two windows".
+  // One persistent two-panel figure, then two free-text questions in
+  // sequence. Setup, prompts, and hint are authored verbatim (do not
+  // paraphrase). The reveals follow the spec's requirements: no verdicts, no
+  // model answers, and neither the questions nor the reveals ever say which
+  // world is better. ---
+  {
+    id: "two-worlds-two-windows",
+    type: "staged-questions",
+    title: "Two worlds, two windows",
+    prompt:
+      "The control window in two dimensions: capability room versus calendar time, and what a window is actually worth.",
+    placeholder: "Write your reasoning…",
+    figureWidget: "two-worlds",
+    parts: [
+      {
+        id: "part-3a",
+        title: "What must differ?",
+        questions: [
+          {
+            id: "what-must-differ",
+            title: "What must differ?",
+            framing:
+              "Both worlds begin at the same moment: the leading lab has just built its first transformatively useful model — very dangerous without countermeasures — and it runs the best protocols it can afford. From here the worlds diverge. Notice that both windows are large, but not in the same way: World A's spans more model development — several generations stay controllable. World B's spans more calendar time — years inside the interval, but only one controllable generation. That difference is the whole exercise.\n\nThese worlds started from the same model at the same moment, so something about each of them produced the picture you see.",
+            question:
+              "What are the most important differences between World A and World B that could produce these two windows? For each difference, say what it changes — where the control frontier sits, or how fast the capability curve climbs toward it.",
+            hint: "Differences tend to live in four places: how fast capabilities advance, and why; how well control protocols keep scaling; what the lab chooses — build the next model, or hold and harden the ones it has; and what the outside world forces — competitors, customers, regulators. Some of these move the frontier. Others only change how fast you reach it.",
+            reveal:
+              "Every difference you named acts through one of three channels. If it changes how well control protocols keep scaling, it moves the red line: the frontier sits wherever protocols stop being affordable. If it changes how fast capabilities advance, it shapes the curve: the frontier stays put, but you reach it sooner or later. If it changes what the lab chooses or what the outside world allows, it sets the dwell: how long anyone actually stays inside the window before building past it.\n\nA few examples, sorted. Monitoring that keeps working on much stronger models: moves the red line up. A training breakthrough that compresses years of progress into months: steepens the curve. A competitor forcing the pace, or a regulator requiring control evaluations before each new training run: neither moves a line, but both change the clock.\n\nNow sort your own answer. For each difference you wrote down, what moves: the red line, or the clock?",
+          },
+        ],
+      },
+      {
+        id: "part-3b",
+        title: "What's the window worth?",
+        questions: [
+          {
+            id: "window-worth",
+            title: "What's the window worth?",
+            framing:
+              "In both worlds the green interval is the same kind of thing: a stretch of time with transformatively useful models you can still trust — to spend on alignment, control, evaluations, security.",
+            question:
+              "What does the value of a control window actually depend on? Use the two worlds to think it through: does more capability room, or more time, make a window worth more?",
+            reveal:
+              "A window is worth what comes out of it. Roughly, that value is a product of four terms: the capability of the trusted models you hold, the time you hold them, the share of their work aimed at what matters, and how much of that ability you can actually elicit. World A is rich in the first term, World B in the second, and neither picture tells you the other two.\n\nWhich term dominates depends on what safety progress is bottlenecked on. If progress waits on insights that only more capable models can supply, room dominates: A's four generations beat B's years. If progress waits on labor, on running the experiments, evaluations, and hardening we already know how to do, time dominates: B's long dwell wins. If progress waits on elicitation, on getting scheming models to genuinely try, neither room nor time helps until that term moves.\n\nOne of these terms is also a lever. Better control protocols raise the frontier, which raises the capability of the most powerful model you can still trust: control research buys window in the room dimension. That is the reading's claim that control is a particularly tractable approach, restated.\n\nCarry the question with you: in our world, which term is the bottleneck?",
+          },
+        ],
+      },
+    ],
+  },
+  // --- Control: "case for control" reading — Exercise Set 1 (control-property
+  // scenarios). Card and reveal copy is authored verbatim (do not paraphrase);
+  // graphs are neutral workflow pictures and must never hint at verdicts. ---
+  {
+    id: "control-scenarios",
+    type: "control-scenarios",
+    title: "Run the evaluation — 5 scenarios",
+    prompt:
+      "You've just seen what makes a model untrusted and how a control evaluation works. Now run one yourself: five deployment setups, the same question each time. First, meet the cast.",
+    question:
+      "Assuming U is actively scheming, does this setup hold the control property? What variables and conditions dictate whether this is the case?",
+    placeholder:
+      "Does this setup hold the control property? What does that depend on?",
+    actors: [
+      {
+        id: "u",
+        letter: "U",
+        name: "the untrusted model",
+        definition:
+          "A frontier model that is highly capable, enough to be capable of scheming.",
+        legend: "untrusted frontier model",
+      },
+      {
+        id: "t",
+        letter: "T",
+        name: "the trusted model",
+        definition:
+          "An older, much weaker model that isn't capable of scheming effectively, so its work is honest but not as good as U.",
+        legend: "weaker but trusted",
+      },
+      {
+        id: "h",
+        letter: "H",
+        name: "human auditors",
+        definition:
+          "Honest and skilled, but scarce: they can only ever look at a small fraction of any work.",
+        legend: "scarce human auditors",
+      },
+      {
+        id: "uprime",
+        letter: "U′",
+        name: "a second copy of U",
+        definition: "A second, identical copy of the untrusted model U.",
+        legend: "identical copy of U",
+        hidden: true,
+      },
+    ],
+    scenarios: [
+      {
+        id: "s1-no-safeguards",
+        displayTitle: "Straight to production",
+        card: "U writes production code and merges its own commits. No review of any kind.",
+        outcome: "Malicious code is merged to production.",
+        revealName: "No safeguards.",
+        reveal:
+          "The control property conditions on the worst case scenario. If U is actively scheming, in this setup, any attacks or malicious code it outputs aren't moderated. Variables like U's empirical reliability, benchmark scores, or past helpfulness are not relevant; control evaluations assume worst-case adversarial behavior by default.",
+        graph: {
+          width: 560,
+          height: 116,
+          nodes: [
+            { id: "u", x: 52, y: 58, kind: "actor", actor: "u", role: "agent" },
+            { id: "deployed", x: 500, y: 58, kind: "terminal", label: "Deployed" },
+          ],
+          edges: [{ from: "u", to: "deployed" }],
+        },
+      },
+      {
+        id: "s2-trusted-monitoring",
+        displayTitle: "Every edit is monitored",
+        card: "Every edit U produces is scored for suspicion by T. The top 2% go to H, who revise or block anything potentially malicious. Everything else merges into production.",
+        outcome: "Malicious code is merged to production.",
+        revealName: "This is trusted monitoring.",
+        reveal:
+          "For control to hold, T must be capable enough to accurately score U's covert attacks, pushing them into the 2% audit bracket. However, if there is a sufficiently large capability gap between U and T, its scoring and detection ability is bottlenecked. Thus, a scheming U may be able to obfuscate its attack well enough to land in the bottom 98% of T's suspicion scores. In practice, trusted monitoring is quite cheap, and we can afford to do it many times to lower the probability of unacceptable outcomes, but this isn't guaranteed to work.",
+        graph: {
+          width: 560,
+          height: 304,
+          nodes: [
+            { id: "u", x: 52, y: 64, kind: "actor", actor: "u", role: "agent" },
+            {
+              id: "t",
+              x: 186,
+              y: 64,
+              kind: "actor",
+              actor: "t",
+              role: "monitor",
+              note: "scores every edit",
+            },
+            {
+              id: "h",
+              x: 322,
+              y: 182,
+              kind: "actor",
+              actor: "h",
+              role: "auditor",
+            },
+            { id: "blocked", x: 322, y: 272, kind: "terminal", label: "Blocked" },
+            { id: "j", x: 436, y: 64, kind: "junction" },
+            { id: "deployed", x: 506, y: 64, kind: "terminal", label: "Deployed" },
+          ],
+          edges: [
+            { from: "u", to: "t" },
+            { from: "t", to: "h", chip: "top 2%" },
+            { from: "t", to: "j", chip: "remaining 98%" },
+            {
+              from: "h",
+              to: "blocked",
+              fromSide: "bottom",
+              toSide: "top",
+              cond: "malicious",
+              labelDx: 34,
+            },
+            {
+              from: "h",
+              to: "j",
+              fromSide: "right",
+              toSide: "bottom",
+              cond: "non-malicious",
+              labelT: 0.4,
+              labelDy: -8,
+            },
+            { from: "j", to: "deployed" },
+          ],
+        },
+      },
+      {
+        id: "s3-untrusted-monitoring",
+        displayTitle: "A reviewer that can keep up",
+        card: "U's research code has outgrown T — T's scores on it look like noise. Instead, a second copy of U (call it U′) scores every action; the top 2% go to H before execution.",
+        outcome: "Malicious code is merged to production.",
+        revealName: "This is untrusted monitoring.",
+        reveal:
+          "Under the worst-case assumptions of the control property, if U is scheming, we must assume its identical copy, U′, is also scheming. Instead of rigorously auditing U's code, a scheming U′ will simply collude with U, artificially lowering the suspicion score on malicious edits to guarantee they bypass the human auditor. By upgrading the monitor to a frontier model, we have solved the capability gap but introduced a fatal vulnerability in allegiance.",
+        graph: {
+          width: 560,
+          height: 304,
+          nodes: [
+            { id: "u", x: 52, y: 64, kind: "actor", actor: "u", role: "agent" },
+            {
+              id: "up",
+              x: 186,
+              y: 64,
+              kind: "actor",
+              actor: "uprime",
+              role: "monitor",
+              note: "scores every action",
+            },
+            {
+              id: "h",
+              x: 322,
+              y: 182,
+              kind: "actor",
+              actor: "h",
+              role: "auditor",
+            },
+            { id: "blocked", x: 322, y: 272, kind: "terminal", label: "Blocked" },
+            { id: "j", x: 436, y: 64, kind: "junction" },
+            { id: "deployed", x: 506, y: 64, kind: "terminal", label: "Deployed" },
+          ],
+          edges: [
+            { from: "u", to: "up" },
+            { from: "up", to: "h", chip: "top 2%" },
+            { from: "up", to: "j", chip: "remaining 98%" },
+            {
+              from: "h",
+              to: "blocked",
+              fromSide: "bottom",
+              toSide: "top",
+              cond: "malicious",
+              labelDx: 34,
+            },
+            {
+              from: "h",
+              to: "j",
+              fromSide: "right",
+              toSide: "bottom",
+              cond: "non-malicious",
+              labelT: 0.4,
+              labelDy: -8,
+            },
+            { from: "j", to: "deployed" },
+          ],
+        },
+      },
+      {
+        id: "s4-trusted-editing",
+        displayTitle: "Rewrite the doubtful ones",
+        card: "T scores every edit. Top 2% → H audit. The next 10% — suspicious, but not audit-worthy — are not merged as written: T rewrites them itself and merges its own version. The bottom 88% merge untouched.",
+        outcome: "Malicious code is merged to production.",
+        revealName: "This is trusted editing, a more robust variant of trusted monitoring.",
+        reveal:
+          "Because T steps in to rewrite the ambiguously suspicious outputs of U (the 10% band), U's attack must now score in the bottom 88% to avoid being overwritten. By forcing T to do a portion of the actual work, this setup drastically narrows the window for an attack to slip through. Generally, you can reliably buy more safety by dynamically shifting the workload back to weaker, trusted models, at the cost of trading away some of U's usefulness.",
+        graph: {
+          width: 560,
+          height: 286,
+          nodes: [
+            { id: "u", x: 52, y: 150, kind: "actor", actor: "u", role: "agent" },
+            {
+              id: "t",
+              x: 184,
+              y: 150,
+              kind: "actor",
+              actor: "t",
+              role: "monitor",
+            },
+            {
+              id: "editor",
+              x: 330,
+              y: 54,
+              kind: "actor",
+              actor: "t",
+              role: "editor",
+              note: "rewrites",
+            },
+            {
+              id: "h",
+              x: 330,
+              y: 242,
+              kind: "actor",
+              actor: "h",
+              role: "auditor",
+            },
+            { id: "j", x: 444, y: 150, kind: "junction" },
+            { id: "deployed", x: 508, y: 150, kind: "terminal", label: "Deployed" },
+          ],
+          edges: [
+            { from: "u", to: "t" },
+            { from: "t", to: "editor", chip: "next 10%" },
+            { from: "t", to: "h", chip: "top 2%" },
+            { from: "t", to: "j", chip: "bottom 88%", labelT: 0.45 },
+            { from: "editor", to: "j", fromSide: "right", toSide: "top" },
+            { from: "h", to: "j", fromSide: "right", toSide: "bottom" },
+            { from: "j", to: "deployed" },
+          ],
+        },
+      },
+      {
+        id: "s5-resampling",
+        displayTitle: "Rewind and ask again",
+        card: "U works through multi-step tasks on the research cluster, one command at a time. Before each command runs, T scores it for suspicion. Low suspicion → it executes. High suspicion → it doesn't run; the system rewinds and resamples the step from U again with a maximum of three tries, and U keeps no memory between tries. If the retries also look suspicious, the whole bundle goes to H. Otherwise the least suspicious retry executes and the task moves on.",
+        outcome: "Model weights leave the cluster.",
+        revealName: "This is resampling.",
+        reveal:
+          "The core principle of this protocol is that U keeps no memory across retries. A rewound U doesn't know its first attempt was flagged. For an attack to survive a resample, the retries must also be attacks. However, three independent draws of malicious commands are far stronger evidence than one, and thus greatly increases the probability of being audited by H and being caught. If instead U doesn't attack as often, whenever T flags one attempt, a resample draws U's benign output and executes that instead. Thus U is forced to incriminate itself or remain benign. Thus the control property holds if there isn't a sufficiently large capability gap between U and T.",
+        graph: {
+          width: 560,
+          height: 428,
+          nodes: [
+            { id: "u", x: 52, y: 170, kind: "actor", actor: "u", role: "agent" },
+            {
+              id: "t",
+              x: 190,
+              y: 170,
+              kind: "actor",
+              actor: "t",
+              role: "monitor",
+              note: "scores each command",
+            },
+            { id: "executed", x: 510, y: 170, kind: "terminal", label: "Executed" },
+            { id: "compare", x: 300, y: 272, kind: "compare", label: "Compare" },
+            {
+              id: "h",
+              x: 455,
+              y: 330,
+              kind: "actor",
+              actor: "h",
+              role: "auditor",
+            },
+            { id: "blocked", x: 455, y: 404, kind: "terminal", label: "Blocked" },
+          ],
+          edges: [
+            { from: "u", to: "t", cond: "command", labelDy: -8 },
+            {
+              from: "t",
+              to: "executed",
+              fromOffset: -8,
+              toOffset: -8,
+              chip: "low suspicion",
+            },
+            {
+              from: "t",
+              to: "u",
+              fromSide: "top",
+              toSide: "top",
+              loop: true,
+              chip: "↩ ask again ×3 —",
+              chipLine2: "U keeps no memory between tries",
+            },
+            {
+              from: "t",
+              to: "compare",
+              fromSide: "right",
+              fromOffset: 14,
+              toSide: "top",
+            },
+            {
+              from: "compare",
+              to: "executed",
+              fromSide: "right",
+              fromOffset: -8,
+              toSide: "left",
+              toOffset: 10,
+              cond: "least suspicious retry runs",
+              labelDy: -12,
+            },
+            {
+              from: "compare",
+              to: "h",
+              fromSide: "right",
+              fromOffset: 8,
+              cond: "retries look suspicious too",
+              labelDy: 24,
+              labelDx: -68,
+            },
+            {
+              from: "h",
+              to: "blocked",
+              fromSide: "bottom",
+              toSide: "top",
+              cond: "malicious",
+              labelDx: 34,
+            },
+          ],
+        },
+      },
+    ],
+  },
 ];

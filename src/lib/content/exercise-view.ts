@@ -6,6 +6,9 @@ import {
   type ArgueRevealExercise,
   type ArgueRevealRating,
   type ChoiceExercise,
+  type CommitConstructExercise,
+  type ControlScenariosExercise,
+  type StagedQuestionsExercise,
   type ExerciseOption,
   type FlowchartBlock,
   type FlowchartExercise,
@@ -221,6 +224,126 @@ export function sanitizeAllocationScenario(
   if (Math.abs(sum - exercise.totalPeople) > 1e-9) return null;
 
   return { allocation: clean, reasoning };
+}
+
+// ---------------------------------------------------------------------------
+// Control-scenario exercises
+// ---------------------------------------------------------------------------
+
+/** Hard cap on a persisted scenario answer (the UI caps input to match). */
+export const CONTROL_SCENARIO_MAX_ANSWER_CHARS = 10_000;
+
+/** One scenario's record inside `Submission.responseJson.scenarios`. */
+export interface ControlScenarioEntry {
+  answer: string;
+}
+
+/**
+ * Validates a posted scenario answer against the exercise definition: known
+ * scenario, non-empty storable text within length bounds. Returns null when
+ * anything is off (reachable by direct POST).
+ */
+export function sanitizeControlScenarioAnswer(
+  exercise: ControlScenariosExercise,
+  scenarioId: unknown,
+  answer: unknown,
+): ControlScenarioEntry | null {
+  if (typeof scenarioId !== "string") return null;
+  if (!exercise.scenarios.some((s) => s.id === scenarioId)) return null;
+  if (typeof answer !== "string" || !isStorableText(answer)) return null;
+  if (answer.trim().length < 1) return null;
+  if (answer.length > CONTROL_SCENARIO_MAX_ANSWER_CHARS) return null;
+  return { answer };
+}
+
+// ---------------------------------------------------------------------------
+// Staged-question exercises
+// ---------------------------------------------------------------------------
+
+/** One question's record inside `Submission.responseJson.questions`. */
+export interface StagedQuestionEntry {
+  answer: string;
+}
+
+/**
+ * Validates a posted question answer against the exercise definition: known
+ * question, non-empty storable text within length bounds. Returns null when
+ * anything is off (reachable by direct POST).
+ */
+export function sanitizeStagedQuestionEntry(
+  exercise: StagedQuestionsExercise,
+  questionId: unknown,
+  answer: unknown,
+): StagedQuestionEntry | null {
+  if (typeof questionId !== "string") return null;
+  const question = exercise.parts
+    .flatMap((p) => p.questions)
+    .find((q) => q.id === questionId);
+  if (!question) return null;
+  if (typeof answer !== "string" || !isStorableText(answer)) return null;
+  if (answer.trim().length < 1) return null;
+  if (answer.length > CONTROL_SCENARIO_MAX_ANSWER_CHARS) return null;
+  return { answer };
+}
+
+// ---------------------------------------------------------------------------
+// Commit & construct exercises
+// ---------------------------------------------------------------------------
+
+/** The commit step's record inside `Submission.responseJson`. */
+export interface CommitConstructCommitEntry {
+  choice: string;
+  confidence: string;
+  reasoning: string;
+}
+
+/** The construct step's record inside `Submission.responseJson`. */
+export interface CommitConstructConstructEntry {
+  threatModel: string;
+}
+
+function sanitizeAnswerText(value: unknown): string | null {
+  if (typeof value !== "string" || !isStorableText(value)) return null;
+  if (value.trim().length < 1) return null;
+  if (value.length > CONTROL_SCENARIO_MAX_ANSWER_CHARS) return null;
+  return value;
+}
+
+/**
+ * Validates the posted commit step against the definition: known choice and
+ * confidence options, non-empty storable reasoning within length bounds.
+ * Returns null when anything is off (reachable by direct POST).
+ */
+export function sanitizeCommitConstructCommit(
+  exercise: CommitConstructExercise,
+  choice: unknown,
+  confidence: unknown,
+  reasoning: unknown,
+): CommitConstructCommitEntry | null {
+  if (
+    typeof choice !== "string" ||
+    !exercise.commit.options.some((o) => o.id === choice)
+  ) {
+    return null;
+  }
+  if (
+    typeof confidence !== "string" ||
+    !exercise.commit.confidenceOptions.some((o) => o.id === confidence)
+  ) {
+    return null;
+  }
+  const cleanReasoning = sanitizeAnswerText(reasoning);
+  if (cleanReasoning === null) return null;
+  return { choice, confidence, reasoning: cleanReasoning };
+}
+
+/** Validates the posted construct step (a single threat-model answer). */
+export function sanitizeCommitConstructConstruct(
+  threatModel: unknown,
+): CommitConstructConstructEntry | null {
+  const cleanThreatModel = sanitizeAnswerText(threatModel);
+  if (cleanThreatModel === null) return null;
+  return { threatModel: cleanThreatModel };
 }
 
 // ---------------------------------------------------------------------------

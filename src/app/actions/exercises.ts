@@ -17,11 +17,19 @@ import {
   sanitizeAllocationScenario,
   sanitizeArgueRevealConstruction,
   sanitizeArgueRevealItem,
+  sanitizeCommitConstructCommit,
+  sanitizeCommitConstructConstruct,
+  sanitizeControlScenarioAnswer,
   sanitizeFlowchartAttempt,
+  sanitizeStagedQuestionEntry,
   type AllocationScenarioEntry,
   type ArgueRevealConstructionEntry,
   type ArgueRevealItemEntry,
   type ArgueRevealRoundEntry,
+  type CommitConstructCommitEntry,
+  type CommitConstructConstructEntry,
+  type ControlScenarioEntry,
+  type StagedQuestionEntry,
   type FlowchartStageResult,
   type GradeResult,
 } from "@/lib/content/exercise-view";
@@ -220,6 +228,198 @@ export async function saveAllocationScenario(
     },
     update: { responseJson, status: complete ? "submitted" : "draft" },
   });
+}
+
+/** Shape persisted in `Submission.responseJson` for control-scenario exercises. */
+interface ControlScenariosResponseJson {
+  scenarios: Record<string, ControlScenarioEntry>;
+}
+
+/**
+ * Persists one submitted scenario answer of a control-scenarios exercise for
+ * a signed-in user. Not graded — there is no answer key; the row records the
+ * learner's pre-commit reasoning per scenario, and flips to `submitted` once
+ * every scenario is present.
+ */
+export async function saveControlScenario(
+  exerciseId: string,
+  scenarioId: string,
+  answer: string,
+): Promise<void> {
+  const exercise = getExerciseById(exerciseId);
+  if (!exercise || exercise.type !== "control-scenarios") return;
+
+  // Reachable by direct POST: validate the payload against the definition.
+  const entry = sanitizeControlScenarioAnswer(exercise, scenarioId, answer);
+  if (!entry) return;
+
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const where = {
+    userId_contentId_kind: {
+      userId: user.id,
+      contentId: exerciseId,
+      kind: "exercise",
+    },
+  } as const;
+  // Read-modify-write on the single submission row — same accepted race as
+  // gradeFlowchartStage: concurrent saves of DIFFERENT scenarios can lose one.
+  const existing = await prisma.submission.findUnique({ where });
+  const prior = (existing?.responseJson as ControlScenariosResponseJson | null) ?? {
+    scenarios: {},
+  };
+  const scenarios = { ...prior.scenarios, [scenarioId]: entry };
+  const complete = exercise.scenarios.every((s) => scenarios[s.id]);
+  const responseJson = { scenarios } as unknown as Prisma.InputJsonValue;
+  await prisma.submission.upsert({
+    where,
+    create: {
+      userId: user.id,
+      contentId: exerciseId,
+      kind: "exercise",
+      format: exercise.type,
+      responseJson,
+      status: complete ? "submitted" : "draft",
+    },
+    update: { responseJson, status: complete ? "submitted" : "draft" },
+  });
+}
+
+/** Shape persisted in `Submission.responseJson` for staged-question exercises. */
+interface StagedQuestionsResponseJson {
+  questions: Record<string, StagedQuestionEntry>;
+}
+
+/**
+ * Persists one submitted question of a staged-questions exercise for a
+ * signed-in user. Not graded; the row flips to `submitted` once every
+ * question is present.
+ */
+export async function saveStagedQuestion(
+  exerciseId: string,
+  questionId: string,
+  answer: string,
+): Promise<void> {
+  const exercise = getExerciseById(exerciseId);
+  if (!exercise || exercise.type !== "staged-questions") return;
+
+  // Reachable by direct POST: validate the payload against the definition.
+  const entry = sanitizeStagedQuestionEntry(exercise, questionId, answer);
+  if (!entry) return;
+
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const where = {
+    userId_contentId_kind: {
+      userId: user.id,
+      contentId: exerciseId,
+      kind: "exercise",
+    },
+  } as const;
+  // Read-modify-write on the single submission row — same accepted race as
+  // gradeFlowchartStage: concurrent saves of DIFFERENT questions can lose one.
+  const existing = await prisma.submission.findUnique({ where });
+  const prior = (existing?.responseJson as StagedQuestionsResponseJson | null) ?? {
+    questions: {},
+  };
+  const questions = { ...prior.questions, [questionId]: entry };
+  const complete = exercise.parts
+    .flatMap((p) => p.questions)
+    .every((q) => questions[q.id]);
+  const responseJson = { questions } as unknown as Prisma.InputJsonValue;
+  await prisma.submission.upsert({
+    where,
+    create: {
+      userId: user.id,
+      contentId: exerciseId,
+      kind: "exercise",
+      format: exercise.type,
+      responseJson,
+      status: complete ? "submitted" : "draft",
+    },
+    update: { responseJson, status: complete ? "submitted" : "draft" },
+  });
+}
+
+/** Shape persisted in `Submission.responseJson` for commit-construct exercises. */
+interface CommitConstructResponseJson {
+  commit?: CommitConstructCommitEntry;
+  construct?: CommitConstructConstructEntry;
+}
+
+async function saveCommitConstructStep(
+  exerciseId: string,
+  merge: (prior: CommitConstructResponseJson) => CommitConstructResponseJson,
+): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  const where = {
+    userId_contentId_kind: {
+      userId: user.id,
+      contentId: exerciseId,
+      kind: "exercise",
+    },
+  } as const;
+  // Read-modify-write on the single submission row — same accepted race as
+  // gradeFlowchartStage: concurrent saves of DIFFERENT steps can lose one.
+  const existing = await prisma.submission.findUnique({ where });
+  const prior = (existing?.responseJson as CommitConstructResponseJson | null) ?? {};
+  const next = merge(prior);
+  const complete = next.commit != null && next.construct != null;
+  const responseJson = next as unknown as Prisma.InputJsonValue;
+  await prisma.submission.upsert({
+    where,
+    create: {
+      userId: user.id,
+      contentId: exerciseId,
+      kind: "exercise",
+      format: "commit-construct",
+      responseJson,
+      status: complete ? "submitted" : "draft",
+    },
+    update: { responseJson, status: complete ? "submitted" : "draft" },
+  });
+}
+
+/**
+ * Persists the commit step (choice + confidence + reasoning) of a
+ * commit-construct exercise for a signed-in user. Not graded.
+ */
+export async function saveCommitConstructCommit(
+  exerciseId: string,
+  choice: string,
+  confidence: string,
+  reasoning: string,
+): Promise<void> {
+  const exercise = getExerciseById(exerciseId);
+  if (!exercise || exercise.type !== "commit-construct") return;
+
+  // Reachable by direct POST: validate the payload against the definition.
+  const entry = sanitizeCommitConstructCommit(exercise, choice, confidence, reasoning);
+  if (!entry) return;
+
+  await saveCommitConstructStep(exerciseId, (prior) => ({ ...prior, commit: entry }));
+}
+
+/**
+ * Persists the construct step (the threat model) of a commit-construct
+ * exercise for a signed-in user. Not graded; the row flips to `submitted`
+ * once both steps are present.
+ */
+export async function saveCommitConstructConstruct(
+  exerciseId: string,
+  threatModel: string,
+): Promise<void> {
+  const exercise = getExerciseById(exerciseId);
+  if (!exercise || exercise.type !== "commit-construct") return;
+
+  const entry = sanitizeCommitConstructConstruct(threatModel);
+  if (!entry) return;
+
+  await saveCommitConstructStep(exerciseId, (prior) => ({ ...prior, construct: entry }));
 }
 
 /** Shape persisted in `Submission.responseJson` for argue-reveal exercises. */

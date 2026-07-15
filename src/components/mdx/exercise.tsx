@@ -11,6 +11,10 @@ import {
   type AllocationScenarioEntry,
   type ArgueRevealConstructionEntry,
   type ArgueRevealItemEntry,
+  type CommitConstructCommitEntry,
+  type CommitConstructConstructEntry,
+  type ControlScenarioEntry,
+  type StagedQuestionEntry,
 } from "@/lib/content/exercise-view";
 import { writingPromptHtml } from "@/lib/content/writing-prompt-html";
 import { getCurrentUser } from "@/lib/auth";
@@ -19,6 +23,9 @@ import { saveWritingDraft, submitWriting } from "@/app/actions/submissions";
 import { AllocationExerciseCard } from "@/components/exercises/allocation-exercise";
 import { ArgueRevealExerciseCard } from "@/components/exercises/argue-reveal-exercise";
 import { ChoiceExerciseCard } from "@/components/exercises/choice-exercise";
+import { CommitConstructCard } from "@/components/exercises/commit-construct-exercise";
+import { ControlScenariosCard } from "@/components/exercises/control-scenarios-exercise";
+import { StagedQuestionsCard } from "@/components/exercises/staged-questions-exercise";
 import { FlowchartExerciseCard } from "@/components/exercises/flowchart-exercise";
 import { TapRevealCard } from "@/components/exercises/tap-reveal-exercise";
 import { UnderstandingCheckCard } from "@/components/exercises/understanding-check";
@@ -93,6 +100,63 @@ export async function Exercise({ id }: ExerciseProps) {
             ? submission.updatedAt.toISOString()
             : undefined
         }
+        persist={user != null}
+      />
+    );
+  }
+
+  if (exercise.type === "control-scenarios") {
+    const user = await getCurrentUser();
+    const submission = user
+      ? ((await getExerciseSubmissionMap(user.id)).get(exercise.id) ?? null)
+      : null;
+    const initialScenarios = (
+      submission?.responseJson as {
+        scenarios?: Record<string, ControlScenarioEntry>;
+      } | null
+    )?.scenarios;
+    return (
+      <ControlScenariosCard
+        exercise={exercise}
+        initialScenarios={initialScenarios}
+        persist={user != null}
+      />
+    );
+  }
+
+  if (exercise.type === "staged-questions") {
+    const user = await getCurrentUser();
+    const submission = user
+      ? ((await getExerciseSubmissionMap(user.id)).get(exercise.id) ?? null)
+      : null;
+    const initialQuestions = (
+      submission?.responseJson as {
+        questions?: Record<string, StagedQuestionEntry>;
+      } | null
+    )?.questions;
+    return (
+      <StagedQuestionsCard
+        exercise={exercise}
+        initialQuestions={initialQuestions}
+        persist={user != null}
+      />
+    );
+  }
+
+  if (exercise.type === "commit-construct") {
+    const user = await getCurrentUser();
+    const submission = user
+      ? ((await getExerciseSubmissionMap(user.id)).get(exercise.id) ?? null)
+      : null;
+    const responseJson = submission?.responseJson as {
+      commit?: CommitConstructCommitEntry;
+      construct?: CommitConstructConstructEntry;
+    } | null;
+    return (
+      <CommitConstructCard
+        exercise={exercise}
+        initialCommit={responseJson?.commit}
+        initialConstruct={responseJson?.construct}
         persist={user != null}
       />
     );

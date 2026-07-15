@@ -92,13 +92,23 @@ export default async function TrackLayout({
       // A single entry is noise — dock the panel only for real multi-section
       // lessons (papers always dock: their toc is never this small).
       if (sections.length < 2) continue;
-      itemNavs[item.lesson.id] = sections.map((section) => ({
-        kind: "section",
-        id: section.id,
-        title: section.title,
-        number: "",
-        level: section.level,
-      }));
+      itemNavs[item.lesson.id] = sections.map((section) =>
+        section.exercise
+          ? {
+              kind: "inserted-exercise",
+              anchorId: section.id,
+              exerciseId: section.exercise,
+              title: exerciseLabel(section.exercise),
+              level: section.level,
+            }
+          : {
+              kind: "section",
+              id: section.id,
+              title: section.title ?? "",
+              number: "",
+              level: section.level,
+            },
+      );
     }
   }
 

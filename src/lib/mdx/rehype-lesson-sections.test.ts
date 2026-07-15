@@ -111,4 +111,37 @@ describe("rehypeLessonSections", () => {
     expect(sections).toEqual([]);
     expect(tree.children).toHaveLength(2);
   });
+
+  it("anchors top-level <Exercise/> blocks and lists them under the last heading", () => {
+    const exercise = (id: string): Node => ({
+      type: "mdxJsxFlowElement",
+      // The plugin matches by JSX name + string id attribute.
+      ...({ name: "Exercise" } as object),
+      ...({
+        attributes: [{ type: "mdxJsxAttribute", name: "id", value: id }],
+      } as object),
+    });
+    const { tree, sections } = run([
+      h("h2", "section-one", text("Section one")),
+      exercise("control-scenarios"),
+      h("h3", "subsection", text("Subsection")),
+      exercise("why-catching-counts"),
+      // No usable id attribute → no entry, node left untouched.
+      { type: "mdxJsxFlowElement", ...({ name: "Exercise", attributes: [] } as object) },
+    ]);
+    expect(sections).toEqual([
+      { id: "section-one", title: "Section one", level: 2 },
+      { id: "ins-exercise-control-scenarios", exercise: "control-scenarios", level: 3 },
+      { id: "subsection", title: "Subsection", level: 3 },
+      { id: "ins-exercise-why-catching-counts", exercise: "why-catching-counts", level: 4 },
+    ]);
+    // Each matched block is wrapped in an anchor div at its original position.
+    const wrapper = tree.children[2];
+    expect(wrapper.type).toBe("element");
+    expect(wrapper.tagName).toBe("div");
+    expect(wrapper.properties).toEqual({ id: "ins-exercise-control-scenarios" });
+    expect(wrapper.children?.[0]?.type).toBe("mdxJsxFlowElement");
+    // The id-less element passes through unwrapped.
+    expect(tree.children[5].type).toBe("mdxJsxFlowElement");
+  });
 });

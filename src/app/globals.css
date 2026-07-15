@@ -159,6 +159,65 @@
   }
 }
 
+/* Control-scenario flow graphs: dashes drift in the draw direction (so the
+   loop-back edge, drawn monitor → agent, animates in the return direction).
+   One full dash period (6 + 6) per cycle keeps the loop seamless; 12px per
+   0.55s ≈ 22px/s — the slow ambient flow the exercise spec asks for. */
+@keyframes flow-graph-dash {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.flow-graph-edge {
+  stroke-dasharray: 6 6;
+  animation: flow-graph-dash 0.55s linear infinite;
+}
+
+/* Control-scenario reveal panel: eases in beside the diagram on submit. */
+@keyframes control-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.control-reveal-in {
+  animation: control-reveal-in 0.35s ease-out both;
+}
+
+/* Two-worlds figure: capability curves draw in once on load. The paths set
+   pathLength=1, so a unit dash covers the whole curve regardless of length. */
+@keyframes two-worlds-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.two-worlds-curve {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: two-worlds-draw 1.1s ease-out 0.15s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-graph-edge {
+    animation: none; /* static dashes with arrowheads */
+  }
+  .control-reveal-in {
+    animation: none;
+  }
+  .two-worlds-curve {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+}
+
 /* ============================================================
    Footnotes — numbered via a CSS counter, revealed via a
    checkbox/label toggle (no JS). On wide viewports the note

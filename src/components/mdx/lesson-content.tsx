@@ -9,13 +9,19 @@ export async function importLesson(contentRef: string) {
   }
 }
 
-/** One top-level ##/### heading of a lesson body, as rendered. */
+/**
+ * One top-level entry of a lesson body, as rendered: a ##/### heading, or an
+ * `<Exercise/>` block (which rehype-lesson-sections wraps in an anchor div).
+ */
 export interface LessonSection {
-  /** The heading's anchor id (assigned by rehype-slug). */
+  /** The anchor id (rehype-slug for headings, `ins-exercise-…` for blocks). */
   id: string;
-  title: string;
-  /** Heading depth: 2 = ##, 3 = ###. */
-  level: 2 | 3;
+  /** Heading text; absent on exercise entries (resolve from the registry). */
+  title?: string;
+  /** Heading depth (2 = ##, 3 = ###); exercises sit one under their section. */
+  level: number;
+  /** Present on exercise entries: the exercise id. */
+  exercise?: string;
 }
 
 /**

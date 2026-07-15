@@ -174,6 +174,137 @@ describe("allocation exercise integrity", () => {
   });
 });
 
+describe("control-scenarios exercise integrity", () => {
+  const controlScenarios = exercises.flatMap((e) =>
+    e.type === "control-scenarios" ? [e] : [],
+  );
+
+  it("scenario ids are unique and copy is non-empty", () => {
+    for (const exercise of controlScenarios) {
+      expect(exercise.scenarios.length, `${exercise.id} scenarios`).toBeGreaterThan(0);
+      const ids = exercise.scenarios.map((s) => s.id);
+      expect(new Set(ids).size, `${exercise.id} has duplicate scenario ids`).toBe(
+        ids.length,
+      );
+      for (const s of exercise.scenarios) {
+        for (const [field, value] of Object.entries({
+          displayTitle: s.displayTitle,
+          card: s.card,
+          outcome: s.outcome,
+          revealName: s.revealName,
+          reveal: s.reveal,
+        })) {
+          expect(value.trim(), `${exercise.id}/${s.id} ${field}`).not.toBe("");
+        }
+      }
+    }
+  });
+
+  it("graphs are well-formed: unique node ids, edges resolve, actors defined", () => {
+    for (const exercise of controlScenarios) {
+      const actorIds = new Set(exercise.actors.map((a) => a.id));
+      for (const s of exercise.scenarios) {
+        const nodeIds = s.graph.nodes.map((n) => n.id);
+        expect(
+          new Set(nodeIds).size,
+          `${exercise.id}/${s.id} has duplicate node ids`,
+        ).toBe(nodeIds.length);
+        const known = new Set(nodeIds);
+        for (const edge of s.graph.edges) {
+          expect(known.has(edge.from), `${exercise.id}/${s.id} edge from ${edge.from}`).toBe(true);
+          expect(known.has(edge.to), `${exercise.id}/${s.id} edge to ${edge.to}`).toBe(true);
+        }
+        for (const node of s.graph.nodes) {
+          if (node.kind === "actor") {
+            expect(
+              node.actor && actorIds.has(node.actor),
+              `${exercise.id}/${s.id} node ${node.id} has an undefined actor`,
+            ).toBe(true);
+          }
+        }
+      }
+    }
+  });
+});
+
+describe("staged-questions exercise integrity", () => {
+  const stagedQuestions = exercises.flatMap((e) =>
+    e.type === "staged-questions" ? [e] : [],
+  );
+
+  it("parts and questions are non-empty with unique ids", () => {
+    for (const exercise of stagedQuestions) {
+      expect(exercise.parts.length, `${exercise.id} parts`).toBeGreaterThan(0);
+      const questions = exercise.parts.flatMap((p) => p.questions);
+      expect(questions.length, `${exercise.id} questions`).toBeGreaterThan(0);
+      const ids = [...exercise.parts.map((p) => p.id), ...questions.map((q) => q.id)];
+      expect(new Set(ids).size, `${exercise.id} has duplicate part/question ids`).toBe(
+        ids.length,
+      );
+      for (const q of questions) {
+        for (const [field, value] of Object.entries({
+          title: q.title,
+          question: q.question,
+          reveal: q.reveal,
+        })) {
+          expect(value.trim(), `${exercise.id}/${q.id} ${field}`).not.toBe("");
+        }
+        if (q.acknowledgement !== undefined) {
+          expect(q.acknowledgement.trim(), `${exercise.id}/${q.id} acknowledgement`).not.toBe("");
+        }
+        // A forward link must point somewhere and appear in the forward text.
+        if (q.forwardLinkText || q.forwardHref) {
+          expect(q.forward, `${exercise.id}/${q.id} forward`).toBeTruthy();
+          expect(q.forwardHref, `${exercise.id}/${q.id} forwardHref`).toBeTruthy();
+          expect(
+            q.forward!.includes(q.forwardLinkText!),
+            `${exercise.id}/${q.id} forwardLinkText not in forward`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+describe("commit-construct exercise integrity", () => {
+  const commitConstructs = exercises.flatMap((e) =>
+    e.type === "commit-construct" ? [e] : [],
+  );
+
+  it("options are unique, guidance keys resolve, and copy is non-empty", () => {
+    for (const exercise of commitConstructs) {
+      const optionIds = exercise.commit.options.map((o) => o.id);
+      const confidenceIds = exercise.commit.confidenceOptions.map((o) => o.id);
+      expect(optionIds.length, `${exercise.id} options`).toBeGreaterThanOrEqual(2);
+      expect(confidenceIds.length, `${exercise.id} confidence`).toBeGreaterThanOrEqual(2);
+      for (const ids of [optionIds, confidenceIds]) {
+        expect(new Set(ids).size, `${exercise.id} has duplicate option ids`).toBe(
+          ids.length,
+        );
+      }
+      for (const key of Object.keys(exercise.construct.guidanceByChoice ?? {})) {
+        expect(
+          optionIds.includes(key),
+          `${exercise.id} guidance key "${key}" is not an option id`,
+        ).toBe(true);
+      }
+      expect(
+        exercise.construct.compareQuestions.length,
+        `${exercise.id} compareQuestions`,
+      ).toBeGreaterThan(0);
+      for (const [field, value] of Object.entries({
+        question: exercise.commit.question,
+        commitReveal: exercise.commit.reveal,
+        threatPrompt: exercise.construct.threatPrompt,
+        revealLead: exercise.construct.revealLead,
+        constructReveal: exercise.construct.reveal,
+      })) {
+        expect(value.trim(), `${exercise.id} ${field}`).not.toBe("");
+      }
+    }
+  });
+});
+
 describe("argue-reveal exercise integrity", () => {
   const argueReveals = exercises.flatMap((e) =>
     e.type === "argue-reveal" ? [e] : [],

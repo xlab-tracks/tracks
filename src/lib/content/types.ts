@@ -173,7 +173,10 @@ export type ClosedExerciseType =
   | "flowchart"
   | "tap-reveal"
   | "allocation"
-  | "argue-reveal";
+  | "argue-reveal"
+  | "control-scenarios"
+  | "staged-questions"
+  | "commit-construct";
 
 export type OpenExerciseType = "short-answer" | "writing-prompt" | "memo" | "essay";
 
@@ -417,6 +420,238 @@ export const ARGUE_REVEAL_DEFAULTS = {
   noteMaxChars: 200,
 } as const;
 
+// --- Control scenarios (pre-commit reasoning on control-protocol setups) ---
+
+/** Actor identities that color/letter flow-graph nodes and the cast card. */
+export type ControlActorId = "u" | "uprime" | "t" | "h";
+
+/**
+ * One actor in the cast: shown on the definitions card and the slim
+ * per-scenario legend (unless `hidden`), and restated as node tooltips.
+ */
+export interface ControlActor {
+  id: ControlActorId;
+  letter: string;
+  /** Short handle, e.g. "the untrusted model". */
+  name: string;
+  /** Full one-line definition (cast card + node tooltip). */
+  definition: string;
+  /** Compressed form for the slim legend row. */
+  legend: string;
+  /** Tooltip-only actors (U′) stay off the cast card and legend. */
+  hidden?: boolean;
+}
+
+/** A node in a scenario's flow graph, positioned in viewBox coordinates. */
+export interface ControlFlowNode {
+  id: string;
+  /** Center of the node in the graph's viewBox. */
+  x: number;
+  y: number;
+  kind: "actor" | "terminal" | "junction" | "compare";
+  /** Actor identity — drives color and tooltip; actor nodes only. */
+  actor?: ControlActorId;
+  /** Node text: the actor letter, or a terminal/compare label. */
+  label?: string;
+  /** Role chip inside actor nodes: agent / monitor / auditor / editor. */
+  role?: string;
+  /** Short annotation under the node ("scores every edit"). */
+  note?: string;
+  /** Horizontal nudge for the note, when an edge would cross it. */
+  noteDx?: number;
+}
+
+export type ControlFlowSide = "left" | "right" | "top" | "bottom";
+
+/**
+ * A dashed, animated edge. Dashes travel in draw (from → to) direction, so a
+ * loop edge drawn monitor → agent animates in the return direction for free.
+ */
+export interface ControlFlowEdge {
+  from: string;
+  to: string;
+  /** Which node side the edge leaves / enters (defaults: right → left). */
+  fromSide?: ControlFlowSide;
+  toSide?: ControlFlowSide;
+  /**
+   * Anchor displacement along the side's axis (y for left/right sides, x for
+   * top/bottom), so parallel edges sharing a side don't overlap.
+   */
+  fromOffset?: number;
+  toOffset?: number;
+  /** Pill label riding the edge ("top 2%"); `chipLine2` wraps long chips. */
+  chip?: string;
+  chipLine2?: string;
+  /** Bare condition label near the edge ("malicious", "else"). */
+  cond?: string;
+  /** 0–1 position of the chip/cond along the path (default 0.5). */
+  labelT?: number;
+  /** Fine-tune label placement in viewBox px. */
+  labelDx?: number;
+  labelDy?: number;
+  /** Loop-back edge: bows outward instead of the default S-curve. */
+  loop?: boolean;
+}
+
+export interface ControlFlowGraph {
+  /** viewBox size; the rendered SVG scales to the width available to it. */
+  width: number;
+  height: number;
+  nodes: ControlFlowNode[];
+  edges: ControlFlowEdge[];
+}
+
+export interface ControlScenario {
+  id: string;
+  /** What the learner sees as the scenario heading (protocol names don't). */
+  displayTitle: string;
+  /** Setup description, shown verbatim. */
+  card: string;
+  /** The unacceptable-outcome chip text. */
+  outcome: string;
+  /** Bold setup-name line opening the reveal ("This is trusted monitoring."). */
+  revealName: string;
+  /** Ideal explanation, shown verbatim after the learner submits. */
+  reveal: string;
+  graph: ControlFlowGraph;
+}
+
+/**
+ * A pre-commit reasoning exercise over control-protocol setups: one scenario
+ * at a time, the learner writes freeform reasoning about whether the control
+ * property holds, then a reveal names the setup and gives the ideal
+ * explanation for self-comparison. Deliberately no verdict control and no
+ * grading — reveals ship to the client by design; answers persist (not
+ * graded) for signed-in learners.
+ */
+export interface ControlScenariosExercise extends ExerciseBase {
+  type: "control-scenarios";
+  /** Block title ("Run the evaluation — 5 scenarios"). */
+  title: string;
+  /** The recurring question, asked identically for every scenario. */
+  question: string;
+  /** Answer textarea placeholder. */
+  placeholder: string;
+  actors: ControlActor[];
+  scenarios: ControlScenario[];
+}
+
+// --- Staged questions (free-text reasoning prompts with staged reveals) ---
+
+/** One free-text question: framing → bold question → submit → reveal. */
+export interface StagedQuestion {
+  id: string;
+  /** Question heading ("Why is a catch a win?"). */
+  title: string;
+  /** 1–3 framing sentences shown before the question. */
+  framing?: string;
+  /** The question itself, rendered bold. */
+  question: string;
+  /** Extra instruction line under the question (e.g. "describe a case…"). */
+  instruction?: string;
+  /** Optional reveal opener: one-line acknowledgement of a good answer. */
+  acknowledgement?: string;
+  /** Reveal substance; `\n\n` separates paragraphs. */
+  reveal: string;
+  /** Intro line for labelled examples, when the reveal enumerates cases. */
+  examplesIntro?: string;
+  /** Labelled example cases rendered after the substance. */
+  examples?: { label: string; text: string }[];
+  /** Optional forward pointer closing the reveal. */
+  forward?: string;
+  /** Substring of `forward` to render as a link, with its destination. */
+  forwardLinkText?: string;
+  forwardHref?: string;
+  /** Interactive widget rendered at the end of the reveal (by registry key). */
+  revealWidget?: "control-timeline";
+  /** Hint text, hidden behind a "Show hint" toggle until requested. */
+  hint?: string;
+}
+
+/** A titled group of questions ("Part A — Catching a model red-handed"). */
+export interface StagedQuestionPart {
+  id: string;
+  title: string;
+  questions: StagedQuestion[];
+}
+
+/**
+ * A multi-part block of free-text reasoning prompts with staged reveals,
+ * presented one part at a time in the paper's understanding-check format:
+ * each Submit commits that question's answer and opens its reveal —
+ * acknowledgement, substance, optional forward pointer. No grading — reveals
+ * ship to the client by design; answers persist (not graded) for signed-in
+ * learners.
+ */
+export interface StagedQuestionsExercise extends ExerciseBase {
+  type: "staged-questions";
+  /** Block title ("Why catching counts, and where evaluation runs out"). */
+  title: string;
+  parts: StagedQuestionPart[];
+  /** Answer textarea placeholder. */
+  placeholder?: string;
+  /**
+   * Persistent figure rendered above every part (by registry key), for
+   * exercises whose questions all reason about one shared picture.
+   */
+  figureWidget?: "two-worlds";
+}
+
+// --- Commit & construct (commit to a view, then build the counterexample) ---
+
+export interface CommitConstructOption {
+  id: string;
+  label: string;
+}
+
+/**
+ * A two-part exercise in the paper's understanding-check format. Part 1: the
+ * learner commits to one of two views, rates their confidence, and explains
+ * their reasoning — submit opens a course-correction reveal. Part 2: they
+ * construct a concrete threat model (a short outcome plus a longer
+ * construction, with guidance conditioned on their Part 1 choice and an
+ * initially hidden hint) — submit opens the worked-example reveal and
+ * comparison questions. No grading; responses persist for signed-in learners.
+ */
+export interface CommitConstructExercise extends ExerciseBase {
+  type: "commit-construct";
+  title: string;
+  commit: {
+    /** Step heading ("Commit to a view"). */
+    partTitle: string;
+    framing?: string;
+    /** The question itself, rendered bold. */
+    question: string;
+    /** Follow-on framing after the question (the thought experiment). */
+    supposition?: string;
+    instruction?: string;
+    options: CommitConstructOption[];
+    confidencePrompt: string;
+    confidenceOptions: CommitConstructOption[];
+    /** Course-correction reveal; `\n\n` separates paragraphs. */
+    reveal: string;
+  };
+  construct: {
+    /** Step heading ("Construct the threat model"). */
+    partTitle: string;
+    /** The single construction prompt (names the outcome and asks how). */
+    threatPrompt: string;
+    /** Constraint line shown under the construction prompt. */
+    constraint?: string;
+    /** Extra guidance keyed by the Part 1 choice id. */
+    guidanceByChoice?: Record<string, string>;
+    /** Hidden until the learner asks for it. */
+    hint?: string;
+    /** Bold opening line of the reveal. */
+    revealLead: string;
+    reveal: string;
+    /** Line introducing the comparison against the learner's construction. */
+    compareIntro: string;
+    compareQuestions: string[];
+    closing?: string;
+  };
+}
+
 export interface WritingExercise extends ExerciseBase {
   type: OpenExerciseType;
   format: DeliverableFormat;
@@ -434,6 +669,9 @@ export type Exercise =
   | TapRevealExercise
   | AllocationExercise
   | ArgueRevealExercise
+  | ControlScenariosExercise
+  | StagedQuestionsExercise
+  | CommitConstructExercise
   | WritingExercise;
 
 export function isChoiceExercise(exercise: Exercise): exercise is ChoiceExercise {
@@ -513,9 +751,13 @@ export const DELIVERABLE_FORMAT_LABELS: Record<DeliverableFormat, string> = {
   briefing: "Briefing",
 };
 
-/** Allocation/argue-reveal carry real titles; other types only have a kind. */
+/** Some judgment-exercise types carry real titles; others only have a kind. */
 export function getExerciseDisplayTitle(exercise: Exercise): string {
-  return exercise.type === "allocation" || exercise.type === "argue-reveal"
+  return exercise.type === "allocation" ||
+    exercise.type === "argue-reveal" ||
+    exercise.type === "control-scenarios" ||
+    exercise.type === "staged-questions" ||
+    exercise.type === "commit-construct"
     ? exercise.title
     : EXERCISE_TYPE_LABELS[exercise.type];
 }
@@ -529,6 +771,9 @@ export const EXERCISE_TYPE_LABELS: Record<ExerciseType, string> = {
   "tap-reveal": "Quick recall",
   allocation: "Allocation exercise",
   "argue-reveal": "Argument exercise",
+  "control-scenarios": "Scenario exercise",
+  "staged-questions": "Reasoning prompts",
+  "commit-construct": "Commit & construct",
   "short-answer": "Short answer",
   "writing-prompt": "Writing prompt",
   memo: "Memo",
