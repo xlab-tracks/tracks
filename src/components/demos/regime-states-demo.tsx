@@ -4,21 +4,18 @@ import { useState } from "react";
 import { SlideStepper, type SlideStep } from "./slide-stepper";
 
 // The regime model's three states and the safety budget (module 2,
-// "Determining the usefulness"): the diagram builds across seven steps —
-// the three states first, then the resource state expanded into the
-// household picture (the will account, the priced aisles, the basket,
-// and what refills the budget). Content restates the lesson's own prose.
+// "Determining the usefulness"). The diagram builds across seven steps:
+// the world state alone (center stage, larger), then the epistemic state
+// beside it, then the resource state completing the row — then the resource
+// state grows a tree down to the household picture (the will account, the
+// priced aisles, the basket, and what refills the budget), drawn in a
+// shopping theme. Content restates the lesson's own prose.
 
 const STEPS: SlideStep[] = [
   {
-    label: "A regime, split in three",
-    caption:
-      "A regime — the bundle of conditions that determines whether control is worth it — splits into three parts that behave very differently. Each answers a different question. Hover or tap a box to peek inside.",
-  },
-  {
     label: "World state",
     caption:
-      "The facts on the ground, whether or not anyone knows them. You never observe the world state directly — the next step shows why that matters.",
+      "A regime — the bundle of conditions that determines whether control is worth it — splits into three parts that behave very differently. The first is the world state: the facts on the ground, whether or not anyone knows them. You never observe it directly.",
   },
   {
     label: "Epistemic state",
@@ -26,7 +23,12 @@ const STEPS: SlideStep[] = [
       "Our picture of the world state. The two can come apart: a control evaluation's score is a measurement, and whether control actually works against the actual model is a different thing entirely. A high safety score from a poor evaluation is a reassuring epistemic state pointing at a world state it doesn't match.",
   },
   {
-    label: "Resource state: the will account",
+    label: "Resource state",
+    caption:
+      "The third part is the safety budget — can we afford to act on what we think? It has more structure than the word “budget” suggests: picture a household. Hover or tap any box to peek inside.",
+  },
+  {
+    label: "The will account",
     caption:
       "One bank account: political will — the authorization to do costly safety things. Not money; permission and backing. It is the only currency. It fades over time if nothing reinforces it, and it spikes after frightening incidents.",
   },
@@ -54,20 +56,25 @@ type StateId = "world" | "epistemic" | "resource";
 
 interface StateBox {
   id: StateId;
-  x: number;
   title: string;
   question: [string, string];
   items: string[];
+  /** The step that introduces the box. */
+  appearsAt: number;
+  /** Per-phase transform [step 0, step 1, steps ≥2] → translate + scale. */
+  layout: [
+    { tx: number; ty: number; s: number },
+    { tx: number; ty: number; s: number },
+    { tx: number; ty: number; s: number },
+  ];
 }
 
-const BOX_Y = 34;
 const BOX_W = 156;
 const BOX_H = 150;
 
 const BOXES: StateBox[] = [
   {
     id: "world",
-    x: 16,
     title: "World state",
     question: ["What is control actually", "worth here?"],
     items: [
@@ -76,10 +83,15 @@ const BOXES: StateBox[] = [
       "how checkable research is",
       "what has happened so far",
     ],
+    appearsAt: 0,
+    layout: [
+      { tx: 155, ty: 20, s: 1.35 },
+      { tx: 72, ty: 34, s: 1.12 },
+      { tx: 16, ty: 34, s: 1 },
+    ],
   },
   {
     id: "epistemic",
-    x: 182,
     title: "Epistemic state",
     question: ["What do we justifiably", "think it's worth?"],
     items: [
@@ -88,10 +100,15 @@ const BOXES: StateBox[] = [
       "the track record",
       "evaluation results",
     ],
+    appearsAt: 1,
+    layout: [
+      { tx: 285, ty: 34, s: 1 },
+      { tx: 285, ty: 34, s: 1 },
+      { tx: 182, ty: 34, s: 1 },
+    ],
   },
   {
     id: "resource",
-    x: 348,
     title: "Resource state",
     question: ["Can we afford to act", "on what we think?"],
     items: [
@@ -100,14 +117,55 @@ const BOXES: StateBox[] = [
       "price: compute",
       "price: delay",
     ],
+    appearsAt: 2,
+    layout: [
+      { tx: 348, ty: 34, s: 1 },
+      { tx: 348, ty: 34, s: 1 },
+      { tx: 348, ty: 34, s: 1 },
+    ],
   },
 ];
 
 // Which box a step opens by default; hover/tap can override on steps 0–2.
-const STEP_DEFAULT: (StateId | null)[] = [null, "world", "epistemic"];
+const STEP_DEFAULT: (StateId | null)[] = ["world", "epistemic", "resource"];
 
-/** One aisle shelf in the household picture. */
-function Aisle({ y, text }: { y: number; text: string }) {
+// Shopping palette: one hue per aisle, reused by the basket's bars.
+const AISLES = [
+  {
+    text: "usefulness tax · public mood",
+    shelf: "fill-amber-500/15 stroke-amber-500",
+    tag: "fill-amber-500",
+  },
+  {
+    text: "compute · internal politics",
+    shelf: "fill-sky-500/15 stroke-sky-500",
+    tag: "fill-sky-500",
+  },
+  {
+    text: "delay · the race",
+    shelf: "fill-rose-500/15 stroke-rose-500",
+    tag: "fill-rose-500",
+  },
+] as const;
+
+const BASKET_BARS = [
+  { label: "tax", width: 52, bar: "fill-amber-500" },
+  { label: "compute", width: 24, bar: "fill-sky-500" },
+  { label: "delay", width: 6, bar: "fill-rose-500" },
+] as const;
+
+/** One aisle shelf with its price tag. */
+function Aisle({
+  y,
+  text,
+  shelf,
+  tag,
+}: {
+  y: number;
+  text: string;
+  shelf: string;
+  tag: string;
+}) {
   return (
     <g>
       <rect
@@ -116,11 +174,20 @@ function Aisle({ y, text }: { y: number; text: string }) {
         width={180}
         height={22}
         rx={6}
-        className="fill-muted stroke-border"
-        strokeWidth={1}
+        className={shelf}
+        strokeWidth={1.25}
       />
+      <circle cx={211} cy={y + 11} r={7} className={tag} />
       <text
-        x={290}
+        x={211}
+        y={y + 14.5}
+        textAnchor="middle"
+        className="fill-white text-[9px] font-bold"
+      >
+        $
+      </text>
+      <text
+        x={296}
         y={y + 15}
         textAnchor="middle"
         className="fill-foreground text-[10px]"
@@ -140,15 +207,15 @@ function InArrow({ x, toY, label }: { x: number; toY: number; label: string }) {
         y1={344}
         x2={x}
         y2={toY}
-        className="stroke-muted-foreground"
+        className="stroke-emerald-600 dark:stroke-emerald-400"
         strokeWidth={1.5}
-        markerEnd="url(#rs-arrow)"
+        markerEnd="url(#rs-refill)"
       />
       <text
         x={x}
         y={360}
         textAnchor="middle"
-        className="fill-muted-foreground text-[9px]"
+        className="fill-emerald-700 text-[9px] dark:fill-emerald-400"
       >
         {label}
       </text>
@@ -156,12 +223,23 @@ function InArrow({ x, toY, label }: { x: number; toY: number; label: string }) {
   );
 }
 
+// The tree from the resource state down to the household picture: a trunk
+// from the box's bottom, branching to each target as its step arrives.
+const TRUNK_X = 426;
+const TRUNK_TOP = 184;
+const BRANCHES = [
+  { toX: 100, appearsAt: 3 }, // the account
+  { toX: 290, appearsAt: 4 }, // the aisles
+  { toX: 452, appearsAt: 5 }, // the basket
+] as const;
+
 export function RegimeStatesDemo() {
   const [hovered, setHovered] = useState<StateId | null>(null);
 
   return (
     <SlideStepper steps={STEPS}>
       {(step) => {
+        const phase = Math.min(step, 2) as 0 | 1 | 2;
         // From the will-account step on, the household picture is the focus
         // and the resource box stays open; before that, hover wins.
         const active: StateId | null =
@@ -175,7 +253,7 @@ export function RegimeStatesDemo() {
             viewBox={`0 0 ${W} ${H}`}
             className="w-full"
             role="img"
-            aria-label="The three regime states — world, epistemic, resource — with the resource state expanded into the safety budget: the political-will account, the priced aisles, the basket, and what refills the budget"
+            aria-label="The three regime states — world, epistemic, resource — introduced one at a time, with the resource state branching into the safety budget: the political-will account, the priced aisles, the basket, and what refills the budget"
           >
             <defs>
               <marker
@@ -189,11 +267,27 @@ export function RegimeStatesDemo() {
               >
                 <path d="M0,0 L8,4 L0,8 z" className="fill-muted-foreground" />
               </marker>
+              <marker
+                id="rs-refill"
+                viewBox="0 0 8 8"
+                refX="6"
+                refY="4"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path
+                  d="M0,0 L8,4 L0,8 z"
+                  className="fill-emerald-600 dark:fill-emerald-400"
+                />
+              </marker>
             </defs>
 
             {/* The three state boxes */}
             {BOXES.map((box) => {
               const open = active === box.id;
+              const visible = step >= box.appearsAt;
+              const { tx, ty, s } = box.layout[phase];
               return (
                 <g
                   key={box.id}
@@ -202,11 +296,13 @@ export function RegimeStatesDemo() {
                   onClick={() =>
                     setHovered((h) => (h === box.id ? null : box.id))
                   }
-                  className="cursor-pointer"
+                  className="cursor-pointer transition-all duration-700 ease-in-out motion-reduce:transition-none"
+                  opacity={visible ? 1 : 0}
+                  style={{
+                    transform: `translate(${tx}px, ${ty}px) scale(${s})`,
+                  }}
                 >
                   <rect
-                    x={box.x}
-                    y={BOX_Y}
                     width={BOX_W}
                     height={BOX_H}
                     rx={12}
@@ -218,8 +314,8 @@ export function RegimeStatesDemo() {
                     strokeWidth={1.5}
                   />
                   <text
-                    x={box.x + BOX_W / 2}
-                    y={BOX_Y + 24}
+                    x={BOX_W / 2}
+                    y={24}
                     textAnchor="middle"
                     className="fill-foreground text-[12px] font-semibold"
                   >
@@ -229,10 +325,10 @@ export function RegimeStatesDemo() {
                     textAnchor="middle"
                     className="fill-muted-foreground text-[10px] italic"
                   >
-                    <tspan x={box.x + BOX_W / 2} y={BOX_Y + 42}>
+                    <tspan x={BOX_W / 2} y={42}>
                       {box.question[0]}
                     </tspan>
-                    <tspan x={box.x + BOX_W / 2} y={BOX_Y + 55}>
+                    <tspan x={BOX_W / 2} y={55}>
                       {box.question[1]}
                     </tspan>
                   </text>
@@ -243,8 +339,8 @@ export function RegimeStatesDemo() {
                     {box.items.map((item, i) => (
                       <text
                         key={item}
-                        x={box.x + 12}
-                        y={BOX_Y + 80 + i * 17}
+                        x={12}
+                        y={80 + i * 17}
                         className="fill-muted-foreground text-[10px]"
                       >
                         – {item}
@@ -258,10 +354,10 @@ export function RegimeStatesDemo() {
             {/* Measured-vs-actual gap: epistemic points at world */}
             <g
               className="transition-opacity duration-500"
-              opacity={step === 2 ? 1 : 0}
+              opacity={step === 1 ? 1 : 0}
             >
               <path
-                d="M 260 30 Q 177 4 98 30"
+                d="M 363 30 Q 264 2 172 26"
                 fill="none"
                 className="stroke-muted-foreground"
                 strokeWidth={1.5}
@@ -269,8 +365,8 @@ export function RegimeStatesDemo() {
                 markerEnd="url(#rs-arrow)"
               />
               <text
-                x={177}
-                y={14}
+                x={268}
+                y={12}
                 textAnchor="middle"
                 className="fill-muted-foreground text-[9px]"
               >
@@ -278,20 +374,24 @@ export function RegimeStatesDemo() {
               </text>
             </g>
 
-            {/* Household picture — the safety budget */}
+            {/* The tree from the resource state to the household picture */}
+            {BRANCHES.map(({ toX, appearsAt }) => (
+              <path
+                key={toX}
+                d={`M ${TRUNK_X} ${TRUNK_TOP} C ${TRUNK_X} 194, ${toX} 186, ${toX} 196`}
+                fill="none"
+                className="stroke-muted-foreground transition-opacity duration-500"
+                opacity={step >= appearsAt ? 0.8 : 0}
+                strokeWidth={1.5}
+                markerEnd="url(#rs-arrow)"
+              />
+            ))}
+
+            {/* Household picture — the safety budget, shopping-themed */}
             <g
               className="transition-opacity duration-500"
               opacity={bankVisible ? 1 : 0}
             >
-              <line
-                x1={426}
-                y1={BOX_Y + BOX_H}
-                x2={426}
-                y2={204}
-                className="stroke-primary/50"
-                strokeWidth={1.5}
-                strokeDasharray="4 3"
-              />
               <text
                 x={100}
                 y={208}
@@ -306,11 +406,26 @@ export function RegimeStatesDemo() {
                 width={160}
                 height={76}
                 rx={10}
-                className="fill-card stroke-border"
+                className="fill-emerald-500/10 stroke-emerald-600 dark:stroke-emerald-400"
                 strokeWidth={1.5}
               />
+              <circle
+                cx={46}
+                cy={252}
+                r={11}
+                className="fill-emerald-500/25 stroke-emerald-600 dark:stroke-emerald-400"
+                strokeWidth={1.25}
+              />
               <text
-                x={100}
+                x={46}
+                y={256.5}
+                textAnchor="middle"
+                className="fill-emerald-700 text-[11px] font-bold dark:fill-emerald-400"
+              >
+                ¤
+              </text>
+              <text
+                x={112}
                 y={248}
                 textAnchor="middle"
                 className="fill-foreground text-[12px] font-semibold"
@@ -318,7 +433,7 @@ export function RegimeStatesDemo() {
                 Political will
               </text>
               <text
-                x={100}
+                x={112}
                 y={264}
                 textAnchor="middle"
                 className="fill-muted-foreground text-[10px]"
@@ -339,9 +454,15 @@ export function RegimeStatesDemo() {
               >
                 the aisles — the regime sets prices
               </text>
-              <Aisle y={214} text="usefulness tax · public mood" />
-              <Aisle y={242} text="compute · internal politics" />
-              <Aisle y={270} text="delay · the race" />
+              {AISLES.map((aisle, i) => (
+                <Aisle
+                  key={aisle.text}
+                  y={214 + i * 28}
+                  text={aisle.text}
+                  shelf={aisle.shelf}
+                  tag={aisle.tag}
+                />
+              ))}
             </g>
 
             <g
@@ -362,7 +483,7 @@ export function RegimeStatesDemo() {
                 width={104}
                 height={76}
                 rx={10}
-                className="fill-card stroke-border"
+                className="fill-violet-500/10 stroke-violet-600 dark:stroke-violet-400"
                 strokeWidth={1.5}
               />
               <text
@@ -373,13 +494,7 @@ export function RegimeStatesDemo() {
               >
                 control&apos;s basket
               </text>
-              {(
-                [
-                  ["tax", 52],
-                  ["compute", 24],
-                  ["delay", 6],
-                ] as const
-              ).map(([label, width], i) => (
+              {BASKET_BARS.map(({ label, width, bar }, i) => (
                 <g key={label}>
                   <text
                     x={408}
@@ -394,7 +509,7 @@ export function RegimeStatesDemo() {
                     width={width}
                     height={7}
                     rx={2}
-                    className="fill-primary/60"
+                    className={bar}
                   />
                 </g>
               ))}
@@ -410,7 +525,7 @@ export function RegimeStatesDemo() {
                 y1={298}
                 x2={180}
                 y2={298}
-                className="stroke-primary"
+                className="stroke-emerald-600 dark:stroke-emerald-400"
                 strokeWidth={3}
                 strokeLinecap="round"
               />
