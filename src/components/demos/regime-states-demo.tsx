@@ -61,8 +61,9 @@ interface StateBox {
   items: string[];
   /** The step that introduces the box. */
   appearsAt: number;
-  /** Per-phase transform [step 0, step 1, steps ≥2] → translate + scale. */
+  /** Per-phase transform [step 0, step 1, step 2, steps ≥3]. */
   layout: [
+    { tx: number; ty: number; s: number },
     { tx: number; ty: number; s: number },
     { tx: number; ty: number; s: number },
     { tx: number; ty: number; s: number },
@@ -88,6 +89,7 @@ const BOXES: StateBox[] = [
       { tx: 155, ty: 20, s: 1.35 },
       { tx: 72, ty: 34, s: 1.12 },
       { tx: 16, ty: 34, s: 1 },
+      { tx: 16, ty: 34, s: 1 },
     ],
   },
   {
@@ -104,6 +106,7 @@ const BOXES: StateBox[] = [
     layout: [
       { tx: 285, ty: 34, s: 1 },
       { tx: 285, ty: 34, s: 1 },
+      { tx: 182, ty: 34, s: 1 },
       { tx: 182, ty: 34, s: 1 },
     ],
   },
@@ -122,6 +125,8 @@ const BOXES: StateBox[] = [
       { tx: 348, ty: 34, s: 1 },
       { tx: 348, ty: 34, s: 1 },
       { tx: 348, ty: 34, s: 1 },
+      // Budget focus: the other states clear out; resource takes the center.
+      { tx: 182, ty: 34, s: 1 },
     ],
   },
 ];
@@ -225,7 +230,7 @@ function InArrow({ x, toY, label }: { x: number; toY: number; label: string }) {
 
 // The tree from the resource state down to the household picture: a trunk
 // from the box's bottom, branching to each target as its step arrives.
-const TRUNK_X = 426;
+const TRUNK_X = 260; // center of the resource box once it holds the stage
 const TRUNK_TOP = 184;
 const BRANCHES = [
   { toX: 100, appearsAt: 3 }, // the account
@@ -239,7 +244,7 @@ export function RegimeStatesDemo() {
   return (
     <SlideStepper steps={STEPS}>
       {(step) => {
-        const phase = Math.min(step, 2) as 0 | 1 | 2;
+        const phase = Math.min(step, 3) as 0 | 1 | 2 | 3;
         // From the will-account step on, the household picture is the focus
         // and the resource box stays open; before that, hover wins.
         const active: StateId | null =
@@ -286,7 +291,8 @@ export function RegimeStatesDemo() {
             {/* The three state boxes */}
             {BOXES.map((box) => {
               const open = active === box.id;
-              const visible = step >= box.appearsAt;
+              const visible =
+                step >= box.appearsAt && (step < 3 || box.id === "resource");
               const { tx, ty, s } = box.layout[phase];
               return (
                 <g
@@ -300,6 +306,7 @@ export function RegimeStatesDemo() {
                   opacity={visible ? 1 : 0}
                   style={{
                     transform: `translate(${tx}px, ${ty}px) scale(${s})`,
+                    pointerEvents: visible ? undefined : "none",
                   }}
                 >
                   <rect
