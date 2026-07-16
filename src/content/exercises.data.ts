@@ -1548,4 +1548,16 @@ export const exercises: Exercise[] = [
       },
     ],
   },
+  // --- Control module 2, "Determining the usefulness" (c-regimes-l1): the
+  // pre-commitment prompt at the top of the lesson. Learners revisit their
+  // answer at the end of the module.
+  {
+    id: "cr-precommit",
+    type: "short-answer",
+    prompt:
+      "Before reading further, write 3–5 sentences answering: Is AI control good? How good? Don't hedge — commit to a view with whatever reasons you currently have. You'll see your answer again at the end of the module.",
+    format: "free-form",
+    minWords: 30,
+    maxWords: 150,
+  },
 ];
