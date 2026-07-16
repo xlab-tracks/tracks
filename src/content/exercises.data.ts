@@ -1560,24 +1560,8 @@ export const exercises: Exercise[] = [
     minWords: 30,
     maxWords: 150,
   },
-  // The lesson's two closing reflection questions, as long-response writing
-  // exercises. Prompts carry the author's Reflection Questions prose.
-  {
-    id: "cr-reflect-q1",
-    type: "writing-prompt",
-    format: "free-form",
-    prompt: [
-      "**Q1: Should you, and how much?**",
-      "Given the three states right now: does the next unit of budget do more good spent on control than spent on the alternatives?",
-      "Keep in mind:",
-      "- We're looking at marginal improvement from a new unit of budget allocated, not the technique as a whole. For example, monitoring systems may quickly taper off in marginal utility.",
-      "- Think about how allocating funding now can affect the inner and outer loops mentioned previously. Because spending can cascade into more general spending & will, the value of spending should be evaluated with this in mind.",
-      "- Unit-by-unit comparison works when techniques improve smoothly with investment. Some purchases may not be scalable and cost much more, like legislation, and therefore may need to be evaluated differently.",
-      "Your response should be one number per technique — risk reduction per unit of will — along with the reasoning behind each, which will help you compare a monitoring protocol to an interpretability agenda to a lobbying campaign.",
-    ].join("\n\n"),
-    minWords: 100,
-    maxWords: 500,
-  },
+  // The lesson's closing reflection question, as a long-response writing
+  // exercise. The prompt carries the author's Reflection Questions prose.
   {
     id: "cr-reflect-q2",
     type: "writing-prompt",
@@ -1588,7 +1572,7 @@ export const exercises: Exercise[] = [
       "- One before any event that would count as evidence of misalignment.",
       "- One at the first such event.",
       "- One after it.",
-      "Then answer: where does control's marginal value peak along this trajectory, and what could make it decrease/increase? Your answer to Q1 should ideally provide a good starting point for this question.",
+      "Then answer: where does control's marginal value peak along this trajectory, and what could make it decrease/increase?",
       "If you disagree with the scenario on any axis, say so and use your own predictions.",
     ].join("\n\n"),
     minWords: 75,
