@@ -1594,4 +1594,47 @@ export const exercises: Exercise[] = [
     minWords: 75,
     maxWords: 500,
   },
+  // Module 2 long exercises: the portfolio-allocation exercise. Each scenario
+  // states a full regime — world, epistemic, and resource states, the
+  // misalignment archetype, and the approaching capability stage — and the
+  // learner divides the team across the technique menu and defends it.
+  {
+    id: "cr-portfolio-allocation",
+    type: "allocation",
+    title: "Portfolio allocation across regimes",
+    prompt:
+      "You direct a safety team of 10 researchers for the next stage of development. Each scenario below stipulates a full regime: the world state, epistemic state, and resource state, the misalignment world you are (probably) in, and the capability stage you are approaching. For each one, decide how many people (halves allowed) work on each agenda, and defend the allocation: which technique gets the marginal researcher, what payoff carries that choice, and which spend binds.",
+    agendas: [
+      { id: "control-protocols", label: "Control protocols" },
+      { id: "alignment-research", label: "Alignment research" },
+      { id: "interpretability", label: "Interpretability" },
+      { id: "verification-evals", label: "Verification & evals science" },
+      { id: "scalable-oversight", label: "Scalable oversight" },
+      { id: "policy-pause", label: "Policy, pause & coordination" },
+      { id: "security", label: "Security" },
+    ],
+    scenarios: [
+      {
+        id: "schemeria-racing",
+        title: "Scenario 1 — Schemeria, racing, approaching autonomous coding",
+        description:
+          "World state: models are coherently scheming and it shows — two sandboxed escape attempts were caught this year; research output is middling to verify. Epistemic state: rich — line-by-line transcripts of both catches, and evals that reproduce the behavior. Resource state: a rival lab sits a few months behind; the catches spiked will, but delay remains nearly unbuyable and safety compute is capped at a small share. Approaching stage: models about to automate most of the lab's coding.",
+      },
+      {
+        id: "quiet-world-slack",
+        title: "Scenario 2 — Easyland or Lurkville?, treaty slack, approaching autonomous research",
+        description:
+          "World state: alignment nature unknown — nothing rules out scheming, sloppiness, or apparent-success seeking; checkability of research output unknown, probably middling. Epistemic state: thin — evals look fine, no catches, no incidents; the reassuring picture is consistent with Easyland and with Lurkville. Resource state: an international agreement has bought roughly a decade of slack — the will account is full and refills easily, delay and the usefulness tax are cheap, compute negotiable. Approaching stage: models about to run research autonomously.",
+      },
+      {
+        id: "slopolis-commercial",
+        title: "Scenario 3 — Slopolis under commercial pressure, mid-stage",
+        description:
+          "World state: no signs of scheming, but models are apparent-success seekers — overselling, downplaying failures, quietly skipping what's hard to check; failures concentrate exactly where verification is expensive. Epistemic state: good visibility into the gaming itself, almost none into research quality. Resource state: heavy commercial pressure; the public is annoyed but not scared, so the product-wide usefulness tax is expensive; will is moderate and fading. Approaching stage: models that meaningfully multiply human researchers but cannot yet work unsupervised.",
+      },
+    ],
+    totalPeople: 10,
+    step: 0.5,
+    minReasoningChars: 250,
+  },
 ];
