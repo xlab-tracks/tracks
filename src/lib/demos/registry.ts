@@ -15,6 +15,8 @@ import { AdditiveControlDemo } from "@/components/demos/additive-control-demo";
 import { RsiBootstrapDemo } from "@/components/demos/rsi-bootstrap-demo";
 import { RegimeStatesDemo } from "@/components/demos/regime-states-demo";
 import { RegimeLoopDemo } from "@/components/demos/regime-loop-demo";
+import { FiveWorldsDemo } from "@/components/demos/five-worlds-demo";
+import { TwoGamesDemo } from "@/components/demos/two-games-demo";
 
 // Central demo registry — the single integration point. Reference a demo by ID
 // from MDX (<Demo id="…"/>), the gallery, standalone pages, or embeds.
@@ -143,6 +145,18 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "regime-loop",
     title: "The loop",
     component: RegimeLoopDemo,
+    tags: ["control", "how-useful"],
+  },
+  "five-worlds": {
+    id: "five-worlds",
+    title: "The five worlds",
+    component: FiveWorldsDemo,
+    tags: ["control", "how-useful"],
+  },
+  "two-games": {
+    id: "two-games",
+    title: "The two games",
+    component: TwoGamesDemo,
     tags: ["control", "how-useful"],
   },
 };
