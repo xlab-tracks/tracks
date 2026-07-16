@@ -34,7 +34,7 @@ const WORLDS: World[] = [
     x: 0.42,
     y: 0.22,
     blurb:
-      "No scheming, but models are apparent-success seekers — overselling, downplaying failures, quietly skipping what's hard to check. Failures concentrate exactly where verification is expensive.",
+      "No scheming, but models are apparent-success seekers: no hidden goals, just trained habits that optimize for looking successful — overselling, downplaying failures, quietly skipping what's hard to check. Failures concentrate exactly where verification is expensive.",
   },
   {
     id: "hackistan",
