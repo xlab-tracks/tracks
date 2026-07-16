@@ -387,6 +387,11 @@ export interface ArgueRevealExercise extends ExerciseBase {
   type: "argue-reveal";
   /** Display title — shown on the intro step and in the exercises gallery. */
   title: string;
+  /**
+   * Course-numbering chip shown instead of the generic type label,
+   * e.g. "Exercise 2.1".
+   */
+  numberLabel?: string;
   /** Extra intro framing shown under the prompt. */
   guidance?: string;
   /** Line above the concept chips, e.g. "Which ideas are you drawing on?" */
