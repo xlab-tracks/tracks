@@ -1,0 +1,211 @@
+## Is control good?
+
+<Callout variant="note" title="Author TODO">
+  Exercise: cr-precommit — before reading further, write 3–5 sentences: "Is AI
+  control good? How good?" You'll see your answer again at the end of the
+  module.
+</Callout>
+
+In the last module you learned what AI control is: techniques for getting useful work out of AI systems even if those systems are trying to undermine you — monitoring their outputs, auditing suspicious behavior, restricting what they can touch. This module asks a different question: is doing that a good use of our limited resources? And it will try to convince you that the question, asked that way, has no answer.
+
+The trouble is that informed people genuinely disagree about the answer. Ask safety researchers whether control is a good investment and you will hear everything from the single most important thing we can do to a distraction that makes things worse. Some of the disagreement is technical — whether monitoring scales, whether evals can bound what a schemer can do. But much of it is about the world control will be deployed into: how likely models are to scheme, how much a lab will spend on safety, whether anyone in power will act on a warning. Whether control is worth doing depends on those conditions. We'll call a full set of such conditions a regime, and the claim of this module is that "is control good?" only becomes answerable once you say which regime you are in. The machinery this module builds to answer it — three states, a budget, a loop — we'll call the regime model, to keep it separate from the model, which in these readings always means the AI system.
+
+By the end of the module you will be able to answer three questions about any regime: should you invest in control there, how much, and when. And not just for control — the same machinery works for any safety technique, which is what makes it a tool for deciding portfolios rather than a piece of advocacy.
+
+### The two games
+
+Everything in this module organizes around two games that safety people are playing at once.
+
+The inner game is played inside the lab, against the possibly-scheming model: designing protocols, extracting trustworthy work, catching bad behavior. It is about spending the safety resources you have well.
+
+The outer game is played out in the world: convincing leadership, the public, and governments to make safety spending possible at all. It is about growing the resources available to spend.
+
+The two games are coupled, and the coupling is the most important idea in this module. Playing the inner game well produces evidence — most dramatically, a scheming model caught in the act. Evidence is what moves the outer game: it scares decision-makers into authorizing more safety spending. And that spending funds the next round of the inner game. Control is unusual among safety techniques in that it plays both games at once, and the rest of this module builds the machinery to say when that makes it a good buy.
+
+<Callout variant="note" title="Author TODO">
+  Exercise: cr-check-games — a team deploys a protocol and publishes the catch
+  transcript: which game(s)?
+</Callout>
+
+## The three states and the safety budget
+
+Related reading (optional, revisited in Reading 3): [Efficient tradeoffs and the safety-usefulness tradeoff model](https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety) — the safety-budget picture this section builds on.
+
+A regime — the bundle of conditions that determines whether control is worth it — sounds hopelessly vague. The regime model's first move is to split it into three parts that behave very differently. Learning to keep them separate is the skill the classification exercises will test.
+
+<Callout variant="note" title="Author TODO">
+  Demo: three-state diagram — hover to expand each state.
+</Callout>
+
+We'll index regimes by capability stage: a standard staged breakdown of how capable frontier models are, from "speeds up human researchers somewhat" to "runs research autonomously" ([a breakdown of AI capability levels focused on AI R&D labor acceleration](https://www.alignmentforum.org/posts/LjgcRbptarrRfJWtR/a-breakdown-of-ai-capability-levels-focused-on-ai-r-and-d)). Capability itself moves continuously; stages are the coarse buckets we'll reason in.
+
+<Callout variant="note" title="Author TODO">
+  Confirm the linked post is the intended AIFM-stages source before publishing.
+</Callout>
+
+### World state: what is actually true
+
+The first part is the facts on the ground, whether or not anyone knows them:
+
+- What the model is actually like. Aligned? A schemer, biding its time? Merely sloppy — honest but unreliable? Or an apparent-success seeker — no hidden goals, but trained habits that optimize for looking successful (more on this below)?
+- How capable it is.
+- How checkable AI research output is. If a model hands you a proof or an experiment, can you verify it efficiently, or do you have to take it on trust?
+- What has happened with the model so far: where it's deployed, what it has been caught doing, what it's been contained from.
+
+You never observe the world state directly. That sounds like a philosophical quibble; the next section shows why it isn't.
+
+<Callout variant="note" title="Author TODO">
+  Exercise: cr-attr-world — which of these belong in the world state?
+  (multi-select with distractors from the other boxes)
+</Callout>
+
+### Epistemic state: what we know
+
+The second part is our picture of the world state:
+
+- The lab's confidence in its alignment methods.
+- Findings from looking inside models (interpretability), and how much we trust them.
+- The track record: past incidents of misalignment, or their absence. An incident is an event — Reading 3 sorts out where events land; here we file what we learned from one. (How such evidence should move us: [How will we update about scheming?](https://redwoodresearch.substack.com/p/how-will-we-update-about-scheming))
+- Evaluation results — including control evaluations, which stage mock attacks to estimate whether the monitoring would catch a real schemer.
+
+One distinction deserves special care, because it is the most common mistake people make with the regime model. A control evaluation's score is a measurement. Whether control actually works against the actual model is a different thing entirely — Reading 3 gives it a place of its own in the regime model. The two can come apart: the eval might be unrealistic, the model might behave differently when it counts. The gap between them is exactly where control evaluations can mislead you — a high safety score from a poor evaluation is a misleadingly reassuring epistemic state pointing at a world state it doesn't match.
+
+<Callout variant="note" title="Author TODO">
+  Exercise: cr-attr-epistemic — which of these belong in the epistemic state?
+  (includes the measured-vs-actual trap as a distractor)
+</Callout>
+
+The three states so far: the world state determines what control is actually worth. The epistemic state determines what we believe it's worth. Control can be genuinely valuable while nobody has solid grounds to believe it — and the reverse.
+
+### Resource state: what we can spend
+
+The third part is the safety budget, and it has more structure than the word "budget" suggests. Picture a household.
+
+There is one bank account: political will — the authorization to do costly safety things. Not money; permission and backing. It is the only currency in the regime model. It fades over time if nothing reinforces it, and it spikes after frightening incidents. Whose will — leadership's, the public's, a government's? They differ, and behave differently; the module returns to that later. For now the regime model keeps one shared account as a deliberate simplification.
+
+The store has aisles with price tags: the different things you can spend will on. Accepting a less useful, slower AI system (the usefulness tax). Diverting compute and researchers to safety work. Delaying a deployment. These are not separate wallets — each is a purchase, priced in will. And crucially, the regime sets the prices, not the lab:
+
+- Delay is priced by the race. With a rival lab three months behind, delay is nearly unbuyable at any level of will.
+- The usefulness tax is priced by commercial pressure and public mood. A scared public makes it cheap for leadership to accept slower AI.
+- Compute is priced by internal politics: how hard it is to pull resources away from the capabilities teams.
+
+Your shopping cart is a safety technique. Deploying control means buying a particular basket: a lot of usefulness tax, some compute, very little delay. The technique's cost is the basket's total, in will.
+
+The same shopping list can be cheap in one regime and ruinous in another. That single observation does a lot of work later, so hold onto it: same plan, same basket — different price tags in different worlds.
+
+Three things generate budget, and they work differently:
+
+- Incidents and evidence refill the bank account directly.
+- Public buy-in doesn't add will; it changes the prices — it makes the usefulness tax cheaper to authorize and slows the fading of will.
+- Passed policy locks a rule in place. You spend will once to get a regulation; afterwards the rule mostly holds by itself: it stops drawing on the account and decays far more slowly than will does (repeal or quiet non-enforcement is possible, but expensive for opponents). It converts a temporary spike of will into a durable floor. There's a catch, though: what gets written into regulation is whatever was easiest to explain and verify politically, which is not necessarily what helps most. Policy trades quality of spending for permanence.
+
+<Callout variant="note" title="Author TODO">
+  Exercises: cr-budget-1, cr-budget-2, cr-budget-3 — budget change or price
+  change; then cr-attr-resource — which of these belong in the resource state?
+</Callout>
+
+### Why the three states are not interchangeable
+
+To recap the structure, the three states answer three different questions:
+
+- World state: what is control actually worth here?
+- Epistemic state: what do we justifiably think it's worth?
+- Resource state: can we afford to act on what we think?
+
+A favorable world state seen through a poor epistemic state means control is useful and we can't know it. A rich epistemic state with an empty resource state means we know exactly what to do and can't do it. Diagnosing which state is the bottleneck is the first thing you'll do with every scenario in this module.
+
+### Five worlds
+
+Abstract states need reference points, so here are five — Greenblatt's caricatured futures ([Current AIs seem pretty misaligned to me](https://www.lesswrong.com/posts/WewsByywWNhX9rtwi/current-ais-seem-pretty-misaligned-to-me)), each a different setting of the world state. They recur through the rest of the module as the standard misalignment archetypes:
+
+- Easyland — alignment generalizes fine. Models are what they appear to be.
+- Slopolis — no scheming, but models are apparent-success seekers: no hidden goals, just trained habits that optimize for looking successful — overselling, downplaying failures, quietly skipping what's hard to check. Failures concentrate exactly where verification is expensive.
+- Hackistan — models cheat and reward-hack constantly. The cheating is detectable with effort, but mundane: no dramatic incidents, just endless gaming.
+- Schemeria — models are coherently scheming, and it shows: incriminating behavior, escape attempts, clear catches.
+- Lurkville — models are coherently scheming and hiding it. No catches, no incidents. By definition it looks like Easyland from the inside — the measured-vs-actual gap as an entire world.
+
+Notice the five differ in the world state, but also in what the epistemic state can see: Lurkville versus Easyland is exactly the gap you just learned, world-sized. Keep them in your pocket — at the end of the module you'll run the full machinery on each and ask which safety techniques still work there.
+
+## Techniques, the loop, and the three channels
+
+Related reading: [Catching AIs red-handed](https://redwoodresearch.substack.com/p/catching-ais-red-handed) — the evidence channel below is this post's argument, folded into the model. [Efficient tradeoffs and the safety-usefulness tradeoff model](https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety) — the two levers below come from here.
+
+<Callout variant="note" title="Author TODO">
+  Flashcards: cr-flash-concepts (cards 1–13) — quick review of Reading 1–2's
+  concepts before starting.
+</Callout>
+
+### Techniques are the choice, not a state
+
+Where do safety techniques — control, interpretability, alignment research — fit among the three states? They don't. The states describe the situation; a technique is what you do about it. The budget is what you spend, the technique is what you buy, and applying the technique is what changes the world.
+
+That gives you exactly two ways to get more safety:
+
+1. Improve the techniques. Better safety technology means any given sacrifice of usefulness buys more safety than it used to.
+2. Grow the budget. More will, or lower prices, means you can afford bigger sacrifices.
+
+Technical safety research works on the first lever. Advocacy, communication, and policy work on the second. The regime model treats them as two intervention points on one system, not two separate causes.
+
+One more classification habit, and it's the trickiest one: a technique's actual effectiveness is not a state either. Whether control works against a given model is a result — it follows from what the model is like, how capable it is, and what measures you deployed. It changes as capability changes. So when you meet a claim like "control works at this capability level," resist filing it under world state or epistemic state. It's an output of the situation, not an input.
+
+<Callout variant="note" title="Author TODO">
+  Exercises: cr-attr-technique, cr-attr-result — which of these are techniques;
+  which are results? (the measured-vs-actual trap pair lives here)
+</Callout>
+
+### The loop
+
+<Callout variant="note" title="Author TODO">
+  Demo: loop animation — step through the cycle.
+</Callout>
+
+Now connect everything from Reading 2 into the cycle that makes timing matter:
+
+1. The resource state buys a technique — say, a monitoring protocol for the lab's internal AI agents.
+2. The technique changes the facts on the ground — the schemer that would have quietly sabotaged research is now a caught schemer. Its nature didn't change; its situation did, and the world state includes what has happened with the model so far.
+3. The catch updates the epistemic state — where there was inference and speculation, there is now a transcript: undeniable, checkable, specific.
+4. The evidence feeds the resource state — leadership and the public get scared in a useful way. Will refills. Prices drop. Maybe a regulation passes and locks a floor in place.
+5. The bigger budget buys better techniques for the next, more dangerous capability stage. Return to step 1.
+
+This is the inner game and outer game from Reading 1, drawn as one circuit: the inner game (steps 1–3) produces evidence, the outer game (step 4) converts evidence into budget, and the budget funds the next round of the inner game. Money spent now changes how much money exists later — which is why "when should you invest?" is a real question and not just "as early as possible."
+
+<Callout variant="note" title="Author TODO">
+  Exercise: cr-attr-catch — a schemer gets caught red-handed: which sequence of
+  boxes does the catch traverse?
+</Callout>
+
+### Control's three channels
+
+Any technique's value can be sorted by where it enters the loop: does it produce useful work, produce evidence, or directly reduce risk? Most techniques concentrate in one channel. Control is unusual in paying into all three. Reading 1 said control's ambition is attacking P(unacceptable | scheming); the surprise of the accounting below is that most of that attack's value routes through the work and the evidence rather than the catch itself.
+
+Usefulness. Control lets you safely extract real work from models you don't trust — including safety research itself. In worlds with short timelines and few resources, this channel dominates, for a blunt reason: AI labor is the only labor you have. How much the channel pays depends on a world-state fact from Reading 2 — how checkable research output is. If verification is cheap, extraction pays handsomely. If it's expensive, this channel shrinks, and control has to earn its keep through the other two. Note also a happy accident of accounting: control's main cost and its main payoff are both denominated in usefulness — you give up some usefulness to make the rest trustworthy — so control partially offsets its own tax.
+
+Evidence. A caught schemer, with transcripts, is the gold standard of safety evidence — concrete where arguments are abstract, checkable where warnings are speculative ([Catching AIs red-handed](https://redwoodresearch.substack.com/p/catching-ais-red-handed) makes the full case). Evidence is what turns the loop: it refills will, cuts prices, and gets rules locked in. Two things make control's evidence unusually strong. It can be checked line by line — hostile parties can verify a transcript, though they still have to trust where it came from — so it survives scrutiny that would shred a mere argument. And it's harder to deflect than a demo: staged research settings get dismissed as roleplay or contrived setups, which is exactly why a catch in real deployment is the gold standard.
+
+Direct risk reduction. Catching and containing schemers is itself a safety gain. The regime model treats this channel as real but subordinate: it only operates while models are actually catchable, and a catch's payoff mostly flows through the other two channels anyway — the catch is the evidence, and catching is what makes the extracted work trustworthy. One honest blind spot: some direct value never produces a transcript at all — sandboxing and deterrence prevent harm invisibly — and this accounting undercounts it.
+
+Keep the channel decomposition; you'll apply it to other techniques at the end of the module, and control's unusual shape — paying into all three — is easiest to see by contrast. Keep the five worlds from Reading 2 in mind too: the closing exercise asks which channels survive in each.
+
+<Callout variant="note" title="Author TODO">
+  Exercise: cr-check-channels — a catch convinces the board to fund a bigger
+  safety team: which channel paid out?
+</Callout>
+
+### The two questions
+
+The regime model answers "should you, how much, when" with two questions you'll practice on real scenarios in the coming lessons.
+
+Q1 — should you, and how much. Given the three states right now: does the next unit of budget do more good spent on control than spent on the alternatives? Three refinements make the question sharp:
+
+- It's about the next unit, not the technique as a whole. The first monitoring system is worth more than the fifth. A technique's value depends on what's already deployed, so there is no fixed per-technique score — only a value at the current setup.
+- Count the loop effects. The next unit spent on control gets credit for the evidence it may produce and the budget that evidence buys, not just the direct catch. Skipping the loop effects is a known error with a known direction: it undervalues control, never overvalues it.
+- "How much" then answers itself: keep giving the next unit to whichever option currently helps most, and stop when the options are even. Comparing techniques unit by unit is the portfolio decision — there is no separate step. One caveat: unit-by-unit comparison works when techniques improve smoothly with investment. Some purchases are all-or-nothing — a regulation passes or it doesn't — and those have to be weighed whole.
+
+Q1's output is one number per technique — risk reduction per unit of will — which is what lets you compare a monitoring protocol to an interpretability agenda to a lobbying campaign without changing units.
+
+Q2 — when. Run the three states forward over capability stages and ask Q1 at each step. Because of the loop, the steps are linked: spending in an early stage changes the evidence and budget available in later ones. So "when should control investment peak?" can't be answered stage by stage; it needs the whole trajectory. Where does the trajectory come from? From a plan — a set of starting conditions and a strategy. That's the next lesson ([Plans A, B, C, and D for misalignment risk](https://blog.redwoodresearch.org/p/plans-a-b-c-and-d-for-misalignment) is its assigned skim), and from there on you'll be running the model yourself.
+
+<Callout variant="note" title="Author TODO">
+  Flashcards: cr-flash-concepts — the full concept deck runs here, and recurs
+  at the start of the plans lesson and both exercise lessons.
+</Callout>

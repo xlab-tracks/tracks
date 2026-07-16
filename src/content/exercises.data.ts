@@ -143,11 +143,12 @@ export const exercises: Exercise[] = [
     minReasoningChars: 200,
   },
   {
-    // Standalone for now — surfaced on the /exercises tab, not referenced by
-    // any lesson or paper yet.
+    // Embedded in Control module 2's lesson (c-contra-l1) and surfaced on
+    // the /exercises tab.
     id: "contra-control-argue-reveal",
     type: "argue-reveal",
     title: "Responding to Arguments Against Control",
+    numberLabel: "Exercise 2.1",
     prompt:
       "You will see a series of criticisms of AI control, one at a time. For each one, write the best response you can using what you learned in Module 1 — then you'll see one response that defenders of control give.",
     guidance:
@@ -259,9 +260,22 @@ export const exercises: Exercise[] = [
         ],
       },
       {
+        id: "ai-created-agendas",
+        label: "ai-created-agendas",
+        title: "Item 4 — AI-created agendas",
+        rounds: [
+          {
+            critique:
+              "Control also forces the development of new AI R&D agendas that are themselves AI-created, which is its own risk.",
+            reveal:
+              "That is an unavoidable artifact of preparing for autonomous AI R&D inside an RSI loop, and since control can marginally reduce the probability of bad agendas, it is still worth having.",
+          },
+        ],
+      },
+      {
         id: "slop",
         label: "slop",
-        title: "Item 4 — Slop",
+        title: "Item 5 — Slop",
         rounds: [
           {
             critique:
@@ -307,7 +321,8 @@ export const exercises: Exercise[] = [
         },
       ],
     },
-    responseMinChars: 80,
+    // Relaxed for now — Send is enabled regardless of response length.
+    responseMinChars: 0,
     responseMaxChars: 450,
     residualMinChars: 30,
     residualMaxChars: 200,
