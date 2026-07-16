@@ -1,4 +1,4 @@
-## Reading 1 — Is control good?
+## Is control good?
 
 <Exercise id="cr-precommit" />
 
@@ -20,9 +20,9 @@ Playing the inner game well produces evidence; most dramatically, a scheming mod
 
 <Demo id="two-games" />
 
-## Reading 2 — The three states and the safety budget
+## The three states and the safety budget
 
-Related reading (optional, revisited in Reading 3): [Efficient tradeoffs and the safety-usefulness tradeoff model](https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety).
+Related reading (optional, revisited later in this lesson): [Efficient tradeoffs and the safety-usefulness tradeoff model](https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety).
 
 We can split potential regimes, the bundle of conditions that we use to describe the world, into three parts or sections of information that we interact with very differently.
 
@@ -57,7 +57,7 @@ The second part is our picture of the world state:
 - Evaluation results
   - control evaluations that stage mock attacks to estimate whether the monitoring would catch a real schemer
 
-One common pitfall is understanding that a control evaluation's score is purely an imperfect measurement. Whether control actually works against the actual model is a different thing entirely, and Reading 3 gives it a place of its own in the regime model. The two can decouple, as the evaluation might be unrealistic or the model might behave differently in a real-world scenario (think hidden situational awareness that leads to differing behavior). This is where control evaluations can fail you, as a high safety score from a poor evaluation leads to a misleadingly reassuring epistemic state implying a world state that isn't true.
+One common pitfall is understanding that a control evaluation's score is purely an imperfect measurement. Whether control actually works against the actual model is a different thing entirely, and the final section gives it a place of its own in the regime model. The two can decouple, as the evaluation might be unrealistic or the model might behave differently in a real-world scenario (think hidden situational awareness that leads to differing behavior). This is where control evaluations can fail you, as a high safety score from a poor evaluation leads to a misleadingly reassuring epistemic state implying a world state that isn't true.
 
 ### Resource state: what we can spend
 
@@ -116,7 +116,7 @@ Abstract states need reference points, so here are five — Greenblatt's caricat
 
 <Demo id="five-worlds" />
 
-## Reading 3 — Techniques and the loop
+## Techniques and the loop
 
 Related reading: We adapt the arguments in this post into our model below: [Catching AIs red-handed](https://redwoodresearch.substack.com/p/catching-ais-red-handed). [Efficient tradeoffs and the safety-usefulness tradeoff model](https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety) — the two levers below come from here.
 
@@ -135,7 +135,7 @@ The states are the input to analyzing a situation, and whether a technique is ac
 
 <Demo id="regime-loop" />
 
-Now we'll try and connect the ideas from Reading 2 into a cycle we think accurately reflects the game that frontier labs play:
+Now we'll try and connect the ideas from the previous section into a cycle we think accurately reflects the game that frontier labs play:
 
 1. The resource state buys a technique, like a monitoring protocol for the lab's internal AI agents.
 2. The technique changes the facts on the ground
