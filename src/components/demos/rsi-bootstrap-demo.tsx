@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// The bootstrapping "circle model" as a zybook-style stepper. Step 0: Gen N
+// The bootstrapping "circle model" as a self-playing animation (5s per
+// phase, looping; pausable, dots scrub and pause, reduced-motion starts
+// paused on the finished diagram). Phase 0: Gen N
 // alone, center stage, tagged as a TUAI. Step 1: it moves into the loop and
 // runs its two jobs (alignment research, building the next generation) while
 // the capability ladder initializes. Step 2: handoff — Gen N+1 takes over.
@@ -90,8 +93,29 @@ function arcPath(from: number, to: number): string {
   return `M ${x(from).toFixed(1)} ${y(from).toFixed(1)} A ${R} ${R} 0 ${large} 1 ${x(to).toFixed(1)} ${y(to).toFixed(1)}`;
 }
 
+const PHASE_MS = 5000;
+
 export function RsiBootstrapDemo() {
   const [step, setStep] = useState(0);
+  const [playing, setPlaying] = useState(true);
+
+  // Respect reduced motion: start paused on the finished diagram.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPlaying(false);
+      setStep(STEPS.length - 1);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = setInterval(
+      () => setStep((s) => (s + 1) % STEPS.length),
+      PHASE_MS,
+    );
+    return () => clearInterval(timer);
+  }, [playing]);
+
   const litRungs = RUNGS_LIT[step];
   const loopVisible = step >= 1;
   const ladderVisible = step >= 2;
@@ -286,17 +310,29 @@ export function RsiBootstrapDemo() {
         <Button
           size="sm"
           variant="outline"
-          disabled={step === 0}
-          onClick={() => setStep((s) => Math.max(0, s - 1))}
+          onClick={() => setPlaying((p) => !p)}
+          aria-label={playing ? "Pause animation" : "Play animation"}
+          className="gap-1"
         >
-          Back
+          {playing ? (
+            <>
+              <Pause className="size-3.5" aria-hidden /> Pause
+            </>
+          ) : (
+            <>
+              <Play className="size-3.5" aria-hidden /> Play
+            </>
+          )}
         </Button>
         <div className="flex items-center gap-1.5" aria-hidden>
           {STEPS.map((_, i) => (
             <button
               key={i}
               type="button"
-              onClick={() => setStep(i)}
+              onClick={() => {
+                setPlaying(false);
+                setStep(i);
+              }}
               className={cn(
                 "size-2 rounded-full transition-colors motion-reduce:transition-none",
                 i === step ? "bg-primary" : "bg-border hover:bg-muted-foreground/50",
@@ -305,13 +341,6 @@ export function RsiBootstrapDemo() {
             />
           ))}
         </div>
-        <Button
-          size="sm"
-          disabled={step === STEPS.length - 1}
-          onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-        >
-          Next
-        </Button>
       </div>
     </div>
   );
