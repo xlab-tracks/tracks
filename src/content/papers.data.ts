@@ -338,13 +338,13 @@ export const papers: Paper[] = [
     estimatedMinutes: 30,
   },
   {
-    // Control track, module 2 opener: Ryan Greenblatt's threat-prioritization post,
+    // Control track, module 1: Ryan Greenblatt's threat-prioritization post,
     // rendered through the LessWrong paper reader with its quick-recall
     // sequence and two exercises spliced back into the reading (was a
     // copied-text MDX lesson).
     id: "c-threats-l1",
     slug: "prioritizing-threats-for-ai-control",
-    moduleId: "c-mod2",
+    moduleId: "c-intro",
     title: "Prioritizing threats for AI control",
     source: {
       kind: "lesswrong",

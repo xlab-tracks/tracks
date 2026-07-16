@@ -75,8 +75,8 @@ export const modules: Module[] = [
     // rendered in full through the paper reader — the "case for control" post
     // carries the module's guided exercises woven into the reading. Reading
     // order: motivation, the paper, the demo, catching scheming AIs, and the
-    // diffuse-threats post ("Prioritizing threats" and the safety–usefulness
-    // tradeoff model now live in module 2). All
+    // two threat-modeling posts (the safety–usefulness tradeoff model now
+    // lives in module 2). All
     // readings are reproduced (arXiv/LessWrong/Substack artifacts) with
     // permission.
     itemIds: [
@@ -84,9 +84,10 @@ export const modules: Module[] = [
       "c-paper-ai-control",
       "c-game",
       "c-catching-red-handed",
+      "c-threats-l1",
       "c-threats-l2",
     ],
-    estimatedMinutes: 362,
+    estimatedMinutes: 377,
   },
   {
     // Human-authored curriculum (from the course author's "contra control"
@@ -100,16 +101,11 @@ export const modules: Module[] = [
     trackId: "control",
     title: "How useful is AI control?",
     summary:
-      "Which threats control is actually for, then the strongest arguments against AI control — deferred alignment research, slop, the superintelligence ceiling, monitor awareness, moral hazard — illustrated one at a time, evaluated, and weighed against the additive alternatives; then the regime model: three states, a safety budget, and the loop that says when control is worth buying.",
+      "The strongest arguments against AI control — deferred alignment research, slop, the superintelligence ceiling, monitor awareness, moral hazard — illustrated one at a time, evaluated, and weighed against the additive alternatives; then the regime model: three states, a safety budget, and the loop that says when control is worth buying.",
     order: 2,
     prerequisiteModuleIds: ["c-intro"],
-    itemIds: [
-      "c-threats-l1",
-      "c-contra-l1",
-      "c-efficient-tradeoffs",
-      "c-regimes-l1",
-    ],
-    estimatedMinutes: 108,
+    itemIds: ["c-contra-l1", "c-efficient-tradeoffs", "c-regimes-l1"],
+    estimatedMinutes: 93,
   },
   {
     id: "c-areas",
