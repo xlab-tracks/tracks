@@ -7,7 +7,6 @@ describe("additive-control demo registration", () => {
     expect(demo).toBeDefined();
     expect(demo?.id).toBe("additive-control");
     expect(demo?.title).toBe("Control is additive");
-    expect(demo?.description).toMatch(/additive/i);
     expect(demo?.tags).toEqual(["control", "how-useful"]);
   });
 });

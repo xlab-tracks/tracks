@@ -123,8 +123,6 @@ export const demoRegistry: Record<string, DemoDefinition> = {
   "additive-control": {
     id: "additive-control",
     title: "Control is additive",
-    description:
-      "Step through the additive property of control: alignment interventions act on the model in an inner box, control's applied monitoring wraps around them, and toggling the shell leaves the inner box untouched.",
     component: AdditiveControlDemo,
     tags: ["control", "how-useful"],
   },
