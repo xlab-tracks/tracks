@@ -13,6 +13,7 @@ import { ControlDashboardDemo } from "@/components/demos/control-dashboard-demo"
 import { SabotageFrontierDemo } from "@/components/demos/sabotage-frontier-demo";
 import { AdditiveControlDemo } from "@/components/demos/additive-control-demo";
 import { RsiBootstrapDemo } from "@/components/demos/rsi-bootstrap-demo";
+import { TakeoffWindowDemo } from "@/components/demos/takeoff-window-demo";
 
 // Central demo registry — the single integration point. Reference a demo by ID
 // from MDX (<Demo id="…"/>), the gallery, standalone pages, or embeds.
@@ -132,6 +133,12 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     title: "The bootstrapping loop",
     component: RsiBootstrapDemo,
     tags: ["control"],
+  },
+  "takeoff-window": {
+    id: "takeoff-window",
+    title: "Control's window during takeoff",
+    component: TakeoffWindowDemo,
+    tags: ["control", "how-useful"],
   },
 };
 
