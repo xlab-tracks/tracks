@@ -130,8 +130,6 @@ export const demoRegistry: Record<string, DemoDefinition> = {
   "rsi-bootstrap": {
     id: "rsi-bootstrap",
     title: "The bootstrapping loop",
-    description:
-      "Step through the circle model: each generation does alignment research, builds the next generation, and hands off — one lap per generation, climbing the capability ladder toward superintelligence.",
     component: RsiBootstrapDemo,
     tags: ["control"],
   },
