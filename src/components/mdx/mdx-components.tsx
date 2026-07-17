@@ -6,6 +6,8 @@ import { Demo } from "./demo";
 import { Exercise } from "./exercise";
 import { ExerciseSequence } from "./exercise-sequence";
 import { Footnote } from "./footnote";
+import { Gate } from "./gate";
+import { PaperText } from "./paper-text";
 import { VerificationExercise } from "@/components/verification/verification-exercise";
 
 // Components available by name inside every lesson `.mdx` body. Authors drop
@@ -19,5 +21,7 @@ export const mdxComponents: MDXComponents = {
   Exercise,
   ExerciseSequence,
   Footnote,
+  Gate,
+  PaperText,
   VerificationExercise,
 };

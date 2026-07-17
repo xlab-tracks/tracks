@@ -157,6 +157,7 @@ export const modules: Module[] = [
       "c-paper-adaptive-deployment",
       "c-lowstakes-l3",
       "c-lowstakes-l4",
+      "c-plm-walkthrough",
       "c-paper-password-locked",
       "c-paper-exploration-hacking",
       "c-paper-sabotage-evals",
@@ -449,6 +450,15 @@ export const lessons: Lesson[] = [
     title: "The “no sandbagging on checkable tasks” hypothesis",
     contentRef: "c-lowstakes-l4",
     estimatedMinutes: 19,
+  },
+  // DRAFT — decision-forcing walkthrough of the password-locked models
+  // paper (parts 0–1 only; gating and commit-reveal exercises are stubbed).
+  {
+    id: "c-plm-walkthrough",
+    slug: "password-locked-models-walkthrough",
+    moduleId: "c-lowstakes",
+    title: "Rebuilding the password-locked models paper",
+    contentRef: "c-plm-walkthrough",
   },
   // --- Control: areas of control work (reproduced verbatim with permission
   // from Redwood Research) ---
