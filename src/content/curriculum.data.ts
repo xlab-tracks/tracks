@@ -104,8 +104,13 @@ export const modules: Module[] = [
       "The strongest arguments against AI control — deferred alignment research, slop, the superintelligence ceiling, moral hazard — illustrated one at a time, evaluated, and weighed against the additive alternatives; then the regime model: three states, a safety budget, and the loop that says when control is worth buying.",
     order: 2,
     prerequisiteModuleIds: ["c-intro"],
-    itemIds: ["c-contra-l1", "c-efficient-tradeoffs", "c-regimes-l1"],
-    estimatedMinutes: 93,
+    itemIds: [
+      "c-contra-l1",
+      "c-efficient-tradeoffs",
+      "c-regimes-l1",
+      "c-regimes-l2",
+    ],
+    estimatedMinutes: 153,
   },
   {
     id: "c-areas",
@@ -428,6 +433,14 @@ export const lessons: Lesson[] = [
     title: "Determining the usefulness",
     contentRef: "c-regimes-l1",
     estimatedMinutes: 35,
+  },
+  {
+    id: "c-regimes-l2",
+    slug: "a-worked-example-and-rollouts",
+    moduleId: "c-mod2",
+    title: "Running the model: a worked example and rollouts",
+    contentRef: "c-regimes-l2",
+    estimatedMinutes: 60,
   },
   // --- Control: every reproduced reading in module 1 (with permission from
   // Redwood Research) now renders through the paper reader as a Paper item in

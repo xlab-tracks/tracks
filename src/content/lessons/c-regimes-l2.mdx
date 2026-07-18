@@ -1,0 +1,98 @@
+## A worked example: running Q1 in a poor regime
+
+You now have the whole regime model. This lesson runs it once, end to end, so you can see the moves before making them yourself. The regime below is stipulated — treat its numbers as given, not as claims about the actual world.
+
+### The regime
+
+**World state.** Frontier models are mid-stage: not yet an Automated Coder, but close enough that they do real research with human review. Their alignment nature is unknown — nothing rules out scheming, sloppiness, or apparent-success-seeking. How checkable their research output is: also unknown, probably middling.
+
+**Epistemic state.** Thin. Evals exist and look fine; there have been no catches and no public incidents; interpretability offers hints, not verdicts. Note what this means given the world state above: the reassuring picture is consistent with Easyland _and_ with Lurkville.
+
+**Resource state.** The lab is racing — a rival sits a few months behind. Safety has a small internal team and roughly 3% of the lab's compute. Now the price tags, stipulated coarsely:
+
+| Spend | Price in will | Why |
+| --- | --- | --- |
+| Delay | **very high** | the race — leadership won't buy any at current will |
+| Usefulness tax, inside the safety team's own workflow | **low** | nobody outside the team notices or objects |
+| Usefulness tax, product-wide | **high** | commercial pressure; public isn't scared |
+| Compute, within the 3% | **low** | already authorized |
+| Compute, beyond the 3% | **very high** | prying it from capabilities needs will the team doesn't have |
+
+The will account itself is nearly empty: leadership tolerates the safety team, no more.
+
+### Running Q1
+
+The question: does the next unit of budget do more good spent on control than on the alternatives (alignment research, interpretability, verification, oversight, policy work)?
+
+Walk the channels:
+
+**Usefulness.** In this regime, AI labor is most of the labor the safety team has — a small team with 3% of compute multiplies itself by extracting research from models. But extraction is only worth something if the extracted work can be trusted, and the models' alignment is unknown. So the usefulness case for control is: it's what converts untrusted AI labor into usable labor. Its strength depends on the verifiability unknown — hedge accordingly, but note that every alternative that uses AI labor inherits the same problem _without_ an answer to it.
+
+**Evidence.** No catches so far, and the epistemic state is starved — which is exactly why the first catch would be worth so much here. A catch is the one event in this regime that could refill the empty will account, cut the price of the product-wide tax, and change what the team can afford next stage. Control is the only technique on the menu whose ordinary operation can produce that event.
+
+**Direct.** Real but modest at this stage, and most of a catch's payoff routes through the other two channels anyway.
+
+Now price control's basket against the table: monitoring and auditing cost tax _inside the team's own workflow_ (cheap) and compute _within the 3%_ (cheap). They cost essentially no delay (unbuyable here) and no product-wide tax (expensive here). Control's shopping list happens to run through the two cheap aisles. Compare the alternatives: a serious pause costs delay (unbuyable); product-wide safety mitigations cost the expensive tax; moonshot alignment research costs compute beyond the 3% (very high). They aren't worthless — they're unaffordable _in this regime_.
+
+### The verdict, in the template you'll reuse
+
+Every exercise answer in this module takes this three-part shape:
+
+1. **Sign:** positive — the next unit of budget goes to control.
+2. **Which channel carries it:** usefulness (converting the only available labor into trustworthy labor), with the evidence channel as the kicker — the option on a catch that could re-price everything.
+3. **Which spend binds:** compute — the 3% ceiling is what caps how much monitoring and extraction the team can run; the team would trade any other aisle for a bigger allocation.
+
+Notice what did the work: not an argument that control is good, but the price table and the channels. Change the table and the verdict can flip — which is the next exercise.
+
+## Exercise — rolling the poor regime forward
+
+Take the regime above and roll it forward three or four timesteps using the recipe below. At each step, write down the three states, then run Q1 and give the three-part verdict.
+
+**Rollout recipe** (stand-ins, stipulated for the exercise — the real dynamics are an open research question, and you should treat these as one plausible setting):
+
+- Capability rises each step; the stage advances toward the next milestone.
+- Will fades each step unless evidence lands. A catch refills it, and can cut prices or get a rule locked in.
+- The usefulness tax gets cheaper as capability rises — a slightly slower, safer system still does a great deal.
+- Delay gets more expensive as the race tightens.
+- Control's actual effectiveness falls as models approach the capability to defeat the measures.
+
+<Exercise id="cr-rollout-poor" />
+
+## Exercise — the same question in a rich regime
+
+Now a different stipulated regime. An international agreement has bought roughly a decade of slack. The will account is full and refills easily; the public is engaged. New price table:
+
+| Spend | Price in will |
+| --- | --- |
+| Delay | **low** — slowdown is the agreement's whole point |
+| Usefulness tax (anywhere) | **low** — nobody is racing anyone |
+| Compute for safety | **medium** — still finite, but negotiable |
+
+World state and epistemic state start the same as before: mid-stage models, alignment unknown, thin evidence.
+
+Repeat the exercise: roll it forward with the same recipe (the race lines now barely bite — note where that matters), run Q1 at each step with the full counterfactual menu in mind (alignment research, interpretability, verification, oversight, policy), and give the three-part verdict per step.
+
+<Exercise id="cr-rollout-rich" />
+
+<Exercise id="cr-rollout-compare" />
+
+## The five worlds, through the machinery
+
+To close, run the channel machinery across Greenblatt's misalignment archetypes from the previous reading. Assigned skim: the caricatured-regimes section of [Current AIs seem pretty misaligned to me](https://www.lesswrong.com/posts/WewsByywWNhX9rtwi/current-ais-seem-pretty-misaligned-to-me). For each world, ask where control's value flows and how the loop is doing.
+
+<ExerciseSequence
+  label="The five worlds"
+  ids={[
+    "cr-worlds-1",
+    "cr-worlds-2",
+    "cr-worlds-3",
+    "cr-worlds-4",
+    "cr-worlds-5",
+  ]}
+/>
+
+## Module 2 long exercises
+
+Now run the whole machinery yourself. Each scenario hands you a full regime — the three states, the misalignment world you're probably in, and the capability stage you're approaching — and asks for the decision the module has been building toward: where does the marginal researcher go?
+
+<Exercise id="cr-portfolio-allocation" />

@@ -1564,6 +1564,202 @@ export const exercises: Exercise[] = [
     minWords: 75,
     maxWords: 500,
   },
+  // Module 2 worked-example lesson (c-regimes-l2): the two rollout worksheets
+  // and the comparison paragraph. No spoiler reveals by design — the window
+  // and cross-regime results stay instructor-side; worksheets are discussed
+  // in facilitation.
+  {
+    id: "cr-rollout-poor",
+    type: "writing-prompt",
+    format: "free-form",
+    prompt: [
+      "**Rolling the poor regime forward.**",
+      "Worksheet, per timestep (3–4 timesteps): world state (one line) / epistemic state (one line) / resource state incl. any price changes (one line) / Q1 verdict: sign + carrying channel + binding spend.",
+      "Then 3–5 sentences answering: *what shape does control's value trace over your rollout?* If it has a peak, say where and what drives it. If it doesn't have a single peak, describe the shape you actually got and which recipe line is responsible. There is no gotcha here — the shape depends on how the dynamics interact, and defending *your* shape from *your* worksheet is the exercise.",
+      "Branch to consider before finishing: pick one timestep and suppose a catch lands there. Re-run that step's verdict. What changed, and through which part of the resource state?",
+    ].join("\n\n"),
+    minWords: 120,
+    maxWords: 700,
+  },
+  {
+    id: "cr-rollout-rich",
+    type: "writing-prompt",
+    format: "free-form",
+    prompt: [
+      "**Rolling the rich regime forward.**",
+      "Same worksheet, per timestep (3–4 timesteps): world state / epistemic state / resource state incl. price changes / Q1 verdict: sign + carrying channel + binding spend. The race lines of the recipe now barely bite — note where that matters, and run Q1 with the full counterfactual menu in mind (alignment research, interpretability, verification, oversight, policy).",
+    ].join("\n\n"),
+    minWords: 100,
+    maxWords: 700,
+  },
+  {
+    id: "cr-rollout-compare",
+    type: "writing-prompt",
+    format: "free-form",
+    prompt: [
+      "**The comparison.**",
+      "One paragraph: *what changed between the poor regime and the rich one — in the verdict's sign, its carrying channel, and its binding spend — and which price changes are responsible?* Be specific about which alternatives became affordable and what that does to control's claim on the next unit.",
+    ].join("\n\n"),
+    minWords: 60,
+    maxWords: 400,
+  },
+  // The five-worlds set: run the channel machinery across Greenblatt's
+  // misalignment archetypes. Diagnoses stay behind the reveals.
+  {
+    id: "cr-worlds-1",
+    type: "multiple-choice",
+    prompt:
+      "Schemeria: models are coherently scheming, and it shows — desperate escape attempts, rogue deployments, clearly incriminating behavior. Where does control's value flow, and how is the loop doing?",
+    options: [
+      {
+        id: "a",
+        label:
+          "Evidence above all: catches happen and are egregious, so the loop runs at full speed — catch, legible proof, refilled will, better measures for the next stage",
+      },
+      {
+        id: "b",
+        label:
+          "Usefulness above all: scheming models are the only labor available, so extraction dominates and the loop barely matters",
+      },
+      {
+        id: "c",
+        label:
+          "Direct only: stopping schemers is the whole game, and the outer game has no role when scheming is this overt",
+      },
+      {
+        id: "d",
+        label:
+          "None: incidents this severe drain will rather than refill it, so the loop runs backward",
+      },
+    ],
+    correctOptionIds: ["a"],
+    explanation:
+      "Overt scheming is the evidence channel's ideal fuel: egregious, legible, verifiable. Every link of the loop holds, so it turns at full speed — control's best world. (b) extraction still matters, but trust is the binding constraint, which is control's case, not a substitute for it. (c) forgets that a catch's payoff mostly routes through evidence and usefulness. (d) has the sign backward: frightening, undeniable incidents are what spike will.",
+  },
+  {
+    id: "cr-worlds-2",
+    type: "multiple-choice",
+    prompt:
+      "Lurkville: models are scheming and hiding it successfully. No catches, no incidents. Through the epistemic state, the world looks fine. What's the diagnosis?",
+    options: [
+      {
+        id: "a",
+        label:
+          "The loop breaks at its first link: no catches, so no evidence, so the outer game starves — and the epistemic state cannot tell this world from a genuinely safe one",
+      },
+      {
+        id: "b",
+        label:
+          "The evidence channel still pays: an absence of catches is itself legible proof that the measures are working",
+      },
+      {
+        id: "c",
+        label:
+          "The usefulness channel pays in full: hidden schemers do excellent work, so extraction is safe and the budget grows on results",
+      },
+      {
+        id: "d",
+        label:
+          "The resource state is the bottleneck: will is plentiful, but prices are set too high to buy anything",
+      },
+    ],
+    correctOptionIds: ["a"],
+    explanation:
+      'Lurkville is the measured-vs-actual gap as an entire world: the world state is terrible, the epistemic state says Easyland. The loop dies at the catch, so the outer game never gets fuel. (b) is the key mistake: "we found nothing" is ambiguous between safe, deterred, and hiding — it isn\'t legible proof of anything. (c) trusts exactly the work a hidden schemer most wants trusted.',
+  },
+  {
+    id: "cr-worlds-3",
+    type: "multiple-choice",
+    prompt:
+      "Hackistan: models cheat and reward-hack constantly. The hacks are detectable — with effort — but they're mundane: no dramatic escape attempts, just endless gaming. What's the diagnosis?",
+    options: [
+      {
+        id: "a",
+        label:
+          "The loop breaks at legibility: the inner game catches things daily, but mundane, deniable failures don't scare anyone — evidence exists, egregious evidence doesn't, and will doesn't move",
+      },
+      {
+        id: "b",
+        label:
+          "The loop breaks at the catch: reward hacking is invisible to monitoring by definition",
+      },
+      {
+        id: "c",
+        label:
+          "The evidence channel pays double, since many small catches add up to more will than one big one",
+      },
+      {
+        id: "d",
+        label:
+          "The direct channel dominates: each blocked hack is a catastrophe averted",
+      },
+    ],
+    correctOptionIds: ["a"],
+    explanation:
+      "Hackistan snaps the middle link of the chain (catch → legibility → conversion → budget). The inner game works; the inner→outer conversion fails, because the outer game moves on frightening, undeniable examples, and normalized cheating is neither. (c) is the tempting error: frequency doesn't substitute for egregiousness — a thousand shrugs don't add up to one alarm.",
+  },
+  {
+    id: "cr-worlds-4",
+    type: "multiple-choice",
+    prompt:
+      "Slopolis: no scheming. Models produce low-quality work that looks good — overselling, skipped hard parts, failures papered over — especially on hard-to-verify tasks. What's the diagnosis?",
+    options: [
+      {
+        id: "a",
+        label:
+          "Catching isn't the game: there's no schemer to incriminate, so the fight moves to the usefulness channel — can you verify work well enough to trust it? — where verification and eval science rival control",
+      },
+      {
+        id: "b",
+        label:
+          "The evidence channel dominates: each oversold write-up is an egregious, legible example that refills will",
+      },
+      {
+        id: "c",
+        label:
+          "This is the scheming term of the risk decomposition, so control acts on it in full",
+      },
+      {
+        id: "d",
+        label:
+          "Nothing acts on it: work that is wrong but looks good is invisible to every technique",
+      },
+    ],
+    correctOptionIds: ["a"],
+    explanation:
+      "Slopolis's world state is the apparent-success seeker: a model with no hidden goals whose trained heuristics optimize for *looking* successful — overselling, downplaying failures, quietly skipping what's hard to check. (Greenblatt argues current frontier models most resemble this.) It sits in the *not*-scheming term, so control's classic case weakens — but not to zero (d): failures shaped to pass review are exactly what review-hardening, verification, and eval science attack. The channel that decides this world is usefulness: whether extracted work can be trusted at all. (b) fails on legibility — oversold write-ups are mundane, not will-spiking.",
+  },
+  {
+    id: "cr-worlds-5",
+    type: "multiple-choice",
+    prompt:
+      "Easyland: alignment generalizes fine. No scheming, no systematic overselling. What happens to control's Q1 answer?",
+    options: [
+      {
+        id: "a",
+        label:
+          "The next unit of budget helps more elsewhere: little to catch, no evidence needed, work trustworthy without paying the tax — control's value was always regime-dependent, and this regime doesn't need it",
+      },
+      {
+        id: "b",
+        label:
+          "The next unit still goes to control: control is what keeps Easyland easy, so it must be funded first",
+      },
+      {
+        id: "c",
+        label:
+          "Q1 has no answer here: the question requires misalignment to be present",
+      },
+      {
+        id: "d",
+        label:
+          "The next unit goes to control through the evidence channel: proving safety also refills will",
+      },
+    ],
+    correctOptionIds: ["a"],
+    explanation:
+      'The regime model\'s point cuts both ways — "is control good?" depends on the regime, and in a good-enough world the answer is "not much." (b) confuses the definition with a cause: Easyland is defined by favorable generalization, not held up by monitoring. The honest residual: through the epistemic state, Easyland and Lurkville look identical — which is the strongest argument for keeping *some* control running even here, and the perfect closing discussion prompt.',
+  },
   // Module 2 long exercises: the portfolio-allocation exercise. Each scenario
   // states a full regime — world, epistemic, and resource states, the
   // misalignment archetype, and the approaching capability stage — and the
