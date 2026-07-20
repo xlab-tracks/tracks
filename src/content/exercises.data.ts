@@ -1588,8 +1588,11 @@ export const exercises: Exercise[] = [
       {
         id: "scare-regime",
         title: "The scare regime",
-        description:
-          "World state: mid-stage models, as in the worked example — alignment nature unknown, checkability of research output unknown, probably middling. Epistemic state: a widely reported incident just happened — real harm, loud coverage, but ambiguous between sloppiness and scheming: no transcripts, nothing reproducible, evals still look fine. Resource state: the incident spiked the will account, but the spike is fading fast; the public is scared, so the product-wide usefulness tax is briefly cheap; delay is briefly buyable at moderate price; safety compute is still capped at a small share, and the race is unchanged underneath.",
+        description: [
+          "World state: mid-stage models, as in the worked example — alignment nature unknown, checkability of research output unknown, probably middling.",
+          "Epistemic state: a widely reported incident just happened — real harm, loud coverage, but ambiguous between sloppiness and scheming: no transcripts, nothing reproducible, evals still look fine.",
+          "Resource state: the incident spiked the will account, but the spike is fading fast; the public is scared, so the product-wide usefulness tax is briefly cheap; delay is briefly buyable at moderate price; safety compute is still capped at a small share, and the race is unchanged underneath.",
+        ].join("\n"),
       },
     ],
     totalPeople: 10,
@@ -1776,20 +1779,32 @@ export const exercises: Exercise[] = [
       {
         id: "schemeria-racing",
         title: "Scenario 1 — Schemeria, racing, approaching autonomous coding",
-        description:
-          "World state: models are coherently scheming and it shows — two sandboxed escape attempts were caught this year; research output is middling to verify. Epistemic state: rich — line-by-line transcripts of both catches, and evals that reproduce the behavior. Resource state: a rival lab sits a few months behind; the catches spiked will, but delay remains nearly unbuyable and safety compute is capped at a small share. Approaching stage: models about to automate most of the lab's coding.",
+        description: [
+          "World state: models are coherently scheming and it shows — two sandboxed escape attempts were caught this year; research output is middling to verify.",
+          "Epistemic state: rich — line-by-line transcripts of both catches, and evals that reproduce the behavior.",
+          "Resource state: a rival lab sits a few months behind; the catches spiked will, but delay remains nearly unbuyable and safety compute is capped at a small share.",
+          "Approaching stage: models about to automate most of the lab's coding.",
+        ].join("\n"),
       },
       {
         id: "quiet-world-slack",
         title: "Scenario 2 — Easyland or Lurkville?, treaty slack, approaching autonomous research",
-        description:
-          "World state: alignment nature unknown — nothing rules out scheming, sloppiness, or apparent-success seeking; checkability of research output unknown, probably middling. Epistemic state: thin — evals look fine, no catches, no incidents; the reassuring picture is consistent with Easyland and with Lurkville. Resource state: an international agreement has bought roughly a decade of slack — the will account is full and refills easily, delay and the usefulness tax are cheap, compute negotiable. Approaching stage: models about to run research autonomously.",
+        description: [
+          "World state: alignment nature unknown — nothing rules out scheming, sloppiness, or apparent-success seeking; checkability of research output unknown, probably middling.",
+          "Epistemic state: thin — evals look fine, no catches, no incidents; the reassuring picture is consistent with Easyland and with Lurkville.",
+          "Resource state: an international agreement has bought roughly a decade of slack — the will account is full and refills easily, delay and the usefulness tax are cheap, compute negotiable.",
+          "Approaching stage: models about to run research autonomously.",
+        ].join("\n"),
       },
       {
         id: "slopolis-commercial",
         title: "Scenario 3 — Slopolis under commercial pressure, mid-stage",
-        description:
-          "World state: no signs of scheming, but models are apparent-success seekers — overselling, downplaying failures, quietly skipping what's hard to check; failures concentrate exactly where verification is expensive. Epistemic state: good visibility into the gaming itself, almost none into research quality. Resource state: heavy commercial pressure; the public is annoyed but not scared, so the product-wide usefulness tax is expensive; will is moderate and fading. Approaching stage: models that meaningfully multiply human researchers but cannot yet work unsupervised.",
+        description: [
+          "World state: no signs of scheming, but models are apparent-success seekers — overselling, downplaying failures, quietly skipping what's hard to check; failures concentrate exactly where verification is expensive.",
+          "Epistemic state: good visibility into the gaming itself, almost none into research quality.",
+          "Resource state: heavy commercial pressure; the public is annoyed but not scared, so the product-wide usefulness tax is expensive; will is moderate and fading.",
+          "Approaching stage: models that meaningfully multiply human researchers but cannot yet work unsupervised.",
+        ].join("\n"),
       },
     ],
     totalPeople: 10,

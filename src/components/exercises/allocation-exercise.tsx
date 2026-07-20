@@ -15,7 +15,7 @@ import {
   isStorableText,
   type AllocationScenarioEntry,
 } from "@/lib/content/exercise-view";
-import { Paragraphs } from "./math-text";
+import { MathText, Paragraphs } from "./math-text";
 
 /**
  * Fixed-order categorical palette, one entry per agenda index — never cycled
@@ -145,6 +145,10 @@ function AllocationDonut({
   );
 }
 
+/** Numeric percent (no sign) for the editable field: 4.5/10 → "45". */
+const shareNumber = (value: number, total: number) =>
+  String(Math.round((value / total) * 1000) / 10);
+
 function Stepper({
   label,
   value,
@@ -161,6 +165,20 @@ function Stepper({
   disabled: boolean;
   onChange: (value: number) => void;
 }) {
+  // Draft holds the field's text while the learner is typing; null means
+  // "mirror the committed value". Committing parses, clamps to 0–100%, and
+  // snaps to the step grid so typed values land where ± clicks would.
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft !== null) {
+      const parsed = Number.parseFloat(draft.replace("%", "").trim());
+      if (Number.isFinite(parsed)) {
+        const effort = (Math.min(100, Math.max(0, parsed)) / 100) * max;
+        onChange(Math.min(max, Math.round(effort / step) * step));
+      }
+      setDraft(null);
+    }
+  };
   const buttonClass =
     "text-foreground hover:enabled:bg-muted disabled:text-muted-foreground/40 h-8 w-8 text-base leading-none";
   return (
@@ -178,11 +196,37 @@ function Stepper({
       >
         −
       </button>
-      <span
-        aria-live="polite"
-        className="border-border text-foreground flex min-w-13 items-center justify-center border-x font-mono text-sm font-semibold tabular-nums"
-      >
-        {formatShare(value, max)}
+      <span className="border-border text-foreground flex items-center border-x pr-2 font-mono text-sm font-semibold tabular-nums">
+        <input
+          type="text"
+          inputMode="decimal"
+          aria-label={`${label} — percent of the budget`}
+          value={draft ?? shareNumber(value, max)}
+          disabled={disabled}
+          onFocus={(e) => {
+            setDraft(shareNumber(value, max));
+            e.currentTarget.select();
+          }}
+          onChange={(e) => setDraft(e.currentTarget.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") {
+              setDraft(null);
+              e.currentTarget.blur();
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setDraft(null);
+              onChange(Math.min(max, value + step));
+            } else if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setDraft(null);
+              onChange(Math.max(0, value - step));
+            }
+          }}
+          className="w-10 bg-transparent text-right outline-none"
+        />
+        <span aria-hidden>%</span>
       </span>
       <button
         type="button"
@@ -461,10 +505,35 @@ export function AllocationExerciseCard({
       <>
         <div className="bg-muted/50 rounded-lg p-4">
           <p className="font-medium">{scenario.title}</p>
-          <Paragraphs
-            text={scenario.description}
-            className="text-muted-foreground mt-1.5 text-sm"
-          />
+          {/* Newline-separated descriptions render as a bulleted list, with a
+              leading "Label:" prefix (if any) bolded per line; single-line
+              descriptions stay prose. */}
+          {scenario.description.includes("\n") ? (
+            <ul className="text-muted-foreground mt-1.5 list-disc space-y-1 pl-4 text-sm">
+              {scenario.description.split("\n").map((line, i) => {
+                const colon = line.indexOf(": ");
+                return (
+                  <li key={i}>
+                    {colon > 0 ? (
+                      <>
+                        <span className="text-foreground font-medium">
+                          {line.slice(0, colon)}:
+                        </span>{" "}
+                        <MathText text={line.slice(colon + 2)} />
+                      </>
+                    ) : (
+                      <MathText text={line} />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <Paragraphs
+              text={scenario.description}
+              className="text-muted-foreground mt-1.5 text-sm"
+            />
+          )}
         </div>
 
         <div className="mt-4 flex flex-col items-center gap-x-5 gap-y-3 sm:flex-row sm:items-start">
