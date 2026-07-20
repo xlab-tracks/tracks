@@ -1803,18 +1803,9 @@ export const exercises: Exercise[] = [
     step: 0.5,
     minReasoningChars: 250,
   },
-  // Short-answer sections spliced into the efficient-tradeoffs paper
+  // Short-answer section spliced into the efficient-tradeoffs paper
   // (c-efficient-tradeoffs). Author-approved wording — see
   // docs/superpowers/specs/2026-07-18-efficient-tradeoffs-activities.md.
-  {
-    id: "c-et-two-ways-preference",
-    type: "short-answer",
-    prompt:
-      "Which way would you prefer to increase safety out of the two — safety tech improvements or safety budget increases — and what are the pros and cons in your eyes?",
-    format: "free-form",
-    minWords: 30,
-    maxWords: 200,
-  },
   {
     id: "c-et-rushed-apply",
     type: "short-answer",

@@ -311,9 +311,8 @@ export const papers: Paper[] = [
     // Control track, module 2: the safety–usefulness tradeoff model, rendered
     // full-page from Redwood's blog (Substack) — the same committed artifact
     // the Example track's ex-paper-substack uses, here as real curriculum.
-    // The two spliced demos were built FROM this paper's territory (via the
-    // c-regimes-l1 restatement); a paragraph-level catalog concluded no
-    // further activities clear the necessity bar — see
+    // A paragraph-level catalog concluded no further activities clear the
+    // necessity bar — see
     // docs/superpowers/specs/2026-07-18-efficient-tradeoffs-activities.md.
     id: "c-efficient-tradeoffs",
     slug: "safety-usefulness-tradeoff-model",
@@ -326,17 +325,6 @@ export const papers: Paper[] = [
     },
     estimatedMinutes: 13,
     edits: [
-      {
-        // The demo's two sliders are exactly the two bullets the reader just
-        // finished (safety tech improvements / safety budget increase); the
-        // short answer then asks which lever they'd prefer and why.
-        op: "activity",
-        after: { anchor: "b-0007", snippet: "Safety budget increase: increase" },
-        items: [
-          { kind: "demo", id: "two-levers" },
-          { kind: "exercise", id: "c-et-two-ways-preference" },
-        ],
-      },
       {
         // The post calls time in this frame "a healthy exercise" (b-0025);
         // the short answer has the reader do it once, concretely.
