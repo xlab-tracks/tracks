@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePrefersReducedMotion } from "@/components/demos/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 // The bootstrapping "circle model" as a self-playing animation (5s per
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 const STEPS = [
   {
     caption:
-      "Generation N is a transformatively useful AI (TUAI) — capable enough to do real research and engineering work.",
+      "Generation N is a transformatively useful AI (TUAI) — the kind of AI the plan uses to align and build the following generation.",
   },
   {
     caption:
@@ -26,11 +27,11 @@ const STEPS = [
   },
   {
     caption:
-      "Handoff: Gen N+1 — more capable, and aligned by Gen N's work — takes over as the builder.",
+      "Handoff: Gen N+1 — more capable, and aligned by Gen N's research if the plan works — takes over as the builder.",
   },
   {
     caption:
-      "The same cycle runs again: Gen N+1 aligns and builds Gen N+2. Each lap of the circle is one generation.",
+      "The same cycle runs again: Gen N+1 aligns and builds Gen N+2, then hands off. Each lap of the circle is one generation.",
   },
   {
     caption:
@@ -95,17 +96,31 @@ function arcPath(from: number, to: number): string {
 
 const PHASE_MS = 5000;
 
+// Thin shell: the reduced-motion preference picks the animation's INITIAL
+// state (reduced → paused on the finished diagram) instead of patching it
+// after mount. While the preference is unknown (server HTML + hydration
+// frame) we render the paused finished diagram; the key remounts the
+// animation into the right initial state once the preference is known.
 export function RsiBootstrapDemo() {
-  const [step, setStep] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const reduced = usePrefersReducedMotion();
+  return (
+    <RsiBootstrapAnimation
+      key={String(reduced)}
+      initialStep={reduced === false ? 0 : STEPS.length - 1}
+      initialPlaying={reduced === false}
+    />
+  );
+}
 
-  // Respect reduced motion: start paused on the finished diagram.
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPlaying(false);
-      setStep(STEPS.length - 1);
-    }
-  }, []);
+function RsiBootstrapAnimation({
+  initialStep,
+  initialPlaying,
+}: {
+  initialStep: number;
+  initialPlaying: boolean;
+}) {
+  const [step, setStep] = useState(initialStep);
+  const [playing, setPlaying] = useState(initialPlaying);
 
   useEffect(() => {
     if (!playing) return;

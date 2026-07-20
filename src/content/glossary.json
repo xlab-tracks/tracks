@@ -1,0 +1,30 @@
+{
+  "terms": [
+    {
+      "id": "example-term",
+      "term": "example term",
+      "aliases": ["example terms"],
+      "definition": "Lorem ipsum dolor sit amet, consectetur adipiscing elit — a placeholder definition showing how a glossary hover card renders. Inline math works: $s(u)$.",
+      "seeAlso": ["another-term"],
+      "source": { "label": "Example source", "url": "https://example.com" }
+    },
+    {
+      "id": "another-term",
+      "term": "another term",
+      "definition": "Sed do eiusmod tempor incididunt ut labore — a second placeholder entry, referenced from the first via seeAlso."
+    },
+    {
+      "id": "attention-mechanism",
+      "term": "attention mechanism",
+      "aliases": ["attention mechanisms"],
+      "definition": "Lorem ipsum placeholder definition (Example track) — consectetur adipiscing elit, sed do eiusmod tempor incididunt.",
+      "seeAlso": ["long-short-term-memory"]
+    },
+    {
+      "id": "long-short-term-memory",
+      "term": "long short-term memory",
+      "aliases": ["LSTM"],
+      "definition": "Lorem ipsum placeholder definition (Example track) — dolor sit amet, ut enim ad minim veniam, quis nostrud exercitation."
+    }
+  ]
+}

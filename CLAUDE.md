@@ -84,8 +84,9 @@ renders an arXiv paper, Substack post, or LessWrong/Alignment Forum post
 full-page from its precomputed artifact (`Paper.source` kinds
 `arxiv`/`substack`/`lesswrong`), editable via
 `Paper.edits`: hide sentences/paragraphs behind expandable markers, add
-editorial markdown (navy "Note" styling), and splice activities (exercises /
-inline lessons) at section ends, between blocks, or mid-paragraph. Targets key
+editorial markdown (navy "Note" styling), splice activities (exercises /
+inline lessons) at section ends, between blocks, or mid-paragraph, and gloss
+phrases with glossary hover-card triggers. Targets key
 on stable `data-anchor`/`data-s` values plus a required `snippet` drift
 tripwire (validated by content.test.ts). `src/lib/papers/apply-edits.ts`
 patches only edited sections (HAST tree ops; unedited papers keep the string
@@ -123,7 +124,8 @@ via `usePathname()` (layouts can't see deeper params).
 `src/components/mdx/mdx-components.tsx`. `LessonContent` dynamically imports
 `src/content/lessons/${contentRef}.mdx`, so authors embed `<Video/>`, `<Demo/>`,
 `<Exercise/>`, `<Callout/>`, `<ArxivPaper/>` (collapsible card — distinct from
-full-page Paper items), and `<Footnote/>` by name inside lesson text.
+full-page Paper items), `<Footnote/>`, and `<Term/>` (glossary hover card)
+by name inside lesson text.
 A lesson body with 2+ top-level `##`/`###` headings automatically gets a
 paper-style "In this lesson" sidebar nav: `src/lib/mdx/rehype-lesson-sections.mjs`
 compiles a `sections` export into every lesson module (read via
@@ -149,6 +151,33 @@ passing them as props. Exercise prompt/answer strings render `$…$` math via
 `MathText`; writing-type prompts additionally render block markdown
 (`src/lib/content/writing-prompt-html.ts`); lesson MDX math uses remark-math +
 rehype-katex.
+The reasoning-transparency grader (`src/lib/grader/`, action
+`requestTransparencyGrade`) sends submitted writing to an LLM via OpenRouter;
+model selection is per length class and key source (`modelFor` in
+`classify.ts`, env-overridable): the server-wide key grades on
+`tencent/hy3:free`; a user-stored key grades on `moonshotai/kimi-k3`
+(`OPENROUTER_MODEL_USER` overrides). The grader card renders only once
+the submission is submitted; `reopenWriting` reverts submitted→draft for
+edit-after-grading (hosts key `WritingEditor` on the row's `updatedAt` so
+`router.refresh()` remounts it with server truth). Grader reports open with
+a machine-parsed `<analysis>` block (per-criterion Score/Evidence/Rationale;
+verdict LAST) that is never shown raw: `parseGraderReport` in `parse.ts`
+turns it into rubric-table rows (`rubric-table.tsx`, criterion tooltips), and
+the visible report is the analysis-stripped remainder. The rubric is
+single-sourced in `src/lib/grader/rubric.ts` (author's verbatim text) — the
+prompts' criterion blocks and the UI tooltips both build from it. The raw
+report persists unmodified on `Submission.feedback`; parsing happens at read
+time, so pre-format reports degrade to a full-markdown view. It prefers a user-stored OpenRouter
+key over the server-wide `OPENROUTER_API_KEY`: signed-in users add their own
+via `saveOpenRouterKey` (validated live against OpenRouter, persisted
+AES-GCM-encrypted in `UserApiKey` under `API_KEY_ENCRYPTION_SECRET`, with
+`userId:provider` bound as additionalData — `src/lib/grader/key-crypto.ts`;
+secrets shorter than 32 chars or equal to the .env.example placeholder are
+treated as unset, hiding the feature). Decrypted key material never leaves
+the server; the client only ever sees a status state + `last4`
+(`getOpenRouterKeyStatus`, passed into `TransparencyFeedback`; it probes
+decryption, so a key orphaned by secret rotation surfaces as `needs-reentry`
+and grading errors rather than silently billing the server-wide key).
 `src/lib/control-model/` is the pure closed-form model behind the Control
 track's demos — its calibration test pins the paper's headline numbers (±4pp);
 plan-level rationale lives in the demos, the code + test are normative.
@@ -157,6 +186,10 @@ reads (`q|b|d|attackSd`): never mutate its returned object, and extend the key
 if `evaluateGame` grows a new lever dependency.
 
 **Auth & mutations.** WorkOS AuthKit. `src/middleware.ts` only refreshes the session.
+Local dev can bypass WorkOS entirely: `DEV_USER=1` in `.env` resolves every
+request to a placeholder account (`devUser()` in `src/lib/auth.ts`; an email
+value gives distinct accounts). Active only when NODE_ENV is `development` —
+both gates are deliberate; don't weaken them.
 `getCurrentUser()` / `requireUser()` (`src/lib/auth.ts`, `cache()`-wrapped per
 request) upsert the WorkOS user into the local `User` table. Enforce sign-in
 **per page/action** (`requireUser`, or `withAuth({ ensureSignedIn: true })`), not in
@@ -182,15 +215,57 @@ migrations, and never run `prisma migrate deploy` against prod. To change the
 schema: edit `prisma/schema.prisma` (types/client) **and** add a matching SQL
 file under `db/migrations/`, apply it, then push. Deploys are git-connected via
 **Workers Builds**: push to `main` → `npx opennextjs-cloudflare build` +
-`npx opennextjs-cloudflare deploy`. Worker secrets (`WORKOS_*`) are set with
-`wrangler secret put`; `NEXT_PUBLIC_WORKOS_REDIRECT_URI` lives in
+`npx opennextjs-cloudflare deploy`. Worker secrets (`WORKOS_*`, `OPENROUTER_API_KEY`,
+`API_KEY_ENCRYPTION_SECRET`) are set with `wrangler secret put`; `NEXT_PUBLIC_WORKOS_REDIRECT_URI` lives in
 `wrangler.jsonc` vars **and** must be a Workers Builds build variable
 (`NEXT_PUBLIC_` values are inlined at build time).
+
+**Glossary.** `src/content/glossary.json` is the hand-authored term registry
+(definitions are curriculum copy — human-authored or lorem, never generated);
+`src/lib/content/glossary.ts` indexes it by id and case-insensitive
+term/alias. One shared card serves both surfaces (`src/components/glossary/`:
+hover-intent on desktop, tap on touch, Escape/outside dismiss); its
+presentation is `glossary-overlay.tsx` — on wide viewports a margin card on
+the surface's sidenote rail, slightly raised, with a dashed connector traced
+from the term (document-coordinate portal, per-surface rail geometry);
+without rail room, a popover anchored at the term. Lessons use the `<Term/>`
+MDX component (server-side lookup; definitions math-render via MathText
+before crossing to the client); papers use the `gloss` edit op —
+`patch-section.ts` wraps the phrase in `span.ax-gloss[data-gloss]`
+(text-preserving, so anchors/sentence indices/snippets never drift, and only
+glossed sections parse — the unedited fast path stands), and `PaperGlossary`
+(PaperSidenotes pattern: no HTML props) event-delegates over the spans.
+`glossary.test.ts` + `content.test.ts` enforce every reference, including
+that each gloss phrase exists as plain running text in its target (the exact
+runtime matcher, applied sequentially like phase A0).
 
 **Demos.** `src/lib/demos/registry.ts` is the single integration point: a demo is a
 self-contained client component registered by id, embeddable in MDX, the `/demos`
 gallery, a standalone page, and the chrome-less `/demos/[id]/embed` iframe route
-(which is excluded from the proxy matcher).
+(which is excluded from the proxy matcher). Demo components live in
+`src/components/demos/` as self-contained `"use client"` files with no
+app-internal deps beyond design-system imports (`src/lib/demos/types.ts` states
+the contract). Never wrap a demo in `DemoFrame` — `DemoById` applies it,
+supplying the titled frame, error boundary, and Reset (Reset works by
+remounting, so demos carry no reset logic of their own). House idiom:
+hand-rolled inline SVG, no chart libraries, styled with Tailwind classes only —
+theme tokens (`card`/`border`/`muted`/`primary`) for structure, fixed palette
+classes (e.g. `fill-amber-500`) where a demo needs categorical accent colors,
+never literal hex/rgb. `slide-stepper.tsx`
+is the reusable zybooks-style slide chrome (label+caption steps, render-prop
+`children(step)`, Back/dots/Next + arrow keys, index clamped; used by
+`additive-control` and `regime-states`): stepper demos render **one** SVG
+scene on every step and fade layers via CSS transitions keyed off the step
+index, so stepping backward animates too. Demo caption/label copy must
+restate the human-authored source note or lesson prose — never invent
+curriculum claims. Vitest runs in node env against `src/**/*.test.ts` only:
+registry wiring gets a plain unit test (`src/lib/demos/registry.test.ts`);
+components are verified by typecheck + a visual pass, not DOM tests. Dated
+design specs and step-by-step implementation plans for demo workstreams live
+in `docs/superpowers/` (`specs/`, `plans/`) — they record intent and rationale
+(e.g. why `regime-states` is a 7-step stepper covering the safety-budget
+household picture, or the `five-worlds` map axes); once shipped, the code is
+normative.
 
 **Verification interactives.** The Verification track's 17 exercises are
 **native React widgets** (`src/components/verification/widgets/<id>.tsx`) in the

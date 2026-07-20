@@ -30,12 +30,12 @@ const STEPS: SlideStep[] = [
   {
     label: "The will account",
     caption:
-      "One bank account: political will — the authorization to do costly safety things. Not money; permission and backing. It is the only currency. It fades over time if nothing reinforces it, and it spikes after frightening incidents.",
+      "One account: willpower — the authorization required to implement costly safety actions. Not just money: permission and backing in economic, political, and social spheres. It fades without reinforcement and spikes after concerning incidents.",
   },
   {
     label: "The priced aisles",
     caption:
-      "The things you can spend will on, each with a price tag — and the regime sets the prices, not the lab. The usefulness tax is priced by commercial pressure and public mood, compute by internal politics, delay by the race.",
+      "The things you can spend will on, each with a price tag — and the regime sets the prices, not the lab. Delay is priced by the race to AGI and takes primarily economic will. Usefulness costs economic and social will — though control's payoff is denominated in usefulness too, so it partially offsets its own tax. Compute is governed by internal politics: pulling it from capabilities takes the economic will to overcome the slowing of development.",
   },
   {
     label: "The basket",
@@ -45,7 +45,7 @@ const STEPS: SlideStep[] = [
   {
     label: "What refills the budget",
     caption:
-      "Three things generate budget, and they work differently: incidents and evidence refill the account directly; public buy-in changes the prices; passed policy spends will once and locks a durable floor in place.",
+      "Three things generate budget, and they work differently: incidents and evidence refill all three wills, with the biggest impact on social will; public buy-in raises social will and slows its fading; passed policy converts political will into a durable floor (repeal is expensive).",
   },
 ];
 
@@ -115,7 +115,7 @@ const BOXES: StateBox[] = [
     title: "Resource state",
     question: ["Can we afford to act", "on what we think?"],
     items: [
-      "political will — the account",
+      "willpower — the account",
       "price: usefulness tax",
       "price: compute",
       "price: delay",
@@ -134,20 +134,24 @@ const BOXES: StateBox[] = [
 // Which box a step opens by default; hover/tap can override on steps 0–2.
 const STEP_DEFAULT: (StateId | null)[] = ["world", "epistemic", "resource"];
 
-// Shopping palette: one hue per aisle, reused by the basket's bars.
+// Shopping palette: one hue per aisle, reused by the basket's bars. Each
+// price tag carries the lesson's will attribution on a second line.
 const AISLES = [
   {
-    text: "usefulness tax · public mood",
+    text: "usefulness tax",
+    will: "economic & social will",
     shelf: "fill-amber-500/15 stroke-amber-500",
     tag: "fill-amber-500",
   },
   {
     text: "compute · internal politics",
+    will: "economic will",
     shelf: "fill-sky-500/15 stroke-sky-500",
     tag: "fill-sky-500",
   },
   {
     text: "delay · the race",
+    will: "primarily economic will",
     shelf: "fill-rose-500/15 stroke-rose-500",
     tag: "fill-rose-500",
   },
@@ -159,15 +163,17 @@ const BASKET_BARS = [
   { label: "delay", width: 6, bar: "fill-rose-500" },
 ] as const;
 
-/** One aisle shelf with its price tag. */
+/** One aisle shelf with its price tag and will attribution. */
 function Aisle({
   y,
   text,
+  will,
   shelf,
   tag,
 }: {
   y: number;
   text: string;
+  will: string;
   shelf: string;
   tag: string;
 }) {
@@ -177,15 +183,15 @@ function Aisle({
         x={200}
         y={y}
         width={180}
-        height={22}
+        height={24}
         rx={6}
         className={shelf}
         strokeWidth={1.25}
       />
-      <circle cx={211} cy={y + 11} r={7} className={tag} />
+      <circle cx={211} cy={y + 12} r={7} className={tag} />
       <text
         x={211}
-        y={y + 14.5}
+        y={y + 15.5}
         textAnchor="middle"
         className="fill-white text-[9px] font-bold"
       >
@@ -193,24 +199,44 @@ function Aisle({
       </text>
       <text
         x={296}
-        y={y + 15}
+        y={y + 10.5}
         textAnchor="middle"
-        className="fill-foreground text-[10px]"
+        className="fill-foreground text-[9px]"
       >
         {text}
+      </text>
+      <text
+        x={296}
+        y={y + 20}
+        textAnchor="middle"
+        className="fill-muted-foreground text-[8px]"
+      >
+        {will}
       </text>
     </g>
   );
 }
 
-/** An upward arrow with a label beneath it (the budget generators). */
-function InArrow({ x, toY, label }: { x: number; toY: number; label: string }) {
+/** An upward arrow with a label beneath it (the budget generators). All
+ * three point at the will account — the lesson has every generator refill
+ * the balance — so the tip x can differ from the label x. */
+function InArrow({
+  x,
+  toX,
+  toY,
+  label,
+}: {
+  x: number;
+  toX?: number;
+  toY: number;
+  label: string;
+}) {
   return (
     <g>
       <line
         x1={x}
         y1={344}
-        x2={x}
+        x2={toX ?? x}
         y2={toY}
         className="stroke-emerald-600 dark:stroke-emerald-400"
         strokeWidth={1.5}
@@ -238,17 +264,27 @@ const BRANCHES = [
   { toX: 452, appearsAt: 5 }, // the basket
 ] as const;
 
+// A peek remembers which step it was made on: entries from another step are
+// ignored, so stepping resets the selection without an effect or a remount
+// (which would cut the boxes' transform transitions short).
+type Peek = { step: number; id: StateId } | null;
+
 export function RegimeStatesDemo() {
-  const [hovered, setHovered] = useState<StateId | null>(null);
+  const [hovered, setHovered] = useState<Peek>(null);
+  const [pinned, setPinned] = useState<Peek>(null);
 
   return (
     <SlideStepper steps={STEPS}>
       {(step) => {
         const phase = Math.min(step, 3) as 0 | 1 | 2 | 3;
         // From the will-account step on, the household picture is the focus
-        // and the resource box stays open; before that, hover wins.
+        // and the resource box stays open; before that, a tapped pin wins,
+        // then hover, then the step's default.
+        const peeked =
+          (pinned?.step === step ? pinned.id : null) ??
+          (hovered?.step === step ? hovered.id : null);
         const active: StateId | null =
-          step >= 3 ? "resource" : (hovered ?? STEP_DEFAULT[step]);
+          step >= 3 ? "resource" : (peeked ?? STEP_DEFAULT[step]);
         const bankVisible = step >= 3;
         const aislesVisible = step >= 4;
         const basketVisible = step >= 5;
@@ -258,7 +294,7 @@ export function RegimeStatesDemo() {
             viewBox={`0 0 ${W} ${H}`}
             className="w-full"
             role="img"
-            aria-label="The three regime states — world, epistemic, resource — introduced one at a time, with the resource state branching into the safety budget: the political-will account, the priced aisles, the basket, and what refills the budget"
+            aria-label="The three regime states — world, epistemic, resource — introduced one at a time, with the resource state branching into the safety budget: the will account, the priced aisles, the basket, and what refills the budget"
           >
             <defs>
               <marker
@@ -297,10 +333,14 @@ export function RegimeStatesDemo() {
               return (
                 <g
                   key={box.id}
-                  onMouseEnter={() => setHovered(box.id)}
+                  onMouseEnter={() => setHovered({ step, id: box.id })}
                   onMouseLeave={() => setHovered(null)}
                   onClick={() =>
-                    setHovered((h) => (h === box.id ? null : box.id))
+                    setPinned((p) =>
+                      p?.step === step && p.id === box.id
+                        ? null
+                        : { step, id: box.id },
+                    )
                   }
                   className="cursor-pointer transition-all duration-700 ease-in-out motion-reduce:transition-none"
                   opacity={visible ? 1 : 0}
@@ -437,7 +477,7 @@ export function RegimeStatesDemo() {
                 textAnchor="middle"
                 className="fill-foreground text-[12px] font-semibold"
               >
-                Political will
+                Willpower
               </text>
               <text
                 x={112}
@@ -445,7 +485,7 @@ export function RegimeStatesDemo() {
                 textAnchor="middle"
                 className="fill-muted-foreground text-[10px]"
               >
-                the only currency
+                economic · political · social
               </text>
             </g>
 
@@ -466,6 +506,7 @@ export function RegimeStatesDemo() {
                   key={aisle.text}
                   y={214 + i * 28}
                   text={aisle.text}
+                  will={aisle.will}
                   shelf={aisle.shelf}
                   tag={aisle.tag}
                 />
@@ -537,8 +578,8 @@ export function RegimeStatesDemo() {
                 strokeLinecap="round"
               />
               <InArrow x={60} toY={306} label="incidents & evidence" />
-              <InArrow x={150} toY={304} label="passed policy" />
-              <InArrow x={290} toY={298} label="public buy-in" />
+              <InArrow x={170} toX={110} toY={304} label="public buy-in" />
+              <InArrow x={290} toX={165} toY={304} label="passed policy" />
             </g>
           </svg>
         );

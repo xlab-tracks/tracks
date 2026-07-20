@@ -8,7 +8,9 @@ import { gfm } from "micromark-extension-gfm";
 // The grader's report is MODEL-GENERATED markdown — unlike authored repo
 // content it is untrusted, so it gets a sanitize pass (default schema: no
 // scripts, no raw HTML, safe protocols) before being rendered via
-// dangerouslySetInnerHTML. GFM is on for the Scores table.
+// dangerouslySetInnerHTML. GFM stays on for pre-analysis-format stored
+// reports (which carry a Scores table) and general GFM constructs in
+// model-generated prose.
 
 export function feedbackToHtml(markdown: string): string {
   const mdast = fromMarkdown(markdown, {

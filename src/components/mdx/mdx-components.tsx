@@ -6,11 +6,13 @@ import { Demo } from "./demo";
 import { Exercise } from "./exercise";
 import { ExerciseSequence } from "./exercise-sequence";
 import { Footnote } from "./footnote";
+import { Term } from "./term";
 import { VerificationExercise } from "@/components/verification/verification-exercise";
 
 // Components available by name inside every lesson `.mdx` body. Authors drop
 // <Video/>, <Demo/>, <Exercise/>, <ExerciseSequence/>, <Callout/>,
-// <ArxivPaper/>, <Footnote/>, <VerificationExercise/> directly into prose.
+// <ArxivPaper/>, <Footnote/>, <Term/>, <VerificationExercise/> directly
+// into prose.
 export const mdxComponents: MDXComponents = {
   Video,
   ArxivPaper,
@@ -19,5 +21,6 @@ export const mdxComponents: MDXComponents = {
   Exercise,
   ExerciseSequence,
   Footnote,
+  Term,
   VerificationExercise,
 };

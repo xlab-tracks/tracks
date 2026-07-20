@@ -1,5 +1,6 @@
 import type { PaperTocEntry } from "@/lib/arxiv/types";
 import {
+  editTargetRef,
   isSectionEndRef,
   type PaperBlockRef,
   type PaperEdit,
@@ -35,23 +36,22 @@ export function applyPaperEdits(
   const all = edits ?? [];
   if (all.length === 0) return { parts: [{ kind: "html", html }], unmatchedEdits: [] };
 
-  const sectionEndOps = all.filter(
-    (op) => op.op !== "hide" && isSectionEndRef(op.after),
-  );
-  const blockOps = all.filter(
-    (op) => op.op === "hide" || !isSectionEndRef(op.after),
-  );
+  // hide/gloss target blocks by construction; add/activity may target either.
+  const sectionEndOps = all.filter((op) => isSectionEndRef(editTargetRef(op)));
+  const blockOps = all.filter((op) => !isSectionEndRef(editTargetRef(op)));
   const unmatchedEdits: PaperEdit[] = [];
 
   // ---- Tier 1: section-end boundaries -------------------------------------
   const tier1 = splitAtSectionEnds<PaperEdit>(
     html,
     toc,
-    sectionEndOps.map((op) => ({
-      sectionId:
-        op.op === "hide" ? "" : isSectionEndRef(op.after) ? op.after.sectionEnd : "",
-      payload: op,
-    })),
+    sectionEndOps.map((op) => {
+      const ref = editTargetRef(op);
+      return {
+        sectionId: isSectionEndRef(ref) ? ref.sectionEnd : "",
+        payload: op,
+      };
+    }),
   );
   unmatchedEdits.push(...tier1.unmatched.map((entry) => entry.payload));
 
@@ -80,7 +80,7 @@ export function applyPaperEdits(
 
   const opsBySlice = new Map<number, PaperEdit[]>();
   for (const op of blockOps) {
-    const ref = (op.op === "hide" ? op.at : op.after) as PaperBlockRef;
+    const ref = editTargetRef(op) as PaperBlockRef;
     if (Number.isNaN(anchorNum(ref.anchor))) {
       unmatchedEdits.push(op);
       continue;

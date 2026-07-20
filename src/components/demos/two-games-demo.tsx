@@ -2,7 +2,7 @@
 
 // The two games (module 2, "Determining the usefulness") as a static
 // anchor image: the inner game played inside the lab against the
-// possibly-scheming model, nested in the outer game played out in the
+// potentially-scheming model, nested in the outer game played out in the
 // world — coupled by evidence flowing out and budget flowing back in.
 // Deliberately previews the regime-loop demo without duplicating its
 // circuit. Copy restates the lesson's own prose.
@@ -100,9 +100,9 @@ export function TwoGamesDemo() {
       >
         growing the resources available to spend
       </text>
-      <Chip x={116} y={H - 52} w={96} text="leadership" tone="outer" />
-      <Chip x={220} y={H - 52} w={96} text="the public" tone="outer" />
-      <Chip x={324} y={H - 52} w={104} text="governments" tone="outer" />
+      <Chip x={112} y={H - 52} w={104} text="lab leadership" tone="outer" />
+      <Chip x={224} y={H - 52} w={96} text="the public" tone="outer" />
+      <Chip x={328} y={H - 52} w={104} text="governments" tone="outer" />
 
       {/* Inner game — inside the lab */}
       <rect
@@ -128,7 +128,7 @@ export function TwoGamesDemo() {
         textAnchor="middle"
         className="fill-muted-foreground text-[10px]"
       >
-        vs. the possibly-scheming model
+        vs. the potentially-scheming model
       </text>
       <Chip x={146} y={132} w={128} text="designing protocols" tone="inner" />
       <Chip x={282} y={132} w={128} text="extracting work" tone="inner" />

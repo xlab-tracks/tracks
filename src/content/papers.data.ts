@@ -310,8 +310,11 @@ export const papers: Paper[] = [
   {
     // Control track, module 2: the safety–usefulness tradeoff model, rendered
     // full-page from Redwood's blog (Substack) — the same committed artifact
-    // the Example track's ex-paper-substack uses, here as real curriculum. No
-    // exercises are woven in (the source PR reproduced it as a plain reading).
+    // the Example track's ex-paper-substack uses, here as real curriculum.
+    // The two spliced demos were built FROM this paper's territory (via the
+    // c-regimes-l1 restatement); a paragraph-level catalog concluded no
+    // further activities clear the necessity bar — see
+    // docs/superpowers/specs/2026-07-18-efficient-tradeoffs-activities.md.
     id: "c-efficient-tradeoffs",
     slug: "safety-usefulness-tradeoff-model",
     moduleId: "c-mod2",
@@ -322,6 +325,26 @@ export const papers: Paper[] = [
         "https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety",
     },
     estimatedMinutes: 13,
+    edits: [
+      {
+        // The demo's two sliders are exactly the two bullets the reader just
+        // finished (safety tech improvements / safety budget increase); the
+        // short answer then asks which lever they'd prefer and why.
+        op: "activity",
+        after: { anchor: "b-0007", snippet: "Safety budget increase: increase" },
+        items: [
+          { kind: "demo", id: "two-levers" },
+          { kind: "exercise", id: "c-et-two-ways-preference" },
+        ],
+      },
+      {
+        // The post calls time in this frame "a healthy exercise" (b-0025);
+        // the short answer has the reader do it once, concretely.
+        op: "activity",
+        after: { sectionEnd: "sb-sec-rushed-reasonable-developers" },
+        items: [{ kind: "exercise", id: "c-et-rushed-apply" }],
+      },
+    ],
   },
   {
     // Control track, module 1: "Catching AIs red-handed", rendered full-page
@@ -491,6 +514,27 @@ export const papers: Paper[] = [
           s: 2,
           snippet: "The Transformer allows for significantly",
         },
+      },
+      // Glossary hover cards: wrap a phrase of a sentence (or of a whole
+      // block — first occurrence wins) in a trigger for a glossary.json term.
+      {
+        op: "gloss",
+        at: {
+          anchor: "b-0006",
+          s: 1,
+          snippet: "Attention mechanisms have become an integral",
+        },
+        termId: "attention-mechanism",
+        phrase: "Attention mechanisms",
+      },
+      {
+        op: "gloss",
+        at: {
+          anchor: "b-0004",
+          snippet: "Recurrent neural networks, long short-term",
+        },
+        termId: "long-short-term-memory",
+        phrase: "long short-term memory",
       },
       // Two consecutive paragraphs hidden in §2 — renders as ONE merged marker.
       {

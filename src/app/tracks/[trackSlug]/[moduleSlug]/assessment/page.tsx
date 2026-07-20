@@ -7,12 +7,17 @@ import { DELIVERABLE_FORMAT_LABELS } from "@/lib/content/types";
 import { isAccessLocked } from "@/lib/content/prerequisites";
 import { getCurrentUser } from "@/lib/auth";
 import { getPrerequisiteStatus, getSubmission } from "@/lib/progress";
-import { saveWritingDraft, submitWriting } from "@/app/actions/submissions";
+import {
+  reopenWriting,
+  saveWritingDraft,
+  submitWriting,
+} from "@/app/actions/submissions";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { WritingEditor, type WritingValues } from "@/components/exercises/writing-editor";
 import { TransparencyFeedback } from "@/components/exercises/transparency-feedback";
 import { feedbackToHtml } from "@/lib/grader/feedback-html";
-import { parseVerdict } from "@/lib/grader/parse";
+import { parseGraderReport, parseVerdict } from "@/lib/grader/parse";
+import { getOpenRouterKeyStatus } from "@/lib/grader/user-key";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -89,6 +94,7 @@ export default async function AssessmentPage({
           {user ? (
             <>
               <WritingEditor
+                key={submission?.updatedAt.toISOString() ?? "new"}
                 sections={assessment.sections}
                 rubric={assessment.rubric}
                 minWords={assessment.minWords}
@@ -97,27 +103,38 @@ export default async function AssessmentPage({
                 submitted={submission?.status === "submitted"}
                 onSaveDraft={saveWritingDraft.bind(null, assessment.id, "assessment", assessment.format)}
                 onSubmit={submitWriting.bind(null, assessment.id, "assessment", assessment.format)}
+                onReopen={reopenWriting.bind(null, assessment.id, "assessment")}
                 submitLabel="Submit assessment"
               />
-              <TransparencyFeedback
-                contentId={assessment.id}
-                kind="assessment"
-                initialScore={
-                  submission?.score != null && submission.feedback
-                    ? submission.score
-                    : undefined
-                }
-                initialBand={
-                  submission?.feedback
-                    ? parseVerdict(submission.feedback)?.band
-                    : undefined
-                }
-                initialFeedbackHtml={
-                  submission?.feedback
-                    ? feedbackToHtml(submission.feedback)
-                    : undefined
-                }
-              />
+              {submission?.status === "submitted" && (
+                <TransparencyFeedback
+                  contentId={assessment.id}
+                  kind="assessment"
+                  keyStatus={(await getOpenRouterKeyStatus(user.id)) ?? undefined}
+                  initialScore={
+                    submission.score != null && submission.feedback
+                      ? submission.score
+                      : undefined
+                  }
+                  initialBand={
+                    submission.feedback
+                      ? parseVerdict(submission.feedback)?.band
+                      : undefined
+                  }
+                  initialFeedbackHtml={
+                    submission.feedback
+                      ? feedbackToHtml(
+                          parseGraderReport(submission.feedback).visibleMarkdown,
+                        )
+                      : undefined
+                  }
+                  initialCriteria={
+                    submission.feedback
+                      ? parseGraderReport(submission.feedback).criteria
+                      : undefined
+                  }
+                />
+              )}
             </>
           ) : (
             <>

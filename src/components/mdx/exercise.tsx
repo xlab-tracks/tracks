@@ -19,7 +19,11 @@ import {
 import { writingPromptHtml } from "@/lib/content/writing-prompt-html";
 import { getCurrentUser } from "@/lib/auth";
 import { getExerciseSubmissionMap } from "@/lib/progress";
-import { saveWritingDraft, submitWriting } from "@/app/actions/submissions";
+import {
+  reopenWriting,
+  saveWritingDraft,
+  submitWriting,
+} from "@/app/actions/submissions";
 import { AllocationExerciseCard } from "@/components/exercises/allocation-exercise";
 import { ArgueRevealExerciseCard } from "@/components/exercises/argue-reveal-exercise";
 import { ChoiceExerciseCard } from "@/components/exercises/choice-exercise";
@@ -33,20 +37,24 @@ import { WritingExerciseCard } from "@/components/exercises/writing-exercise";
 import type { WritingValues } from "@/components/exercises/writing-editor";
 import { TransparencyFeedback } from "@/components/exercises/transparency-feedback";
 import { feedbackToHtml } from "@/lib/grader/feedback-html";
-import { parseVerdict } from "@/lib/grader/parse";
+import { parseGraderReport, parseVerdict } from "@/lib/grader/parse";
+import { getOpenRouterKeyStatus } from "@/lib/grader/user-key";
 
 // Preloaded props for TransparencyFeedback from a previously graded row, so
-// a stored grade survives reloads.
+// a stored grade survives reloads. The report's <analysis> block never
+// reaches the client raw — it's parsed into rubric-table rows here.
 function storedGradeProps(
   submission: { score: number | null; feedback: string | null } | null,
 ) {
   if (submission == null || submission.score == null || !submission.feedback) {
     return {};
   }
+  const report = parseGraderReport(submission.feedback);
   return {
     initialScore: submission.score,
     initialBand: parseVerdict(submission.feedback)?.band,
-    initialFeedbackHtml: feedbackToHtml(submission.feedback),
+    initialFeedbackHtml: feedbackToHtml(report.visibleMarkdown),
+    initialCriteria: report.criteria,
   };
 }
 
@@ -205,6 +213,7 @@ export async function Exercise({ id }: ExerciseProps) {
             <TransparencyFeedback
               contentId={exercise.id}
               kind="exercise"
+              keyStatus={(await getOpenRouterKeyStatus(user.id)) ?? undefined}
               {...storedGradeProps(submission)}
             />
           ) : undefined
@@ -232,21 +241,29 @@ export async function Exercise({ id }: ExerciseProps) {
       (await getExerciseSubmissionMap(user.id)).get(exercise.id) ?? null;
     return (
       <>
+        {/* Keyed on the row's updatedAt: submit/reopen call router.refresh(),
+            and the remount re-seeds editor state from the server's row — a
+            stale tab can't silently write old content over a newer one. */}
         <WritingExerciseCard
+          key={submission?.updatedAt.toISOString() ?? "new"}
           exercise={exercise}
           promptHtml={promptHtml}
           initialValues={(submission?.responseJson as WritingValues | null) ?? undefined}
           submitted={submission?.status === "submitted"}
           onSaveDraft={saveWritingDraft.bind(null, exercise.id, "exercise", exercise.format)}
           onSubmit={submitWriting.bind(null, exercise.id, "exercise", exercise.format)}
+          onReopen={reopenWriting.bind(null, exercise.id, "exercise")}
         />
-        <div className="not-prose my-6">
-          <TransparencyFeedback
-            contentId={exercise.id}
-            kind="exercise"
-            {...storedGradeProps(submission)}
-          />
-        </div>
+        {submission?.status === "submitted" && (
+          <div className="not-prose my-6">
+            <TransparencyFeedback
+              contentId={exercise.id}
+              kind="exercise"
+              keyStatus={(await getOpenRouterKeyStatus(user.id)) ?? undefined}
+              {...storedGradeProps(submission)}
+            />
+          </div>
+        )}
       </>
     );
   }

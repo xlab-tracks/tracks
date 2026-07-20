@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { SlideStepper, type SlideStep } from "./slide-stepper";
 
 // Illustrates the additive property of control (module 2, "How useful is AI
@@ -16,7 +18,12 @@ const STEPS: SlideStep[] = [
   {
     label: "Control wraps around",
     caption:
-      "Control's applied monitoring — trusted monitoring, auditing, defer-to-trusted, resampling — surrounds those methods without modifying them. Control is additive: it does not interfere with security, alignment, or verification interventions.",
+      "Control's applied monitoring — trusted monitoring, auditing, defer-to-trusted, resampling — surrounds those methods without modifying them. Control is additive: it does not interfere with security, alignment, or verification interventions in a general sense.",
+  },
+  {
+    label: "Additive, not entangled",
+    caption:
+      "Toggle the shell: the inner interventions are untouched either way. But additive does not necessitate high-value — control's share of resources should track how much of the risk one expects to come from scheming rather than slop.",
   },
 ];
 
@@ -65,10 +72,12 @@ function Chip({
 }
 
 export function AdditiveControlDemo() {
+  const [shellOn, setShellOn] = useState(true);
+
   return (
     <SlideStepper steps={STEPS}>
       {(step) => {
-        const shellVisible = step === 1;
+        const shellVisible = step === 1 || (step === 2 && shellOn);
         return (
           <div className="space-y-2">
             <svg
@@ -137,6 +146,22 @@ export function AdditiveControlDemo() {
                 <Chip x={274} y={124} w={120} text="classifiers / probes" tone="inner" />
               </g>
             </svg>
+
+            {step === 2 && (
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-muted-foreground text-xs">
+                  Monitoring shell:
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShellOn((v) => !v)}
+                  aria-pressed={shellOn}
+                >
+                  {shellOn ? "On" : "Off"}
+                </Button>
+              </div>
+            )}
           </div>
         );
       }}

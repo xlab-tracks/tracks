@@ -17,14 +17,28 @@ export function classifyLength(text: string): LengthClass {
   return "long";
 }
 
-const DEFAULT_MODEL = "deepseek/deepseek-v4-flash";
+const DEFAULT_MODEL = "tencent/hy3:free";
+
+// Grading billed to a user's own OpenRouter key defaults to a paid, stronger
+// model — their key, their spend; the server-wide key stays on the free tier.
+const DEFAULT_USER_KEY_MODEL = "moonshotai/kimi-k3";
+
+/** Whose OpenRouter key pays for the grading call. */
+export type GraderKeySource = "server" | "user";
 
 /**
- * The OpenRouter model slug for a length class. Each class is its own model
- * instance and can be pointed elsewhere via env (OPENROUTER_MODEL_SHORT /
- * _MEDIUM / _LONG), with OPENROUTER_MODEL as the shared fallback.
+ * The OpenRouter model slug for a length class. With the server key, each
+ * class can be pointed elsewhere via env (OPENROUTER_MODEL_SHORT / _MEDIUM /
+ * _LONG), with OPENROUTER_MODEL as the shared fallback. With a user-supplied
+ * key, one slug covers all classes (OPENROUTER_MODEL_USER, default Kimi K3).
  */
-export function modelFor(lengthClass: LengthClass): string {
+export function modelFor(
+  lengthClass: LengthClass,
+  keySource: GraderKeySource = "server",
+): string {
+  if (keySource === "user") {
+    return process.env.OPENROUTER_MODEL_USER || DEFAULT_USER_KEY_MODEL;
+  }
   const perClass = {
     short: process.env.OPENROUTER_MODEL_SHORT,
     medium: process.env.OPENROUTER_MODEL_MEDIUM,

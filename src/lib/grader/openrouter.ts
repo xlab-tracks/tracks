@@ -1,7 +1,7 @@
 // Server-only OpenRouter chat client for the grader. Plain fetch (Workers
-// compatible, no SDK). deepseek-v4-flash is a reasoning model: it spends
-// completion tokens thinking before answering, so the budget is generous and
-// only `message.content` (never `message.reasoning`) is returned.
+// compatible, no SDK). hy3 is a reasoning model: it spends completion
+// tokens thinking before answering, so the budget is generous and only
+// `message.content` (never `message.reasoning`) is returned.
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 const MAX_TOKENS = 6000;
@@ -14,8 +14,8 @@ export async function callGrader(
   model: string,
   system: string,
   user: string,
+  apiKey: string,
 ): Promise<GraderCallResult> {
-  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return { ok: false, error: "Grading is not configured on this server." };
   }

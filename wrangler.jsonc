@@ -37,7 +37,9 @@
     "NEXT_PUBLIC_WORKOS_REDIRECT_URI": "https://tracks.xlabtracks.workers.dev/callback"
   },
   // Secrets (set via `wrangler secret put`, never here): WORKOS_API_KEY,
-  // WORKOS_CLIENT_ID, WORKOS_COOKIE_PASSWORD.
+  // WORKOS_CLIENT_ID, WORKOS_COOKIE_PASSWORD, OPENROUTER_API_KEY (grader
+  // fallback key), API_KEY_ENCRYPTION_SECRET (user-key storage; without it
+  // the add-your-own-key feature is hidden).
   "observability": { "enabled": true },
   // Every request hits the DB (us-east-1); smart placement moves the worker
   // near it instead of near the visitor.

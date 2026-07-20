@@ -5,8 +5,16 @@ import { prisma } from "@/lib/db";
 import { classifyLength, modelFor } from "@/lib/grader/classify";
 import { feedbackToHtml } from "@/lib/grader/feedback-html";
 import { callGrader } from "@/lib/grader/openrouter";
-import { parseVerdict } from "@/lib/grader/parse";
+import {
+  parseGraderReport,
+  parseVerdict,
+  type CriterionResult,
+} from "@/lib/grader/parse";
 import { systemPrompt, userPrompt } from "@/lib/grader/prompts";
+import {
+  getOpenRouterKeyStatus,
+  getUserOpenRouterKey,
+} from "@/lib/grader/user-key";
 import {
   assembleArgueReveal,
   assembleWriting,
@@ -19,7 +27,15 @@ import type {
 import { getExerciseById } from "@/lib/content";
 
 export type GradeResult =
-  | { ok: true; score: number; band: string; feedbackHtml: string }
+  | {
+      ok: true;
+      score: number;
+      band: string;
+      /** Rendered from the report minus its <analysis> block. */
+      feedbackHtml: string;
+      /** Parsed per-criterion results for the rubric table. */
+      criteria: CriterionResult[];
+    }
   | { ok: false; error: string };
 
 /**
@@ -56,11 +72,36 @@ export async function requestTransparencyGrade(
     return { ok: false, error: "Nothing gradeable in this submission yet." };
   }
 
+  // Prefer the user's own stored key; fall back to the server-wide one only
+  // when the user has none. A stored-but-undecryptable key (rotated
+  // API_KEY_ENCRYPTION_SECRET) is an error, not a silent fallback — the user
+  // believes their key pays for this call. The decrypted key exists only
+  // inside this request — never in the response.
+  const keyStatus = await getOpenRouterKeyStatus(user.id);
+  if (keyStatus?.state === "needs-reentry") {
+    return {
+      ok: false,
+      error:
+        "Your stored OpenRouter key can no longer be read — replace or remove it below, then try again.",
+    };
+  }
+  const userKey = await getUserOpenRouterKey(user.id);
+  const apiKey = userKey ?? process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return {
+      ok: false,
+      error: keyStatus
+        ? "Grading needs an OpenRouter API key — add your own key below to enable it."
+        : "Grading is not configured on this server.",
+    };
+  }
+
   const lengthClass = classifyLength(assembled.sample);
   const result = await callGrader(
-    modelFor(lengthClass),
+    modelFor(lengthClass, userKey != null ? "user" : "server"),
     systemPrompt(lengthClass),
     userPrompt(assembled.sample, assembled.context),
+    apiKey,
   );
   if (!result.ok) return result;
 
@@ -83,11 +124,15 @@ export async function requestTransparencyGrade(
     },
   });
 
+  // The raw report (including its <analysis> block) persists above; the
+  // client gets only the parsed criteria and the analysis-stripped body.
+  const report = parseGraderReport(result.content);
   return {
     ok: true,
     score: verdict.score,
     band: verdict.band,
-    feedbackHtml: feedbackToHtml(result.content),
+    feedbackHtml: feedbackToHtml(report.visibleMarkdown),
+    criteria: report.criteria,
   };
 }
 

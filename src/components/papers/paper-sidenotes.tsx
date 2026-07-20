@@ -209,6 +209,23 @@ export function PaperSidenotes({ prefix }: { prefix: string }) {
           pill.textContent = "···";
           hidden.replaceWith(pill);
         }
+        // Glossary triggers must not clone as live triggers: the rail
+        // rebuilds on resize/toggle, which would detach an open card's
+        // virtual anchor (and the rail has no .arxiv-paper styling, so the
+        // clone shows no affordance). The canonical footnote keeps the
+        // working trigger; the clone keeps only the text.
+        for (const gloss of body.querySelectorAll("[data-gloss]")) {
+          for (const attr of [
+            "data-gloss",
+            "role",
+            "tabindex",
+            "aria-haspopup",
+            "aria-expanded",
+          ]) {
+            gloss.removeAttribute(attr);
+          }
+          gloss.classList.remove("ax-gloss");
+        }
         // The layer is aria-hidden presentation: nothing in a clone may be
         // keyboard-focusable (links stay mouse-clickable).
         for (const focusable of body.querySelectorAll(

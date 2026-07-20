@@ -129,6 +129,9 @@ A "sublesson" is a `Lesson` — the MDX page inside a module. To add one to an
      id needed. It numbers itself automatically (in document order) and renders as
      a sidenote in the right margin on wide screens, or a tap-to-expand marker on
      narrower ones — no separate "References" section at the bottom of the lesson.
+   - `<Term>…</Term>` — a glossary term with a hover/tap definition card
+     (see §1c). `<Term>example term</Term>` resolves by its text;
+     `<Term id="another-term">the prose form</Term>` pins the entry by id.
 
 The lesson is now live at `/tracks/<trackSlug>/<moduleSlug>/<itemSlug>` and shows
 in the sidebar + prev/next. A lesson completes when the learner scrolls to its end
@@ -255,14 +258,55 @@ paragraph; see `c-areas-l1-theory-of-change`.
 
 ---
 
+## 1c. Glossary terms (hover definitions)
+
+The glossary is one hand-authored JSON registry, `src/content/glossary.json` —
+definitions are curriculum copy (human-authored or lorem; never invented), and
+runtime only ever reads the committed file. Each entry:
+
+```jsonc
+{
+  "id": "example-term",              // stable kebab-case id
+  "term": "example term",            // display name = the card title
+  "definition": "Lorem ipsum… $s(u)$ math works.",
+  "aliases": ["example terms"],      // optional alternate surface forms
+  "seeAlso": ["another-term"],       // optional related-entry ids ("Related" line)
+  "source": { "label": "Example source", "url": "https://example.com" } // optional footer
+}
+```
+
+Learners see a dotted-underlined term; hovering (after a short intent delay)
+or tapping opens the definition card — with the definition, related terms,
+and source line. On wide screens the card renders in the **right margin**, on
+the same rail sidenotes use, raised slightly above the term's line with a
+dashed hairline tracing from the word to the box; when there's no rail room
+it anchors at the term instead. Escape, tapping away, or moving the pointer
+off dismisses it.
+
+Reference a term from either surface:
+
+- **Lesson MDX**: `<Term>example term</Term>` (resolves by display name or
+  alias, case-insensitive), `<Term id="another-term">the prose form</Term>`
+  (pins the entry when the prose differs), or `<Term id="example-term" />`
+  (renders the display name). Live example: `ex-content-l1`.
+- **Papers**: the `gloss` edit op wraps a phrase of the paper's own text —
+  see §2b. Live example: `ex-paper-attention`.
+
+Enforced by `npm run test` (`glossary.test.ts` + `content.test.ts`): unique
+ids/aliases, resolvable `seeAlso`, every `<Term>` and `gloss` reference
+resolves, and every gloss phrase exists as plain running text in its target.
+
+---
+
 ## 2. Add an arXiv paper to a module
 
 A `Paper` is a first-class module item: the arXiv paper renders **full-page**
 inline (LaTeX → HTML with KaTeX), the sidebar grows a docked **"In this paper"**
 section panel with scroll-synced highlighting, and `edits` let you **hide** text,
-**add** editorial notes, and splice **activities** — exercise cards and inline
-lessons — at section ends, between paragraphs, or between sentences. Papers count
-toward progress exactly like lessons. Footnotes additionally render as margin
+**add** editorial notes, splice **activities** — exercise cards and inline
+lessons — at section ends, between paragraphs, or between sentences, and
+**gloss** phrases of the paper's prose with glossary hover cards (§1c). Papers
+count toward progress exactly like lessons. Footnotes additionally render as margin
 **sidenotes** when the viewport has room (readers can toggle this from the
 page header; the in-document footnotes section is always there).
 
@@ -352,7 +396,7 @@ renders a link-out fallback page, with its activities stacked below under an
 apply). Ready papers with conversion approximations list them in a footer
 disclosure next to the Abstract/PDF links.
 
-### 2b. Edit a paper: hide, add, insert
+### 2b. Edit a paper: hide, add, insert, gloss
 
 Beyond section-end activities, `Paper.edits` supports fine-grained editorial
 control keyed to **block anchors** and **sentences**:
@@ -377,7 +421,7 @@ control keyed to **block anchors** and **sentences**:
   math/citations never split a sentence — when in doubt the segmenter merges,
   so trust the `--blocks` output over your own reading.
 
-The three ops, targeting the example paper (`1706.03762v7`; anchors/snippets
+The four ops, targeting the example paper (`1706.03762v7`; anchors/snippets
 below are real — see `papers.data.ts` for the live config):
 
 ```ts
@@ -401,6 +445,16 @@ edits: [
   { op: "activity",
     after: { anchor: "b-0004", s: 1, snippet: "Recurrent neural networks," },
     items: [{ kind: "exercise", id: "true-false" }] },
+
+  // GLOSS: wrap a phrase of the paper's own text in a glossary hover-card
+  // trigger (§1c). First occurrence inside the target sentence (or whole
+  // block when s is omitted); the phrase must be plain running text — a
+  // phrase broken by a link/citation/math does not match, and the tests
+  // fail naming it. Never targets a sectionEnd.
+  { op: "gloss",
+    at: { anchor: "b-0006", s: 1, snippet: "Attention mechanisms have become an integral" },
+    termId: "attention-mechanism",
+    phrase: "Attention mechanisms" },
 ]
 ```
 
@@ -422,6 +476,10 @@ edits: [
   **Inline add** → a navy-tinted span with a dashed underline, appended right
   after the target sentence, tooltipped "Added by the course". Editorial voice
   is always navy, distinct from the paper's red links.
+- **Gloss** → the phrase gets the glossary's dotted underline; hover (with
+  intent delay) or tap opens the definition card. Wrapping never changes the
+  block's text, so anchors, sentence indices, and snippets are unaffected —
+  glossing inside hidden text is allowed (the trigger reveals with it).
 - **Mid-paragraph activity** → the paragraph ends after the target sentence
   (keeping any inline adds attached to it), the card renders, and the remainder
   continues as a normal-looking paragraph. Splitting at the last sentence just

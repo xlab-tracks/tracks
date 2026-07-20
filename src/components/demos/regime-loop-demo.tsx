@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePrefersReducedMotion } from "@/components/demos/use-prefers-reduced-motion";
 
 // The regime model's loop (module 2, "Determining the usefulness") as a
 // self-playing animation: the resource state alone, then it buys a
@@ -10,8 +11,9 @@ import { Button } from "@/components/ui/button";
 // then the epistemic state completes the diamond and the cycle closes —
 // advancing on a timer and looping. Nodes glide between layouts; each
 // layout's arrows cross-fade in place. Captions restate the lesson's five
-// numbered steps. Pausable; clicking a dot scrubs and pauses; users with
-// reduced motion start paused on the finished diagram.
+// numbered loop steps, after an unnumbered setup phase. Pausable; clicking
+// a dot scrubs and pauses; users with reduced motion start paused on the
+// finished diagram.
 
 const PHASE_MS = 5000;
 
@@ -22,7 +24,7 @@ interface Phase {
 
 const STEPS: Phase[] = [
   {
-    label: "The resource state",
+    label: "Setup — the resource state",
     caption:
       "Everything starts at the resource state — the safety budget: the will account, and the prices the regime sets.",
   },
@@ -34,22 +36,22 @@ const STEPS: Phase[] = [
   {
     label: "The technique changes the facts",
     caption:
-      "The schemer that would have quietly sabotaged research is now a caught schemer. Its nature didn't change; its situation did — and the world state includes what has happened with the model so far.",
+      "The schemer that would have quietly sabotaged research may now be caught. The world state updates based on this catch — what has happened with the model so far is part of the world state.",
   },
   {
     label: "The catch updates what we know",
     caption:
-      "Where there was inference and speculation, there is now a transcript: undeniable, checkable, specific.",
+      "There is now undeniable proof that the model has schemed — a transcript that can be checked line by line.",
   },
   {
     label: "The evidence feeds the budget",
     caption:
-      "Leadership and the public get scared in a useful way. Will refills. Prices drop. Maybe a regulation passes and locks a floor in place.",
+      "Leadership and the public become alarmed, increasing political, social, and economic will — potentially leading to regulation passing, locking a floor in place.",
   },
   {
     label: "Around again, one stage up",
     caption:
-      "The bigger budget buys better techniques for the next, more dangerous capability stage. Money spent now changes how much money exists later — which is why \"when should you invest?\" is a real question.",
+      "The bigger budget buys better techniques for the next, more dangerous capability stage. That spending funds the next round of the inner game, searching for more evidence.",
   },
 ];
 
@@ -223,17 +225,31 @@ function EdgeLabel({
   );
 }
 
+// Thin shell: reads the reduced-motion preference and picks the initial
+// state (reduced → paused on the finished diagram) instead of patching it
+// after mount. While the preference is unknown (server HTML + hydration
+// frame) we render the paused finished diagram; the key remounts the
+// animation into the right initial state once the preference is known.
 export function RegimeLoopDemo() {
-  const [step, setStep] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const reduced = usePrefersReducedMotion();
+  return (
+    <RegimeLoopAnimation
+      key={String(reduced)}
+      initialStep={reduced === false ? 0 : STEPS.length - 1}
+      initialPlaying={reduced === false}
+    />
+  );
+}
 
-  // Respect reduced motion: start paused on the finished diagram.
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPlaying(false);
-      setStep(STEPS.length - 1);
-    }
-  }, []);
+function RegimeLoopAnimation({
+  initialStep,
+  initialPlaying,
+}: {
+  initialStep: number;
+  initialPlaying: boolean;
+}) {
+  const [step, setStep] = useState(initialStep);
+  const [playing, setPlaying] = useState(initialPlaying);
 
   useEffect(() => {
     if (!playing) return;
@@ -379,8 +395,9 @@ export function RegimeLoopDemo() {
           </svg>
 
       <div className="min-h-16 text-sm" aria-live="polite">
+        {/* Phase 0 is setup; phases 1-5 carry the lesson's step numbers. */}
         <p className="font-medium">
-          {step + 1}. {STEPS[step].label}
+          {step === 0 ? STEPS[step].label : `${step}. ${STEPS[step].label}`}
         </p>
         <p className="text-muted-foreground mt-1">{STEPS[step].caption}</p>
       </div>
@@ -420,7 +437,7 @@ export function RegimeLoopDemo() {
             <button
               key={s.label}
               type="button"
-              aria-label={`Phase ${i + 1}: ${s.label}`}
+              aria-label={i === 0 ? s.label : `Step ${i}: ${s.label}`}
               aria-current={i === step ? "step" : undefined}
               onClick={() => {
                 setPlaying(false);

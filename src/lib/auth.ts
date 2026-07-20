@@ -102,6 +102,8 @@ async function upsertUser(workosUser: WorkosUserShape): Promise<AppUser> {
  * so layout + page calls don't each hit the DB.
  */
 export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
+  const dev = devUser();
+  if (dev) return upsertUser(dev);
   const { user } = await withAuth();
   if (!user) return null;
   return upsertUser(user);
@@ -109,6 +111,32 @@ export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
 
 /** Like getCurrentUser, but redirects to sign-in when not authenticated. */
 export const requireUser = cache(async (): Promise<AppUser> => {
+  const dev = devUser();
+  if (dev) return upsertUser(dev);
   const { user } = await withAuth({ ensureSignedIn: true });
   return upsertUser(user);
 });
+
+/**
+ * Dev-only auth bypass: with DEV_USER set in .env, every request resolves to
+ * a placeholder account (no WorkOS round trip), so save/submit/grading flows
+ * work under `next dev` without real credentials. DEV_USER=1 gives the
+ * default "Dev User"; DEV_USER=alice@dev.local gives a distinct account per
+ * email (handy for classroom instructor/student testing). Deliberately
+ * double-gated: the flag AND NODE_ENV === "development" are both required,
+ * so a stray DEV_USER in a production or preview environment can never open
+ * a backdoor (`next build`/`start` and the Workers runtime set "production";
+ * vitest sets "test"). Never expose a DEV_USER dev server to the network.
+ */
+function devUser(): WorkosUserShape | null {
+  const flag = process.env.DEV_USER;
+  if (!flag || process.env.NODE_ENV !== "development") return null;
+  const email = flag.includes("@") ? flag : "dev@localhost";
+  const local = email.split("@")[0];
+  return {
+    id: `dev_${local}`,
+    email,
+    firstName: flag.includes("@") ? local : "Dev",
+    lastName: flag.includes("@") ? "(dev)" : "User",
+  };
+}

@@ -17,6 +17,9 @@ import { RegimeStatesDemo } from "@/components/demos/regime-states-demo";
 import { RegimeLoopDemo } from "@/components/demos/regime-loop-demo";
 import { FiveWorldsDemo } from "@/components/demos/five-worlds-demo";
 import { TwoGamesDemo } from "@/components/demos/two-games-demo";
+import { PUnacceptableDemo } from "@/components/demos/p-unacceptable-demo";
+import { WillAccountDemo } from "@/components/demos/will-account-demo";
+import { TwoLeversDemo } from "@/components/demos/two-levers-demo";
 
 // Central demo registry — the single integration point. Reference a demo by ID
 // from MDX (<Demo id="…"/>), the gallery, standalone pages, or embeds.
@@ -39,7 +42,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "audit-tradeoff",
     title: "Upfront auditing: the audit/attack-rate tradeoff",
     description:
-      "Drag the auditing proportion and watch the red team's optimal attack rate, expected backdoor attempts, and the blue team's win probability update live — reproducing Figure 3.",
+      "Drag the auditing proportion and watch the red team's optimal attack rate, expected backdoor attempts, and the blue team's win probability update live.",
     component: AuditTradeoffDemo,
     tags: ["control", "ai-control-paper"],
   },
@@ -63,7 +66,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "monitor-tails",
     title: "Same AUROC, different safety",
     description:
-      "Two monitors with identical AUROC but different attack-score spread. Drag the shared AUROC and watch how many attacks each catches at a 2% audit budget — the tail, not the area, is what matters.",
+      "Two monitors with identical AUROC but different attack-score spread. Drag the shared AUROC and watch how many attacks each catches at a 2% audit budget.",
     component: MonitorTailsDemo,
     tags: ["control", "control-game"],
   },
@@ -71,7 +74,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "best-response",
     title: "The red team's best response",
     description:
-      "The red team's win probability over its two levers — attack rate and subtlety — as a heatmap, with the best response ringed. Move the blue audit and defer budgets and watch the best strategy migrate.",
+      "The red team's win probability over attack rate and subtlety as a heatmap, with the best response highlighted.",
     component: BestResponseDemo,
     tags: ["control", "control-game"],
   },
@@ -79,7 +82,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "race",
     title: "Safety over a deployment: the race",
     description:
-      "Per-attack odds compound over a whole deployment. Drag the number of attacks and watch the two factors of the red team's win probability — the race odds and the chance any decisive event fires.",
+      "Drag the number of attacks and watch how per-attack odds compound over a whole deployment through the race odds and the chance any decisive event fires.",
     component: RaceDemo,
     tags: ["control", "control-game"],
   },
@@ -87,7 +90,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "attack-rate",
     title: "The attack-rate hump",
     description:
-      "The red team's win probability against how often it attacks. Rare attacks may never fire; frequent attacks use worse, more-visible opportunities and get caught — so the optimum is interior.",
+      "The red team's win probability against how often it attacks. Rare attacks may never fire while frequent attacks use worse, more-visible opportunities and get caught.",
     component: AttackRateDemo,
     tags: ["control", "control-game"],
   },
@@ -103,7 +106,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "defer",
     title: "Defer to trusted, mechanistically",
     description:
-      "Widen the defer band and watch the amber region grow. It holds a large share of the attack mass but a thin slice of the innocent mass — which is why deferring buys safety cheaply.",
+      "Widen the defer band and note that it holds a large share of the attack mass but a thin slice of the innocent mass, showing why deferring buys safety cheaply.",
     component: DeferDemo,
     tags: ["control", "control-game"],
   },
@@ -111,7 +114,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "control-dashboard",
     title: "The control game: full dashboard",
     description:
-      "Three blue levers — audit budget, defer band, monitor quality — feeding one live world: the suspicion distributions with bands, and the safety/usefulness frontier with the current protocol ringed. The red team best-responds throughout.",
+      "See how audit budget, defer band, and monitor quality affect the suspicion distributions with bands and the safety/usefulness frontier. The red team best-responds throughout.",
     component: ControlDashboardDemo,
     tags: ["control", "control-game"],
   },
@@ -119,44 +122,80 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "sabotage-frontier",
     title: "The diffuse-to-concentrated frontier",
     description:
-      "Sabotage strategies as a Pareto frontier: fewer actions versus less incriminating actions. Move the deployer's three mitigations and watch which strategies survive — and where the schemer's best response migrates.",
+      "Move the deployer's three mitigations and watch which strategies survive and where the schemer's best response migrates.",
     component: SabotageFrontierDemo,
     tags: ["control", "threat-modeling"],
   },
   "additive-control": {
     id: "additive-control",
     title: "Control is additive",
+    description:
+      "Step through the additive property of control & note how alignment interventions act on the model in an inner box, control's applied monitoring wraps around them, and toggling the shell leaves the inner box untouched.",
     component: AdditiveControlDemo,
     tags: ["control", "how-useful"],
   },
   "rsi-bootstrap": {
     id: "rsi-bootstrap",
     title: "The bootstrapping loop",
+    description:
+      "Each controlled generation of AI does alignment research, builds the next generation, and hands off until superintelligence is reached.",
     component: RsiBootstrapDemo,
-    tags: ["control"],
+    tags: ["control", "how-useful"],
   },
   "regime-states": {
     id: "regime-states",
     title: "The three states and the safety budget",
+    description:
+      "A regime split into its three states — world, epistemic, resource — and the safety budget: the will account, the prices the regime sets, and what refills the balance.",
     component: RegimeStatesDemo,
     tags: ["control", "how-useful"],
   },
   "regime-loop": {
     id: "regime-loop",
     title: "The loop",
+    description:
+      "The cycle frontier labs play.",
     component: RegimeLoopDemo,
     tags: ["control", "how-useful"],
   },
   "five-worlds": {
     id: "five-worlds",
     title: "The five worlds",
+    description:
+      "Greenblatt's five caricatured futures as a map.",
     component: FiveWorldsDemo,
     tags: ["control", "how-useful"],
   },
   "two-games": {
     id: "two-games",
     title: "The two games",
+    description:
+      "The inner game inside the lab and the outer game everywhere else, coupled: evidence from catching bad behavior flows out, authorized safety spending flows back in.",
     component: TwoGamesDemo,
+    tags: ["control", "how-useful"],
+  },
+  "p-unacceptable": {
+    id: "p-unacceptable",
+    title: "The decomposition",
+    description:
+      "Decomposition of P(unacceptable).",
+    component: PUnacceptableDemo,
+    tags: ["control", "how-useful"],
+  },
+  "will-account": {
+    id: "will-account",
+    title: "The will account",
+    description:
+      "Try to balance a simplified version of a safety budget that shows how economic, political, and social will interact & are affected by the real world.",
+    component: WillAccountDemo,
+    tags: ["control", "how-useful"],
+  },
+  "two-levers": {
+    id: "two-levers",
+    title: "The two levers",
+    description:
+      "See how improving the techniques, so any given sacrifice of usefulness buys more safety than it used to, and growing the budget, so you can afford bigger sacrifices, can affect safety.",
+    component: TwoLeversDemo,
     tags: ["control", "how-useful"],
   },
 };

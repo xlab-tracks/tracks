@@ -1,10 +1,11 @@
 import type { Element, ElementContent, Root, RootContent } from "hast";
 import { fromHtmlIsomorphic } from "hast-util-from-html-isomorphic";
 import { toHtml } from "hast-util-to-html";
-import type {
-  PaperBlockRef,
-  PaperEdit,
-  PaperInsertionItem,
+import {
+  editTargetRef,
+  type PaperBlockRef,
+  type PaperEdit,
+  type PaperInsertionItem,
 } from "@/lib/content/types";
 import { anchorNum } from "./anchors";
 import { blockTextOf, normalizeText } from "./block-index";
@@ -15,6 +16,7 @@ import { markdownBlocksToHast, markdownInlineToHast } from "./markdown";
 // fragment parsing is safe), mutate, then re-serialize into html parts split
 // around activity positions. Ops are applied in fixed phases so earlier
 // splices never invalidate later lookups:
+//   A0 glossary wraps (text-preserving, so no later lookup can drift) →
 //   A1 sentence hides (asc s) → A2 inline adds (asc s) →
 //   B mid-paragraph activity splits (DESC s — the first half keeps every
 //     not-yet-split earlier sentence) →
@@ -91,6 +93,7 @@ export function patchSectionHtml(
 
   // Group ops per target anchor.
   interface BlockOps {
+    glosses: Extract<PaperEdit, { op: "gloss" }>[];
     sentenceHides: Extract<PaperEdit, { op: "hide" }>[];
     inlineAdds: Extract<PaperEdit, { op: "add" }>[];
     splits: Extract<PaperEdit, { op: "activity" }>[];
@@ -101,13 +104,13 @@ export function patchSectionHtml(
   const opsFor = (anchor: string): BlockOps => {
     let entry = byAnchor.get(anchor);
     if (!entry) {
-      entry = { sentenceHides: [], inlineAdds: [], splits: [], after: [] };
+      entry = { glosses: [], sentenceHides: [], inlineAdds: [], splits: [], after: [] };
       byAnchor.set(anchor, entry);
     }
     return entry;
   };
   for (const op of ops) {
-    const ref = op.op === "hide" ? op.at : op.after;
+    const ref = editTargetRef(op);
     if (!("anchor" in ref)) {
       unmatched.push(op); // sectionEnd ops never reach the section patcher
       continue;
@@ -117,7 +120,9 @@ export function patchSectionHtml(
       continue;
     }
     const bucket = opsFor(ref.anchor);
-    if (op.op === "hide") {
+    if (op.op === "gloss") {
+      bucket.glosses.push(op);
+    } else if (op.op === "hide") {
       if (ref.s) bucket.sentenceHides.push(op);
       else bucket.blockHide = bucket.blockHide ?? op;
     } else if (ref.s) {
@@ -129,6 +134,20 @@ export function patchSectionHtml(
   }
 
   const anchorsAsc = [...byAnchor.keys()].sort((a, b) => anchorNum(a) - anchorNum(b));
+
+  // ---- Phase A0: glossary term wraps ---------------------------------------
+  // Wrapping a phrase in a span preserves the block's text content and its
+  // sentence spans, so every later phase (and any snippet check) sees an
+  // unchanged tree shape.
+  for (const anchor of anchorsAsc) {
+    const block = blockByAnchor.get(anchor)!;
+    for (const op of byAnchor.get(anchor)!.glosses) {
+      const scope = op.at.s ? findSentenceSpan(block, op.at.s) : block;
+      if (!scope || !wrapGlossPhrase(scope, op.phrase, op.termId)) {
+        unmatched.push(op);
+      }
+    }
+  }
 
   // ---- Phase A1: sentence hides ------------------------------------------
   for (const anchor of anchorsAsc) {
@@ -415,7 +434,7 @@ export function patchSectionHtml(
 }
 
 function sOf(op: PaperEdit): number {
-  const ref = op.op === "hide" ? op.at : op.after;
+  const ref = editTargetRef(op);
   return "anchor" in ref ? (ref.s ?? 0) : 0;
 }
 
@@ -436,7 +455,7 @@ function childIndexContainingSentence(block: Element, s: number): number {
 }
 
 /** The sentence span itself (skipping nested anchored blocks). */
-function findSentenceSpan(block: Element, s: number): Element | null {
+export function findSentenceSpan(block: Element, s: number): Element | null {
   const target = String(s);
   for (const child of block.children) {
     if (child.type !== "element") continue;
@@ -450,6 +469,90 @@ function findSentenceSpan(block: Element, s: number): Element | null {
 
 function text(value: string): ElementContent {
   return { type: "text", value };
+}
+
+// Inline containers a glossary wrap must not reach into: links and citations
+// (nested interactive content), code, footnote markers, and rendered math
+// (KaTeX MathML+HTML duplication would garble a text match anyway).
+const GLOSS_SKIP_TAGS = new Set(["a", "code", "pre", "sup", "sub", "svg", "script", "style"]);
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Wraps the first occurrence of `phrase` inside `target` in a glossary
+ * trigger span (`span.ax-gloss[data-gloss=termId]`). Whitespace in the
+ * phrase matches any whitespace run, but the match must lie within a SINGLE
+ * text node — a phrase broken by a link, citation, math, or other inline
+ * markup does not match — and a phrase edge that is a word character must
+ * fall on a word boundary (also refusing hyphen adjacency), so glossing
+ * "attention" never wraps the tail of "intra-attention". content.test.ts
+ * runs this exact matcher against the artifact — sequentially, in edits
+ * order, like phase A0 — so a non-matching edit fails CI instead of
+ * silently at render time. Returns whether a wrap happened.
+ */
+export function wrapGlossPhrase(
+  target: Element,
+  phrase: string,
+  termId: string,
+): boolean {
+  const normalized = normalizeText(phrase);
+  if (!normalized) return false;
+  const wordChar = /[\p{L}\p{N}]/u;
+  const boundary = "[\\p{L}\\p{N}\\p{Pd}]"; // letters, digits, dashes
+  const pattern = new RegExp(
+    (wordChar.test(normalized[0]) ? `(?<!${boundary})` : "") +
+      normalized.split(" ").map(escapeRegExp).join("\\s+") +
+      (wordChar.test(normalized[normalized.length - 1]) ? `(?!${boundary})` : ""),
+    "u",
+  );
+  let wrapped = false;
+  const visit = (node: Element): void => {
+    const children = node.children;
+    for (let i = 0; i < children.length && !wrapped; i++) {
+      const child = children[i];
+      if (child.type === "text") {
+        const match = pattern.exec(child.value);
+        if (!match) continue;
+        const before = child.value.slice(0, match.index);
+        const after = child.value.slice(match.index + match[0].length);
+        const replacement: ElementContent[] = [];
+        if (before) replacement.push(text(before));
+        replacement.push(glossWrapper(match[0], termId));
+        if (after) replacement.push(text(after));
+        children.splice(i, 1, ...replacement);
+        wrapped = true;
+        return;
+      }
+      if (child.type !== "element") continue;
+      if (GLOSS_SKIP_TAGS.has(child.tagName)) continue;
+      if (hasClass(child, "inline-math") || hasClass(child, "display-math")) continue;
+      if (hasClass(child, "ax-gloss")) continue; // never nest triggers
+      if (typeof child.properties?.dataAnchor === "string") continue; // nested block
+      visit(child);
+    }
+  };
+  visit(target);
+  return wrapped;
+}
+
+function glossWrapper(value: string, termId: string): Element {
+  return {
+    type: "element",
+    tagName: "span",
+    properties: {
+      className: ["ax-gloss"],
+      dataGloss: termId,
+      // The PaperGlossary client layer drives these: keyboard reachable,
+      // Enter/Space toggles the anchored card, aria-expanded tracks it.
+      tabIndex: 0,
+      role: "button",
+      ariaHasPopup: "dialog",
+      ariaExpanded: "false",
+    },
+    children: [text(value)],
+  };
 }
 
 function inlineHiddenWrapper(

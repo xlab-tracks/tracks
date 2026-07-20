@@ -22,13 +22,20 @@ import {
   parseLessWrongPostUrl,
 } from "@/lib/lesswrong/id";
 import { LESSWRONG_CONVERTER_VERSION } from "@/lib/lesswrong/types";
-import type { Paper, PaperInsertionItem } from "@/lib/content/types";
+import {
+  editTargetRef,
+  type Paper,
+  type PaperInsertionItem,
+} from "@/lib/content/types";
+import { getGlossaryTerm, getRelatedTermNames } from "@/lib/content/glossary";
 import { insertionAnchorId } from "@/lib/papers/split-paper";
 import { applyPaperEdits, type PaperPart } from "@/lib/papers/apply-edits";
 import { Demo } from "@/components/mdx/demo";
 import { Exercise } from "@/components/mdx/exercise";
 import { ExerciseSequence } from "@/components/mdx/exercise-sequence";
+import { MathText } from "@/components/exercises/math-text";
 import { EmbeddedLesson } from "./embedded-lesson";
+import { PaperGlossary, type PaperGlossaryEntry } from "./paper-glossary";
 import { PaperSidenotes } from "./paper-sidenotes";
 import {
   LessWrongUnavailable,
@@ -350,7 +357,7 @@ function EditedPaperBody({
       `[papers] ${paper.id}: unmatched edit target(s): ` +
         unmatchedEdits
           .map((op) => {
-            const ref = op.op === "hide" ? op.at : op.after;
+            const ref = editTargetRef(op);
             return "anchor" in ref
               ? `${ref.anchor}${ref.s ? ` s=${ref.s}` : ""} ("${ref.snippet}")`
               : ref.sectionEnd;
@@ -409,8 +416,42 @@ function EditedPaperBody({
 
       {footer}
       {sidenotePrefix && <PaperSidenotes prefix={sidenotePrefix} />}
+      <GlossaryLayer paper={paper} />
     </div>
   );
+}
+
+/**
+ * Mounts the PaperGlossary interaction layer when the paper has gloss
+ * edits, with each referenced term's card data resolved here — definitions
+ * math-render server-side (MathText), so the client layer receives finished
+ * nodes, never strings to interpret.
+ */
+function GlossaryLayer({ paper }: { paper: Paper }) {
+  const termIds = new Set(
+    (paper.edits ?? []).flatMap((edit) =>
+      edit.op === "gloss" ? [edit.termId] : [],
+    ),
+  );
+  const entries: PaperGlossaryEntry[] = [...termIds].flatMap((termId) => {
+    const term = getGlossaryTerm(termId);
+    // Unknown ids fail glossary.test.ts; at render time the span simply
+    // gets no card.
+    if (!term) return [];
+    return [
+      {
+        termId,
+        card: {
+          term: term.term,
+          definition: <MathText text={term.definition} />,
+          related: getRelatedTermNames(term),
+          source: term.source,
+        },
+      },
+    ];
+  });
+  if (entries.length === 0) return null;
+  return <PaperGlossary entries={entries} />;
 }
 
 function InsertionBlock({

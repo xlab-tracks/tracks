@@ -135,7 +135,21 @@ export type PaperEdit =
    */
   | { op: "add"; after: PaperEditAnchor; markdown: string; label?: string }
   /** Activities (exercise cards / inline lessons) spliced into the flow. */
-  | { op: "activity"; after: PaperEditAnchor; items: PaperInsertionItem[] };
+  | { op: "activity"; after: PaperEditAnchor; items: PaperInsertionItem[] }
+  /**
+   * Wrap a phrase of the target block/sentence in a glossary hover-card
+   * trigger. `termId` references an entry in `src/content/glossary.json`;
+   * `phrase` is the exact text to wrap — first occurrence inside the target,
+   * whitespace-flexible, and it must be plain running text (a phrase broken
+   * by a link, citation, math, or other inline markup does not match —
+   * content.test.ts runs the exact matcher). Never targets a sectionEnd.
+   */
+  | { op: "gloss"; at: PaperBlockRef; termId: string; phrase: string };
+
+/** The block/section target of any edit op, regardless of its field name. */
+export function editTargetRef(edit: PaperEdit): PaperEditAnchor {
+  return edit.op === "hide" || edit.op === "gloss" ? edit.at : edit.after;
+}
 
 export interface Paper {
   /** Globally unique across ALL content ids (lessons included). */
