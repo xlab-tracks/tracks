@@ -220,10 +220,12 @@ Four more closed types:
   order-sensitive structural equality per stage; "Show solution" unlocks after
   two wrong attempts. See `c-paper-l2-protocol-flowcharts` for a full example.
 - **`allocation`** (scenario-based judgment) — a `title`, `agendas`, and
-  `scenarios`; the learner divides `totalPeople` (in `step` increments,
-  default 0.5) across the agendas once per scenario and explains each
-  allocation (`minReasoningChars` gates advancing), then reviews a summary
-  table + stacked bars. No answer key — the whole definition ships to the
+  `scenarios`; the learner divides a budget of `totalPeople` researchers'
+  worth of effort (in `step` increments, default 0.5) across the agendas
+  once per scenario — the UI shows shares as percentages with a live donut
+  chart — and explains each allocation (`minReasoningChars` gates
+  advancing), then reviews a summary table + stacked bars. Stored
+  allocations stay in effort units, not percent. No answer key — the whole definition ships to the
   client, and completed scenarios persist per signed-in learner
   (`saveAllocationScenario`; the row flips to `submitted` once every scenario
   is saved). `totalPeople` must sit on the step grid (content.test.ts

@@ -104,7 +104,7 @@ export const exercises: Exercise[] = [
     type: "allocation",
     title: "Judgment as to the Usefulness of Control",
     prompt:
-      "You run a safety team of 10 researchers for the next 12 months. Decide how many people (halves allowed) work on each agenda, given that you are in each of the scenarios.",
+      "You run a safety team with a budget of 10 researchers' worth of effort for the next 12 months. Divide the effort across the agendas, given that you are in each of the scenarios.",
     agendas: [
       { id: "control-protocols", label: "Control Protocols" },
       { id: "evals-verification", label: "Evals, verification" },
@@ -1574,7 +1574,7 @@ export const exercises: Exercise[] = [
     type: "allocation",
     title: "Your turn: a portfolio for the scare regime",
     prompt:
-      "You direct a safety team of 10 researchers. The scenario below stipulates a new regime — the three states and the price table. Price each technique's basket against the table, ask which channel its payoff flows through, and divide the team (halves allowed). Defend the allocation in the worked example's three-part template: the allocation itself, who gets the marginal researcher and through which channel, and which spend binds.",
+      "You direct a safety team with a budget of 10 researchers' worth of effort. The scenario below stipulates a new regime — the three states and the price table. Price each technique's basket against the table, ask which channel its payoff flows through, and divide the effort across the agendas — the chart tracks your split as you go. Defend the allocation in the worked example's three-part template: the allocation itself, where the marginal slice of effort goes and through which channel, and which spend binds.",
     agendas: [
       { id: "control-protocols", label: "Control protocols" },
       { id: "alignment-research", label: "Alignment research" },
@@ -1762,7 +1762,7 @@ export const exercises: Exercise[] = [
     type: "allocation",
     title: "Portfolio allocation across regimes",
     prompt:
-      "You direct a safety team of 10 researchers for the next stage of development. Each scenario below stipulates a full regime: the world state, epistemic state, and resource state, the misalignment world you are (probably) in, and the capability stage you are approaching. For each one, decide how many people (halves allowed) work on each agenda, and defend the allocation: which technique gets the marginal researcher, what payoff carries that choice, and which spend binds.",
+      "You direct a safety team with a budget of 10 researchers' worth of effort for the next stage of development. Each scenario below stipulates a full regime: the world state, epistemic state, and resource state, the misalignment world you are (probably) in, and the capability stage you are approaching. For each one, divide the effort across the agendas, and defend the allocation: which technique gets the marginal slice of effort, what payoff carries that choice, and which spend binds.",
     agendas: [
       { id: "control-protocols", label: "Control protocols" },
       { id: "alignment-research", label: "Alignment research" },

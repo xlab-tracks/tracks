@@ -17,13 +17,21 @@ import {
 } from "@/lib/content/exercise-view";
 import { Paragraphs } from "./math-text";
 
-/** Cycled per agenda: summary bars, legend swatches in the table. */
+/**
+ * Fixed-order categorical palette, one entry per agenda index — never cycled
+ * (the two live allocation exercises share the same 7-agenda menu, so colors
+ * follow the agenda across exercises). Order is deliberate: adjacent hues
+ * alternate lightness so neighboring donut slices stay separable under CVD
+ * (palette validated light-mode against the white card surface).
+ */
 const AGENDA_COLORS = [
-  "var(--chart-4)",
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-5)",
+  "#2563eb", // blue
+  "#f59e0b", // amber
+  "#047857", // emerald
+  "#d946ef", // fuchsia
+  "#0891b2", // cyan
+  "#ef4444", // red
+  "#7e22ce", // purple
 ];
 
 const agendaColor = (index: number) => AGENDA_COLORS[index % AGENDA_COLORS.length];
@@ -31,6 +39,111 @@ const agendaColor = (index: number) => AGENDA_COLORS[index % AGENDA_COLORS.lengt
 // Values are step-multiples accumulated by ± clicks; rounding to 3 decimals
 // absorbs float drift for any sensible step without misrendering e.g. 0.25.
 const formatPeople = (value: number) => String(Math.round(value * 1000) / 1000);
+
+/** Share of the total budget, as a percent string ("35%", "12.5%"). */
+const formatShare = (value: number, total: number) =>
+  `${String(Math.round((value / total) * 1000) / 10)}%`;
+
+/**
+ * Live donut of the current allocation. Purely presentational — the stepper
+ * rows beside it are the legend and the accessible reading of the same data,
+ * so the SVG is aria-hidden. Slices get a 2px card-colored outline as the
+ * gap between neighbors; the unallocated remainder renders as a muted ring.
+ */
+function AllocationDonut({
+  values,
+  total,
+}: {
+  values: number[];
+  total: number;
+}) {
+  const R = 56;
+  const r = 30;
+  const C = 64; // center
+  const allocated = values.reduce((sum, v) => sum + v, 0);
+
+  const point = (radius: number, frac: number) => {
+    const angle = 2 * Math.PI * frac - Math.PI / 2; // 12 o'clock start
+    return `${C + radius * Math.cos(angle)} ${C + radius * Math.sin(angle)}`;
+  };
+  const wedge = (from: number, to: number) => {
+    const large = to - from > 0.5 ? 1 : 0;
+    return [
+      `M ${point(R, from)}`,
+      `A ${R} ${R} 0 ${large} 1 ${point(R, to)}`,
+      `L ${point(r, to)}`,
+      `A ${r} ${r} 0 ${large} 0 ${point(r, from)}`,
+      "Z",
+    ].join(" ");
+  };
+
+  const slices: { key: number; from: number; to: number; color: string }[] = [];
+  let cursor = 0;
+  values.forEach((v, j) => {
+    if (v > 0) {
+      slices.push({
+        key: j,
+        from: cursor / total,
+        to: (cursor + v) / total,
+        color: agendaColor(j),
+      });
+      cursor += v;
+    }
+  });
+
+  return (
+    <svg viewBox="0 0 128 128" className="size-36 shrink-0" aria-hidden>
+      {/* Unallocated remainder / empty state: a muted ring underneath. */}
+      <circle
+        cx={C}
+        cy={C}
+        r={(R + r) / 2}
+        fill="none"
+        stroke="var(--muted)"
+        strokeWidth={R - r}
+      />
+      {slices.map((s) =>
+        s.to - s.from >= 0.9999 ? (
+          // A lone full-budget slice: the arc path degenerates, so draw the
+          // whole ring directly.
+          <circle
+            key={s.key}
+            cx={C}
+            cy={C}
+            r={(R + r) / 2}
+            fill="none"
+            stroke={s.color}
+            strokeWidth={R - r}
+          />
+        ) : (
+          <path
+            key={s.key}
+            d={wedge(s.from, s.to)}
+            fill={s.color}
+            stroke="var(--card)"
+            strokeWidth={2}
+          />
+        ),
+      )}
+      <text
+        x={C}
+        y={C - 2}
+        textAnchor="middle"
+        className="fill-foreground font-mono text-[15px] font-semibold tabular-nums"
+      >
+        {formatShare(allocated, total)}
+      </text>
+      <text
+        x={C}
+        y={C + 12}
+        textAnchor="middle"
+        className="fill-muted-foreground text-[8px]"
+      >
+        allocated
+      </text>
+    </svg>
+  );
+}
 
 function Stepper({
   label,
@@ -42,6 +155,7 @@ function Stepper({
 }: {
   label: string;
   value: number;
+  /** Also the whole budget — the displayed percentage is value / max. */
   max: number;
   step: number;
   disabled: boolean;
@@ -66,9 +180,9 @@ function Stepper({
       </button>
       <span
         aria-live="polite"
-        className="border-border text-foreground flex min-w-11 items-center justify-center border-x font-mono text-sm font-semibold tabular-nums"
+        className="border-border text-foreground flex min-w-13 items-center justify-center border-x font-mono text-sm font-semibold tabular-nums"
       >
-        {formatPeople(value)}
+        {formatShare(value, max)}
       </span>
       <button
         type="button"
@@ -214,8 +328,16 @@ export function AllocationExerciseCard({
           Agendas
         </p>
         <ul className="border-border divide-border divide-y rounded-lg border">
-          {exercise.agendas.map((agenda) => (
-            <li key={agenda.id} className="px-3 py-2 text-sm">
+          {exercise.agendas.map((agenda, j) => (
+            <li
+              key={agenda.id}
+              className="flex items-center gap-2.5 px-3 py-2 text-sm"
+            >
+              <span
+                aria-hidden
+                className="inline-block size-2.5 shrink-0 rounded-[3px]"
+                style={{ background: agendaColor(j) }}
+              />
               {agenda.label}
             </li>
           ))}
@@ -268,7 +390,7 @@ export function AllocationExerciseCard({
                       key={s.id}
                       className="px-2 py-2 text-right font-mono tabular-nums"
                     >
-                      {formatPeople(allocations[i][j])}
+                      {formatShare(allocations[i][j], exercise.totalPeople)}
                     </td>
                   ))}
                 </tr>
@@ -288,7 +410,7 @@ export function AllocationExerciseCard({
                   allocations[i][j] > 0 ? (
                     <span
                       key={agenda.id}
-                      title={`${agenda.label}: ${formatPeople(allocations[i][j])}`}
+                      title={`${agenda.label}: ${formatShare(allocations[i][j], exercise.totalPeople)}`}
                       style={{
                         width: `${(allocations[i][j] / exercise.totalPeople) * 100}%`,
                         background: agendaColor(j),
@@ -345,39 +467,47 @@ export function AllocationExerciseCard({
           />
         </div>
 
-        <ul className="border-border divide-border mt-4 divide-y rounded-lg border">
-          {exercise.agendas.map((agenda, j) => {
-            const previous = index > 0 ? allocations[index - 1][j] : null;
-            const delta = previous === null ? 0 : row[j] - previous;
-            return (
-              <li
-                key={agenda.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2.5"
-              >
-                <span className="min-w-0 flex-1 text-sm">{agenda.label}</span>
-                {previous !== null && (
-                  <span className="text-muted-foreground font-mono text-xs whitespace-nowrap tabular-nums">
-                    was {formatPeople(previous)}
-                    {delta !== 0 && (
-                      <span className="border-border ml-1.5 rounded-full border px-1.5">
-                        {delta > 0 ? "+" : "−"}
-                        {formatPeople(Math.abs(delta))}
-                      </span>
-                    )}
-                  </span>
-                )}
-                <Stepper
-                  label={agenda.label}
-                  value={row[j]}
-                  max={exercise.totalPeople}
-                  step={step}
-                  disabled={pending}
-                  onChange={(value) => setValue(index, j, value)}
-                />
-              </li>
-            );
-          })}
-        </ul>
+        <div className="mt-4 flex flex-col items-center gap-x-5 gap-y-3 sm:flex-row sm:items-start">
+          <AllocationDonut values={row} total={exercise.totalPeople} />
+          <ul className="border-border divide-border min-w-0 flex-1 divide-y self-stretch rounded-lg border">
+            {exercise.agendas.map((agenda, j) => {
+              const previous = index > 0 ? allocations[index - 1][j] : null;
+              const delta = previous === null ? 0 : row[j] - previous;
+              return (
+                <li
+                  key={agenda.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2.5"
+                >
+                  <span
+                    aria-hidden
+                    className="inline-block size-2.5 shrink-0 rounded-[3px]"
+                    style={{ background: agendaColor(j) }}
+                  />
+                  <span className="min-w-0 flex-1 text-sm">{agenda.label}</span>
+                  {previous !== null && (
+                    <span className="text-muted-foreground font-mono text-xs whitespace-nowrap tabular-nums">
+                      was {formatShare(previous, exercise.totalPeople)}
+                      {delta !== 0 && (
+                        <span className="border-border ml-1.5 rounded-full border px-1.5">
+                          {delta > 0 ? "+" : "−"}
+                          {formatShare(Math.abs(delta), exercise.totalPeople)}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  <Stepper
+                    label={agenda.label}
+                    value={row[j]}
+                    max={exercise.totalPeople}
+                    step={step}
+                    disabled={pending}
+                    onChange={(value) => setValue(index, j, value)}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         <p
           aria-live="polite"
@@ -391,7 +521,8 @@ export function AllocationExerciseCard({
           )}
         >
           {exact ? "✓ " : ""}
-          {formatPeople(total)} of {formatPeople(exercise.totalPeople)} allocated
+          {formatShare(total, exercise.totalPeople)} of {formatPeople(exercise.totalPeople)}{" "}
+          researchers&rsquo; effort allocated
         </p>
 
         <label htmlFor={reasonId} className="mt-4 block text-sm font-medium">
