@@ -61,40 +61,28 @@ One common pitfall is understanding that a control evaluation's score is purely 
 
 ### Resource state: what we can spend
 
-We analyze the safety budget primarily through the currency of willpower, or the authorization required to implement costly safety actions. Note first that we're defining the different wills as follows:
+We analyze the safety budget through the currency of **political will** — in the sense the previous reading gave it. A developer that doesn't fully share your priorities is still willing to concede safety-relevant actions up to some cost threshold, measured against *the developer's own* objectives; that willingness is the account you spend from. It is held by the lab, not by you — you move it only indirectly — and it fades without reinforcement while spiking after concerning incidents. Pressure reaches that account through several routes: internal pushback from staff, public backing, and binding external rules, and a project's C-suite, the public, and the government each respond to different ones. For now we operationalize the budget by asking what political will buys and what refills it.
 
-- Economic Will
-  - The ability for an organization to perform internal actions that go against profit incentives
-  - pausing model releases
-- Political Will
-  - The willingness of political systems to pass legislation regarding AI safety
-- Social Will
-  - The ability for an organization to garner public support for causes it champions
-
-Will encompasses not just the necessary money, but permission and backing in economic, political and social spheres. It has a tendency to fade over time without constant reinforcement and spikes after concerning incidents. Furthermore, the will of an AGI project's C-suite is different from the public's or the government's, as we will see later. For now, we will operationalize our budget by examining how one spends a balance of will on safety techniques.
-
-Deploying a control-based safety intervention requires spending your will on the following things:
+Deploying a control-based safety intervention spends political will on:
 
 - Delay
-  - How long you can delay is priced by the race to AGI. With a rival lab three months behind, delay is nearly unbuyable at any level of will, but this type of action requires primarily economic will.
+  - How long you can delay is priced by the race to AGI. With a rival lab three months behind, delay is nearly unbuyable at any level of will.
 - Usefulness
-  - Whether you can accept a less useful, slower system in both economic and social will. A scared public also makes it cheaper for organizations & can potentially lower the economic will required by proxy due to a lower demand for the product.
+  - Whether the developer will accept a less useful, slower system. A scared public makes this cheaper by lowering demand for the product.
   - Note that control's main payoff is also denominated in usefulness — you give up some usefulness to make the rest trustworthy — so control partially offsets its own tax.
 - Compute
-  - In our scoping, we primarily focus on internal compute, which is governed by internal politics. Specifically, the main issue here is that compute is finite, so pulling compute away from capabilities research requires the economic will to overcome the slowing down of development.
+  - In our scoping, we primarily focus on internal compute, which is governed by internal politics. Compute is finite, so pulling it from capabilities research spends will to overcome the slowing down of development.
 
 Note that delay, usefulness, and compute can be cheap in one regime and ruinous in another.
 
-These three things generate budget, and they work differently:
+Political will is not fixed — it is generated, and the sources work differently:
 
 - Incidents and evidence
-  - These can refill the balance of economic, social, and political will, but have a much larger impact on social will and a large impact on political will
+  - Concerning incidents and accumulating evidence refill the account, and refill it hardest right after something goes wrong.
 - Public buy-in
-  - Public buy-in increases social will and slows down the fading of social will, with weaker effects on political will in democratic nations
+  - Public support raises the account and slows its fading, though its pull on a developer is weaker and more indirect.
 - Passed policy
-  - Passed policy converts political will into a durable floor as repeal is expensive. Note that what gets written into regulation tends to be easy to explain and verify politically, which is not necessarily optimal policy
-
-<Demo id="will-account" />
+  - Passed policy converts will into a durable floor, because repeal is expensive. Note that what gets written into regulation tends to be easy to explain and verify politically, which is not necessarily optimal policy.
 
 ### Why the three states are not interchangeable
 
@@ -145,7 +133,7 @@ Now we'll try and connect the ideas from the previous section into a cycle we th
 3. The catch updates the epistemic state
    - There is now undeniable proof that the model has schemed against the user.
 4. The evidence impacts the resource state
-   - Leadership and the public become alarmed, increasing political, social, and economic will, potentially leading to regulation passing, locking a floor in place.
+   - Leadership and the public become alarmed, refilling political will, potentially leading to regulation passing, locking a floor in place.
 5. The bigger budget helps buy better techniques for the next, more dangerous capability stage. Return to step 1.
 
 The loop runs on evidence, and a catch is the gold standard of it. Two things make it unusually strong: the transcript can be checked line by line, even by hostile parties, so it survives scrutiny that would shred a mere argument; and it's harder to deflect than a demo — staged research settings get dismissed as roleplay or contrived setups, which is exactly why a catch in real deployment moves decision-makers the way warnings don't.
