@@ -145,6 +145,43 @@ function AllocationDonut({
   );
 }
 
+/**
+ * Prompt text with light structure: newline-separated lines; runs of lines
+ * starting with "- " render as a bulleted list, everything else as
+ * paragraphs. Math renders per line.
+ */
+function PromptText({ text, className }: { text: string; className?: string }) {
+  const lines = text.split("\n").filter((l) => l.trim() !== "");
+  const blocks: { bullets: boolean; lines: string[] }[] = [];
+  for (const line of lines) {
+    const bullet = line.startsWith("- ");
+    const last = blocks[blocks.length - 1];
+    if (last && last.bullets === bullet) last.lines.push(line);
+    else blocks.push({ bullets: bullet, lines: [line] });
+  }
+  return (
+    <>
+      {blocks.map((block, i) =>
+        block.bullets ? (
+          <ul key={i} className={cn("mt-2 list-disc space-y-1 pl-4", className)}>
+            {block.lines.map((line, j) => (
+              <li key={j}>
+                <MathText text={line.slice(2)} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          block.lines.map((line, j) => (
+            <p key={`${i}-${j}`} className={cn("mt-2 first:mt-0", className)}>
+              <MathText text={line} />
+            </p>
+          ))
+        ),
+      )}
+    </>
+  );
+}
+
 /** Numeric percent (no sign) for the editable field: 4.5/10 → "45". */
 const shareNumber = (value: number, total: number) =>
   String(Math.round((value / total) * 1000) / 10);
@@ -367,7 +404,9 @@ export function AllocationExerciseCard({
     body = (
       <>
         <h3 className="text-lg font-semibold tracking-tight">{exercise.title}</h3>
-        <Paragraphs text={exercise.prompt} className="mt-2 text-sm" />
+        <div className="mt-2">
+          <PromptText text={exercise.prompt} className="text-sm" />
+        </div>
         <p className="text-muted-foreground mt-4 mb-1.5 text-xs font-medium tracking-wide uppercase">
           Agendas
         </p>
