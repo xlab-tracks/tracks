@@ -110,7 +110,7 @@ export const modules: Module[] = [
       "c-regimes-l1",
       "c-regimes-l2",
     ],
-    estimatedMinutes: 138,
+    estimatedMinutes: 128,
   },
   {
     id: "c-areas",
@@ -436,11 +436,11 @@ export const lessons: Lesson[] = [
   },
   {
     id: "c-regimes-l2",
-    slug: "a-worked-example",
+    slug: "running-the-model",
     moduleId: "c-mod2",
-    title: "Running the model: a worked example",
+    title: "Running the model",
     contentRef: "c-regimes-l2",
-    estimatedMinutes: 45,
+    estimatedMinutes: 35,
   },
   // --- Control: every reproduced reading in module 1 (with permission from
   // Redwood Research) now renders through the paper reader as a Paper item in

@@ -1,68 +1,16 @@
-## A worked example: choosing a portfolio in a poor regime
+## Running the model
 
-You now have the whole regime model. This lesson runs it once, end to end — from the three states all the way to a concrete portfolio of safety methods — so you can see the moves before making them yourself. The regime below is stipulated — treat its numbers as given, not as claims about the actual world.
+You now have the whole regime model, and everything the analysis takes is already in your hands from the previous lesson and readings: read the three states, price each technique's basket against the regime's price table, and ask which channel — usefulness, evidence, direct — its payoff flows through. What the prices and channels say, the portfolio should reflect.
 
-### The regime
+Every portfolio answer in this module takes a three-part shape:
 
-**World state.** Frontier models are mid-stage: not yet an Automated Coder, but close enough that they do real research with human review. Their alignment nature is unknown — nothing rules out scheming, sloppiness, or apparent-success-seeking. How checkable their research output is: also unknown, probably middling.
+1. **The allocation** — how the effort splits across the technique menu.
+2. **Where the marginal slice of effort goes, and through which channel.**
+3. **Which spend binds** — the aisle the team would trade any other for.
 
-**Epistemic state.** Thin. Evals exist and look fine; there have been no catches and no public incidents; interpretability offers hints, not verdicts. Note what this means given the world state above: the reassuring picture is consistent with Easyland _and_ with Lurkville.
+## Exercise — choose the portfolio
 
-**Resource state.** The lab is racing — a rival sits a few months behind. Safety has a small internal team and roughly 3% of the lab's compute. Now the price tags, stipulated coarsely:
-
-| Spend | Price in will | Why |
-| --- | --- | --- |
-| Delay | **very high** | the race — leadership won't buy any at current will |
-| Usefulness tax, inside the safety team's own workflow | **low** | nobody outside the team notices or objects |
-| Usefulness tax, product-wide | **high** | commercial pressure; public isn't scared |
-| Compute, within the 3% | **low** | already authorized |
-| Compute, beyond the 3% | **very high** | prying it from capabilities needs will the team doesn't have |
-
-The will account itself is nearly empty: leadership tolerates the safety team, no more.
-
-### Walking the menu
-
-The decision this module has been building toward is not "is control good?" in the abstract — it is: given these states, how should a safety team divide its people across the technique menu? Take the menu one item at a time, pricing each basket against the table and asking which channel (usefulness, evidence, direct) its payoff flows through:
-
-**Control protocols.** The usefulness case: in this regime, AI labor is most of the labor the safety team has — a small team with 3% of compute multiplies itself by extracting research from models. But extraction is only worth something if the extracted work can be trusted, and the models' alignment is unknown. Control is what converts untrusted AI labor into usable labor. The evidence case: no catches so far, and the epistemic state is starved — which is exactly why the first catch would be worth so much here. A catch is the one event in this regime that could refill the empty will account, cut the price of the product-wide tax, and change what the team can afford next stage. Control is the only technique on the menu whose ordinary operation can produce that event. And its basket runs through the two cheap aisles: monitoring and auditing cost tax _inside the team's own workflow_ (cheap) and compute _within the 3%_ (cheap) — essentially no delay (unbuyable here), no product-wide tax (expensive here).
-
-**Verification & evals science.** Control's usefulness case leans on an unknown — how checkable the models' research output is. Work that makes output more checkable pays in the same usefulness channel, shores up the hedge, and its basket is the same two cheap aisles. It earns a real slice.
-
-**Interpretability.** The epistemic state says hints, not verdicts. Better hints pay in the evidence channel, but in this regime the big training-time bets cost compute beyond the 3% — very high. A small slice, aimed at whatever runs inside the existing allocation.
-
-**Alignment research.** Acting on $P(\text{scheming})$ itself is the payoff that would eventually retire the whole problem — but the moonshot versions cost compute beyond the 3% (very high), and with the epistemic state this thin there is no way to tell whether they're working. Not worthless — unaffordable _in this regime_, beyond a small stake.
-
-**Scalable oversight.** Deployed product-wide it costs the expensive tax. Kept inside the team's own workflow it is cheap and compounds with control's monitoring. A slice, scoped accordingly.
-
-**Policy, pause & coordination.** A serious pause costs delay — unbuyable at current will. But the evidence channel needs a receiving end: if a catch lands, someone must be ready to convert the spike of will into a durable rule. A small slice buys that option.
-
-**Security.** Exfiltration and rogue deployments are the threat models a catch-all has to close first; basic measures run through the cheap in-team aisles. A small, non-negotiable slice.
-
-### The worked portfolio, in the template you'll reuse
-
-Putting the walk together, with a budget of 10 researchers' worth of effort as the currency:
-
-| Agenda | Share of effort | Why, in one line |
-| --- | --- | --- |
-| Control protocols | 45% | both live channels, both cheap aisles |
-| Verification & evals science | 20% | shores up the checkability unknown control leans on |
-| Interpretability | 10% | evidence-channel hints, within the compute cap |
-| Scalable oversight | 10% | cheap while kept in-team; compounds with monitoring |
-| Security | 5% | closes exfiltration/rogue-deployment paths; cheap |
-| Alignment research | 5% | a stake in the retire-the-problem payoff |
-| Policy, pause & coordination | 5% | the receiving end for a catch |
-
-Every portfolio answer in this module takes this three-part shape:
-
-1. **The allocation:** the table above — control-heavy, with real slices for the techniques that share its cheap aisles.
-2. **Where the marginal slice of effort goes, and through which channel:** control, through usefulness (converting the only available labor into trustworthy labor), with the evidence channel as the kicker — the option on a catch that could re-price everything.
-3. **Which spend binds:** compute — the 3% ceiling is what caps how much monitoring and extraction the team can run; the team would trade any other aisle for a bigger allocation, and it is why the compute-hungry agendas got slivers.
-
-Notice what did the work: not an argument that control is good, but the price table and the channels. Change the table and the portfolio can flip — which is exactly the next exercise.
-
-## Exercise — your turn, on a new regime
-
-Now conduct the same analysis yourself on a new set of states. Read the regime the exercise stipulates, price the baskets against its table, walk the menu, and divide the effort — then defend the result in the three-part template: allocation, marginal slice + carrying channel, binding spend.
+The exercise stipulates a regime. Price the baskets against its table, walk the menu, and divide the effort — then defend the result in the three-part template.
 
 <Exercise id="cr-portfolio-yourself" />
 

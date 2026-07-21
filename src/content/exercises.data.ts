@@ -1564,17 +1564,17 @@ export const exercises: Exercise[] = [
     minWords: 75,
     maxWords: 500,
   },
-  // Module 2 worked-example lesson (c-regimes-l2): the learner repeats the
-  // worked portfolio analysis on a new stipulated regime. Same allocation
-  // widget and agenda menu as the capstone (cr-portfolio-allocation); the
-  // regime is distinct from the worked example and from all three capstone
-  // scenarios. No reveal by design — portfolios are discussed in facilitation.
+  // Module 2 "Running the model" lesson (c-regimes-l2): the learner runs the
+  // portfolio analysis on a stipulated regime. Same allocation widget and
+  // agenda menu as the capstone (cr-portfolio-allocation); the regime is
+  // distinct from all three capstone scenarios. No reveal by design —
+  // portfolios are discussed in facilitation.
   {
     id: "cr-portfolio-yourself",
     type: "allocation",
     title: "Your turn: a portfolio for the scare regime",
     prompt:
-      "You direct a safety team with a budget of 10 researchers' worth of effort. The scenario below stipulates a new regime — the three states and the price table. Price each technique's basket against the table, ask which channel its payoff flows through, and divide the effort across the agendas — the chart tracks your split as you go. Defend the allocation in the worked example's three-part template: the allocation itself, where the marginal slice of effort goes and through which channel, and which spend binds.",
+      "You direct a safety team with a budget of 10 researchers' worth of effort. The scenario below stipulates a regime — the three states and the price table. Price each technique's basket against the table, ask which channel its payoff flows through, and divide the effort across the agendas — the chart tracks your split as you go. Defend the allocation in the three-part template: the allocation itself, where the marginal slice of effort goes and through which channel, and which spend binds.",
     agendas: [
       { id: "control-protocols", label: "Control protocols" },
       { id: "alignment-research", label: "Alignment research" },
@@ -1589,7 +1589,7 @@ export const exercises: Exercise[] = [
         id: "scare-regime",
         title: "The scare regime",
         description: [
-          "World state: mid-stage models, as in the worked example — alignment nature unknown, checkability of research output unknown, probably middling.",
+          "World state: mid-stage models — alignment nature unknown, checkability of research output unknown, probably middling.",
           "Epistemic state: a widely reported incident just happened — real harm, loud coverage, but ambiguous between sloppiness and scheming: no transcripts, nothing reproducible, evals still look fine.",
           "Resource state: the incident spiked the will account, but the spike is fading fast; the public is scared, so the product-wide usefulness tax is briefly cheap; delay is briefly buyable at moderate price; safety compute is still capped at a small share, and the race is unchanged underneath.",
         ].join("\n"),
