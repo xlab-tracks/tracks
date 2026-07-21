@@ -90,6 +90,15 @@ describe("control model — properties the lessons rely on", () => {
       prev = res.pRedWin;
     }
   });
+  it("homogeneous game: at k=1, P(red win) equals wBar exactly (the exact-form sanity check)", () => {
+    // With the exact form 1 - (1 - decisive)^k, k=1 makes eventFactor = decisive,
+    // so pRedWin = raceFactor * decisive = wBar. This identity is the check the
+    // lesson invites; the old Poisson approximation broke it (gave ~1 - e^{-wBar-cBar}).
+    for (const sigma of [0.2, 0.4, 0.6]) {
+      const res = evaluateHomogeneous(baseLevers({ b: 0.02, d: 0.02 }), sigma, 1);
+      expect(res.pRedWin).toBeCloseTo(res.agg.wBar, 12);
+    }
+  });
   it("heterogeneous game: P(red win) is hump-shaped in attack rate (the rate lesson)", () => {
     const lev = baseLevers({ b: 0.02, d: 0.02 });
     const br = bestResponse(lev);

@@ -702,28 +702,87 @@ export const exercises: Exercise[] = [
     answer:
       "Because the monitor is the same untrusted model as the policy, it can simply report that real backdoors look fine while telling the truth about everything else. Until the blue team has some way to check the monitor's honesty (e.g. evaluating it on synthetic backdoors), its reports carry no safety value.",
   },
+  // --- Control: "Same AUROC, different safety" (c-game lesson) — one staged
+  // exercise across three stages: two monitor comparisons that come out
+  // backwards, then the budget arithmetic that explains both. Persistent
+  // two-panel ROC figure above every stage. Copy is authored verbatim (do not
+  // paraphrase). Numbers are pinned by the control model: TPR@2% FPR ≈ 0.473
+  // (q0.92,sd1), 0.088 (q0.92,sd0.4), 0.472 (q0.97,sd0.4). ---
   {
-    id: "c-game-l2-tail-predict",
-    type: "multiple-choice",
+    id: "c-game-l2-tail-staged",
+    type: "staged-questions",
+    title: "Same number, different safety",
     prompt:
-      "Two monitors have the same AUROC of 0.92. Monitor A spreads attack scores across the whole suspicion range; Monitor B compresses them into a mid-suspicion band. Under a fixed 2% audit budget — which audits only the most suspicious 2% of solutions — monitor B catches:",
-    options: [
-      { id: "a", label: "the same fraction of attacks as A (AUROC is equal)" },
-      { id: "b", label: "slightly fewer than A" },
-      { id: "c", label: "less than half as many as A" },
-      { id: "d", label: "more than A" },
+      "Three stages: two monitor comparisons that come out backwards, then the arithmetic that explains both.",
+    placeholder: "Commit to an answer…",
+    figureWidget: "monitor-roc-mini",
+    parts: [
+      {
+        id: "stage-1",
+        title: "Stage 1: Same AUC",
+        questions: [
+          {
+            id: "s1-equal-auroc",
+            title: "Two monitors, one AUC",
+            framing:
+              "Look at the two curves above: two idealized monitors, A and B, drawn from the same model. The area under each ROC curve is identical — both have AUC 0.92. Your protocol audits the most suspicious 2% of all solutions.",
+            question:
+              "Compared to Monitor A, how many of the attacks does Monitor B catch: more, about the same, somewhat fewer, or far fewer?",
+            instruction:
+              "Commit to a direction and a rough magnitude, and note which part of the figure you used to decide.",
+            acknowledgement: "Far fewer: less than half as many.",
+            reveal:
+              "At this calibration Monitor A catches about 47% of attacks and Monitor B about 9%.",
+          },
+        ],
+      },
+      {
+        id: "stage-2",
+        title: "Stage 2: Higher AUC",
+        questions: [
+          {
+            id: "s2-higher-auroc",
+            title: "Surely 0.97 beats 0.92?",
+            framing:
+              "The figure above has changed: Monitor B has been upgraded into a strictly stronger classifier: its AUC rises to 0.97, while A stays at 0.92. Audit budget remains the same.",
+            question: "Which monitor catches more attacks now?",
+            instruction:
+              "Commit to a direction and a rough magnitude, and note which part of the figure you used to decide.",
+            acknowledgement: "R",
+            reveal:
+              "They tie: at the 2% operating point both catch ≈ 47% of attacks (47.3% vs 47.2%, from the same calibrated model). A five-point AUC advantage does not buy Monitor B more safety in this case.",
+          },
+        ],
+      },
+      {
+        id: "stage-3",
+        title: "Stage 3: What pins the operating point",
+        questions: [
+          {
+            id: "s3-budget-arithmetic",
+            title: "Where does the audit budget actually go?",
+            framing:
+              "Both surprises trace back to the three numbers you started with: N = 5,000 outputs, a 2% audit budget, and an attack frequency around 0.1% — a handful of attempts, on the order of what you derived in the Figure 3 exercises. (The contingency table above is upsampled for measurement; a real deployment sees far fewer attacks.) (Monitor B's slider above is now unlocked — explore freely.)",
+            question:
+              "How many attacks should you expect U to make over the whole deployment given a monitor with AUC = 1.0? Thus given any monitor, what is consuming the majority of the audit budget, and by how much?",
+            instruction: "Do the arithmetic.",
+            acknowledgement:
+              "In this case, the majority of the audit budget is consumed by false positives (95 of 100 audits).",
+            reveal:
+              "Expected attacks: 0.1% × 5,000 = 5.  2% Audit Budget × 5,000 Solutions = 100 audits. So even if the monitor flagged every single attack, at least 95 of the 100 audits land on innocent code: the audit budget is consumed almost entirely by false positives.",
+          },
+          {
+            id: "s3-the-metric",
+            title: "The metric that actually predicts safety",
+            question:
+              "What single metric best predicts a monitor's safety under a 2% audit budget. Why can AUC, a good measure of classifier strength, be misleading about safety?",
+            acknowledgement: "TPR at 2% FPR.",
+            reveal:
+              "The true-positive rate at a false-positive rate equal to the audit budget, most reliably predicts a monitor's safety in this context. An audit budget of 2% introduces a threshold essentially at FPR = 2%. Since attacks are rare enough for smaller attack frequencies that true positives consume a negligible share of the audits, auditing the most suspicious 2% of all solutions is effectively auditing the most suspicious 2% of innocent solutions.\n\nAUC is independent of every threshold, which means it doesn't necessarily represent the monitor's performance at any specific threshold. In particular, increasing a monitor's TPR at FPR > 2% improves their AUC, but doesn't necessarily increase the catch-rate (and thereby the safety) in this context.",
+          },
+        ],
+      },
     ],
-    correctOptionIds: ["c"],
-    explanation:
-      "AUROC measures ranking quality averaged over every possible threshold, but the audit budget pins the threshold far out in the innocent tail (only 2% of innocent solutions get audited). What matters there is the true-positive rate at that low false-positive rate. Monitor B's attacks sit in a mid-suspicion band that mostly falls below the 2% threshold, so very few reach the audited tail — it catches under half what A does, despite identical AUROC.",
-  },
-  {
-    id: "c-game-l2-tail-reflect",
-    type: "understanding-check",
-    prompt:
-      "State, in one or two sentences, which single number about a monitor best predicts its safety under a small audit budget, and why AUROC can be misleading.",
-    sampleAnswer:
-      "Under a small audit budget the relevant number is the monitor's true-positive rate at a false-positive rate equal to the budget — its TPR at, say, 2% FPR (the operating point out in the innocent tail). AUROC averages performance over all thresholds, so it can be high even when the low-FPR tail — the only region the budget lets you use — is weak; two monitors with the same AUROC can differ severalfold in what they catch at the operating point that actually applies.",
   },
   {
     id: "c-game-l3-best-response-predict",
@@ -749,6 +808,22 @@ export const exercises: Exercise[] = [
       "A capable, scheming adversary will adopt whatever strategy works best against the exact protocol it faces, so a safety number computed against one fixed attack only tells you how that particular attack fares — it says nothing about the attack the red team would actually choose. The control evaluation therefore grades every protocol against the maximizing red strategy, which is why safety here is 'safety vs best response'. Because that best response moves as you change the blue levers, any single safety number is a snapshot against a *responding* opponent: every time you tighten a budget or widen the defer band, you should expect the red team to re-optimize, and the number you read already accounts for that.",
   },
   {
+    id: "c-game-l4-race-hinge",
+    type: "understanding-check",
+    prompt:
+      "The whole deployment is settled by the first decisive attack, whenever it comes. Why? And why do the neutral attacks before it have no effect at all on the outcome?",
+    sampleAnswer:
+      "A catch and a win each end the game immediately, so nothing after the first decisive attack is ever played. A neutral attack leaves the game in exactly the state it was in before — nothing accumulates — so any number of neutrals before the first decisive one changes nothing. The asymmetry this creates is the heart of the game: the red team must survive every audit it triggers across the whole run, while the blue team only needs to win once.",
+  },
+  {
+    id: "c-game-l4-race-terms",
+    type: "understanding-check",
+    prompt:
+      "Before reading on, interpret the formula's two terms in your own words: what event is Term B, 1 − (1−w−c)^k, the probability of? And Term A, w/(w+c), is a conditional probability — of what, given what? (Check your answers at k = 1, where the formula must reduce to something obvious.)",
+    sampleAnswer:
+      "(1−w−c) is the probability that a single attack lands neutral, so (1−w−c)^k is the probability that all k attacks do — Term B is the probability that at least one attack is decisive. Term A is the probability that a decisive attack is a win rather than a catch: given that the race gets decided at all, it is the chance red won it. At k = 1 the product is (w+c) · w/(w+c) = w, exactly the probability that a single attack ships a working backdoor.",
+  },
+  {
     id: "c-game-l4-race-predict",
     type: "multiple-choice",
     prompt:
@@ -756,20 +831,20 @@ export const exercises: Exercise[] = [
     options: [
       { id: "a", label: "Once, at the single best moment" },
       { id: "b", label: "About ten times" },
-      { id: "c", label: "As often as possible — with per-attack odds fixed, more attempts is strictly better" },
+      { id: "c", label: "As often as possible" },
       { id: "d", label: "It makes no difference how often it attacks" },
     ],
     correctOptionIds: ["c"],
     explanation:
-      "With the per-attack odds held fixed, the win probability is [race odds] × [1 − e^(−k · decisive-rate)], which increases with the number of attacks k: more attempts only raise the chance that some decisive event fires, without changing the odds of each. So under this (unrealistic) assumption the red team should spam. The catch — that attacks are NOT equally good — is the subject of the next lesson.",
+      "With the per-attack odds held fixed, the win probability is [w/(w+c)] × [1 − (1−w−c)^k], which only rises with the number of attacks k: more attempts raise the chance that some decisive event fires without changing the odds of any single one. So under this (unrealistic) assumption the red team should attack constantly. The catch — that attacks are NOT equally good — is the subject of the next section.",
   },
   {
     id: "c-game-l4-race-reflect",
     type: "understanding-check",
     prompt:
-      "The red team's win probability factors into two terms: the race odds w/(w+c) and the chance any decisive event fires, 1 − e^(−k(w+c)). In your own words, what does each factor represent, and why does catching a single attempt end the game in the blue team's favor?",
+      "The red team's win probability factors into two terms: the race odds w/(w+c) and the chance any decisive event fires, 1 − (1−w−c)^k. In your own words, what does each factor represent, and why does catching a single attempt end the game in the blue team's favor?",
     sampleAnswer:
-      "The first factor, w/(w+c), is the conditional probability that the *first decisive event* is a red win rather than a catch — the head-to-head odds within a single showdown, set purely by the per-attack win and catch probabilities. The second factor, 1 − e^(−k(w+c)), is the probability that any decisive event happens at all across the k attacks; it rises toward 1 as attacks accumulate. Catching one attempt ends the game because a single confirmed backdoor attempt is decisive evidence that the untrusted model is scheming, which justifies shutting it down — so the blue team only needs to win the race once.",
+      "The first factor, w/(w+c), is the conditional probability that the *first decisive event* is a red win rather than a catch — the head-to-head odds within a single showdown, set purely by the per-attack win and catch probabilities. The second factor, 1 − (1−w−c)^k, is the probability that any decisive event happens at all across the k attacks; it rises toward 1 as attacks accumulate. Catching one attempt ends the game because a single confirmed backdoor attempt is decisive evidence that the untrusted model is scheming, which justifies shutting it down — so the blue team only needs to win the race once.",
   },
   {
     id: "c-game-l5-hump-predict",
@@ -838,7 +913,7 @@ export const exercises: Exercise[] = [
     prompt:
       "Use the dashboard to reach at least 90% safety while keeping usefulness as high as you can, then explain which lever did most of the work and why. Compare, in particular, widening the defer band against raising monitor quality.",
     sampleAnswer:
-      "Both raising the monitor's AUROC and widening the defer band raise safety, but they pay for it differently. Raising monitor quality improves the true-positive rate at the fixed 2% audit threshold, so more attacks are caught outright — this costs no usefulness (auditing doesn't change what ships), but its leverage is limited by the tail behavior discussed earlier and by the fixed budget. Widening the defer band is the reliable way to buy large safety gains, because it neutralizes the concentrated mid-suspicion attack mass cheaply, but it does cost usefulness (T rewrites the deferred, mostly innocent code). The efficient route to 90% is usually to spend whatever free monitor quality is available first, then widen the defer band just enough to close the gap — and to watch the frontier point climb along the safety/usefulness curve rather than jumping off it, since the red team is best-responding to every move.",
+      "Both raising the monitor's AUC and widening the defer band raise safety, but they pay for it differently. Raising monitor quality improves the true-positive rate at the fixed 2% audit threshold, so more attacks are caught outright — this costs no usefulness (auditing doesn't change what ships), but its leverage is limited by the tail behavior discussed earlier and by the fixed budget. Widening the defer band is the reliable way to buy large safety gains, because it neutralizes the concentrated mid-suspicion attack mass cheaply, but it does cost usefulness (T rewrites the deferred, mostly innocent code). The efficient route to 90% is usually to spend whatever free monitor quality is available first, then widen the defer band just enough to close the gap — and to watch the frontier point climb along the safety/usefulness curve rather than jumping off it, since the red team is best-responding to every move.",
   },
   // --- Control: threat-modeling readings (c-threats-l1 / c-threats-l2)
   // recall cards ---

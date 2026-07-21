@@ -6,7 +6,7 @@ import { DEFAULT_LEVERS, type Levers, evaluateHomogeneous } from "@/lib/control-
 // Stage 8: safety over a whole deployment, assembled from per-attack odds.
 // Each attack independently ends as CATCH (blue wins), WIN (red wins), or
 // NEUTRAL. With per-attack odds fixed, P(red wins) factors into
-//   [ wBar / (wBar + cBar) ]  ·  [ 1 - e^{-k (wBar + cBar)} ]
+//   [ wBar / (wBar + cBar) ]  ·  [ 1 - (1 - wBar - cBar)^k ]
 //   = (odds red wins a decisive event)  ·  (chance any decisive event fires).
 // The race odds are fixed per attack; the event factor rises with k, so
 // P(red wins) is monotone increasing in the number of attacks k — if every
@@ -14,8 +14,9 @@ import { DEFAULT_LEVERS, type Levers, evaluateHomogeneous } from "@/lib/control-
 // that assumption.
 //
 // K_MAX is small on purpose: with these per-attack odds a decisive event fires
-// with p ≈ 0.58 per attack, so the curve is within 1% of its plateau by k ≈ 8 —
-// a wider range renders as a step function against the left wall.
+// with p ≈ 0.58 per attack, so (1 - wBar - cBar)^k puts the curve within 1% of
+// its plateau by k ≈ 6 — a wider range renders as a step function against the
+// left wall.
 
 const SIGMA = 0.4; // fixed subtlety for this lesson (subtlety is the next lesson's lever)
 const K_MAX = 20;
@@ -44,10 +45,12 @@ export function RaceDemo() {
   }, [levers]);
 
   const res = useMemo(() => evaluateHomogeneous(levers, SIGMA, k), [levers, k]);
-  const yMax = Math.max(0.01, curve[curve.length - 1].p) * 1.05;
+  // The race odds are k-independent for k ≥ 1, but the model returns a
+  // degenerate 0 at k = 0 — so compute the ceiling once at k = 1.
+  const raceOdds = useMemo(() => evaluateHomogeneous(levers, SIGMA, 1).raceFactor, [levers]);
 
   const xPx = (kk: number) => M.left + (kk / K_MAX) * PW;
-  const yPx = (p: number) => M.top + PH - Math.min(1, p / yMax) * PH;
+  const yPx = (p: number) => M.top + PH - Math.min(1, p) * PH;
   const r1 = (x: number) => Number(x.toFixed(1));
   const line = curve.map((pt, i) => `${i === 0 ? "M" : "L"} ${r1(xPx(pt.k))} ${r1(yPx(pt.p))}`).join(" ");
 
@@ -62,7 +65,7 @@ export function RaceDemo() {
           type="range"
           // Start at 1: at k=0 there are no decisive problems, so the model
           // returns a degenerate raceFactor of 0, which would render a
-          // misleading "race odds 0%" against this demo's k-independent lesson.
+          // misleading "Term A 0%" against this demo's k-independent lesson.
           min={1}
           max={K_MAX}
           step={1}
@@ -77,11 +80,15 @@ export function RaceDemo() {
         <p className="text-muted-foreground mb-1 text-center text-xs font-medium">Red team win probability vs number of attacks</p>
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Red win probability versus number of attacks">
           <rect x={M.left} y={M.top} width={PW} height={PH} fill="none" stroke="var(--border)" strokeWidth={1} opacity={0.5} />
+          <line x1={M.left} x2={M.left + PW} y1={r1(yPx(raceOdds))} y2={r1(yPx(raceOdds))} stroke="var(--muted-foreground)" strokeWidth={1} strokeDasharray="4 3" strokeOpacity={0.6} />
+          <text x={M.left + PW - 4} y={r1(yPx(raceOdds)) - 4} fontSize={8} fill="var(--muted-foreground)" textAnchor="end">
+            race odds — ceiling
+          </text>
           <path d={line} fill="none" stroke="var(--primary)" strokeWidth={1.5} />
           <line x1={r1(xPx(k))} x2={r1(xPx(k))} y1={M.top} y2={M.top + PH} stroke="var(--muted-foreground)" strokeWidth={1} strokeDasharray="2 2" strokeOpacity={0.5} />
           <circle cx={r1(xPx(k))} cy={r1(yPx(res.pRedWin))} r={3} fill="var(--primary)" stroke="var(--card)" strokeWidth={1} />
           <text x={M.left - 4} y={M.top + 8} fontSize={8} fill="var(--muted-foreground)" textAnchor="end">
-            {(yMax * 100).toFixed(0)}%
+            100%
           </text>
           <text x={M.left - 4} y={M.top + PH} fontSize={8} fill="var(--muted-foreground)" textAnchor="end">
             0
@@ -103,12 +110,12 @@ export function RaceDemo() {
         </p>
         <div className="flex items-center justify-center gap-2 text-center tabular-nums">
           <span>
-            <span className="text-muted-foreground block text-xs">race odds</span>
+            <span className="text-muted-foreground block text-xs">Term A</span>
             <span className="font-semibold">{(res.raceFactor * 100).toFixed(0)}%</span>
           </span>
           <span className="text-muted-foreground">×</span>
           <span>
-            <span className="text-muted-foreground block text-xs">any decisive event</span>
+            <span className="text-muted-foreground block text-xs">Term B</span>
             <span className="font-semibold">{(res.eventFactor * 100).toFixed(0)}%</span>
           </span>
           <span className="text-muted-foreground">=</span>

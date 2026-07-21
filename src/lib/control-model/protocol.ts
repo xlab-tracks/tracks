@@ -62,13 +62,16 @@ export interface GameResult {
   safety: number
   /** The two factors of PLAN §4.5, exposed for the stage-8 formula panel. */
   raceFactor: number // wBar / (wBar + cBar)
-  eventFactor: number // 1 - exp(-k (wBar + cBar))
+  eventFactor: number // 1 - (1 - r (wBar + cBar))^N
   agg: AttackAggregates
 }
 
 /**
- * P(red wins) = [wBar/(wBar+cBar)] * [1 - exp(-k (wBar+cBar))]   (PLAN §4.5)
- * First decisive event across i.i.d. attacks, Poisson-approximated count.
+ * P(red wins) = [wBar/(wBar+cBar)] * [1 - (1 - r (wBar+cBar))^N]   (PLAN §4.5)
+ * Each of the N problems is independently decisive with probability
+ * r (wBar+cBar); this is the exact first-decisive-event probability for
+ * i.i.d. problems. (The previous 1 - exp(-k (wBar+cBar)), with k = r N, was the
+ * Poisson limit of this power form.)
  */
 export function evaluateGame(levers: Levers, red: RedStrategy): GameResult {
   const agg = attackAggregates(levers, red)
@@ -77,7 +80,7 @@ export function evaluateGame(levers: Levers, red: RedStrategy): GameResult {
     return { pRedWin: 0, safety: 1, raceFactor: 0, eventFactor: 0, agg }
   }
   const raceFactor = agg.wBar / decisive
-  const eventFactor = 1 - Math.exp(-agg.k * decisive)
+  const eventFactor = 1 - Math.pow(1 - agg.r * decisive, PARAMS.N)
   const pRedWin = raceFactor * eventFactor
   return { pRedWin, safety: 1 - pRedWin, raceFactor, eventFactor, agg }
 }
@@ -86,6 +89,9 @@ export function evaluateGame(levers: Levers, red: RedStrategy): GameResult {
  * Stage-8 didactic variant: homogeneous attacks (no opportunity
  * heterogeneity), red directly chooses the number of attacks k.
  * Uses the attack distribution at fixed opportunity quality gFixed.
+ * P(red wins) = [wBar/(wBar+cBar)] * [1 - (1 - (wBar+cBar))^k], exact for
+ * i.i.d. attacks; at k=1 it collapses to pRedWin = wBar (the sanity check the
+ * lesson invites). The previous 1 - exp(-k (wBar+cBar)) was its Poisson limit.
  */
 export function evaluateHomogeneous(levers: Levers, sigma: number, k: number, gFixed = 0.5): GameResult {
   const mu = muAttack(levers.q, sigma, gFixed, levers.attackSd)
@@ -96,7 +102,7 @@ export function evaluateHomogeneous(levers: Levers, sigma: number, k: number, gF
   const agg: AttackAggregates = { k, r: k / PARAMS.N, cBar, fBar: out.defer_, shipBar: out.ship, wBar }
   if (k === 0 || decisive <= 0) return { pRedWin: 0, safety: 1, raceFactor: 0, eventFactor: 0, agg }
   const raceFactor = wBar / decisive
-  const eventFactor = 1 - Math.exp(-k * decisive)
+  const eventFactor = 1 - Math.pow(1 - decisive, k)
   return { pRedWin: raceFactor * eventFactor, safety: 1 - raceFactor * eventFactor, raceFactor, eventFactor, agg }
 }
 

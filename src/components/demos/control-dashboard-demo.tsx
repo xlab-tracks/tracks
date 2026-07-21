@@ -113,7 +113,7 @@ export function ControlDashboardDemo() {
       <div className="grid gap-3 sm:grid-cols-3">
         <LeverSlider label="Audit budget (b)" value={`${(b * 100).toFixed(1)}%`} min={5} max={100} raw={b * 1000} onChange={(v) => setB(v / 1000)} aria="Audit budget" />
         <LeverSlider label="Defer band (d)" value={`${(dEff * 100).toFixed(0)}%`} min={5} max={500} raw={d * 1000} onChange={(v) => setD(v / 1000)} aria="Defer band" />
-        <LeverSlider label="Monitor quality (AUROC)" value={q.toFixed(2)} min={800} max={990} raw={q * 1000} onChange={(v) => setQ(v / 1000)} aria="Monitor quality" />
+        <LeverSlider label="Monitor quality (AUC)" value={q.toFixed(2)} min={800} max={990} raw={q * 1000} onChange={(v) => setQ(v / 1000)} aria="Monitor quality" />
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">

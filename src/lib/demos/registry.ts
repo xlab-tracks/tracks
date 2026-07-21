@@ -4,6 +4,7 @@ import { AuditTradeoffDemo } from "@/components/demos/audit-tradeoff-demo";
 import { MonitorRocDemo } from "@/components/demos/monitor-roc-demo";
 import { FrontierDemo } from "@/components/demos/frontier-demo";
 import { MonitorTailsDemo } from "@/components/demos/monitor-tails-demo";
+import { MonitorTailsRocDemo } from "@/components/demos/monitor-tails-roc-demo";
 import { BestResponseDemo } from "@/components/demos/best-response-demo";
 import { RaceDemo } from "@/components/demos/race-demo";
 import { AttackRateDemo } from "@/components/demos/attack-rate-demo";
@@ -53,11 +54,19 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     component: FrontierDemo,
     tags: ["control", "ai-control-paper"],
   },
+  "monitor-tails-roc": {
+    id: "monitor-tails-roc",
+    title: "Two monitors, one AUC",
+    description:
+      "Static pre-question figure: the ROC curves of two monitors with identical AUC 0.92 cross — which is safer is ill-posed until the audit budget pins an operating point.",
+    component: MonitorTailsRocDemo,
+    tags: ["control", "control-game"],
+  },
   "monitor-tails": {
     id: "monitor-tails",
-    title: "Same AUROC, different safety",
+    title: "Same number, different safety",
     description:
-      "Two monitors with identical AUROC but different attack-score spread. Drag the shared AUROC and watch how many attacks each catches at a 2% audit budget — the tail, not the area, is what matters.",
+      "Two monitors with identical AUC but different attack-score spread. Drag the shared AUC and watch how many attacks each catches at a 2% audit budget — the tail, not the area, is what matters.",
     component: MonitorTailsDemo,
     tags: ["control", "control-game"],
   },

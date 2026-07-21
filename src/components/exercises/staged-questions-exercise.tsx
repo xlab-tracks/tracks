@@ -19,6 +19,7 @@ import {
 } from "@/lib/content/exercise-view";
 import { ControlTimeline } from "./control-timeline";
 import { TwoWorldsFigure } from "./two-worlds-figure";
+import { MonitorRocMiniFigure } from "./monitor-roc-pair-figure";
 import { Paragraphs } from "./math-text";
 
 /** Interactive widgets a reveal can end with, by registry key. */
@@ -29,12 +30,20 @@ const REVEAL_WIDGETS: Record<
   "control-timeline": ControlTimeline,
 };
 
+/** Props a persistent figure widget receives (it may ignore activePartIndex). */
+interface FigureWidgetProps {
+  className?: string;
+  /** Index of the part currently being presented (0-based). */
+  activePartIndex?: number;
+}
+
 /** Persistent figures rendered above every part, by registry key. */
 const FIGURE_WIDGETS: Record<
   NonNullable<StagedQuestionsExercise["figureWidget"]>,
-  React.ComponentType<{ className?: string }>
+  React.ComponentType<FigureWidgetProps>
 > = {
   "two-worlds": TwoWorldsFigure,
+  "monitor-roc-mini": MonitorRocMiniFigure,
 };
 
 /** The forward pointer, with its named reading rendered as a link. */
@@ -80,9 +89,10 @@ export function StagedQuestionsCard({
   /** Signed-in only — signed-out visitors skip the (no-op) server round-trip. */
   persist?: boolean;
 }) {
-  // Flattened questions, each with its part's title for the step header.
-  const steps = exercise.parts.flatMap((part) =>
-    part.questions.map((question) => ({ partTitle: part.title, question })),
+  // Flattened questions, each with its part's title (step header) and part
+  // index (drives the persistent figure's stage awareness).
+  const steps = exercise.parts.flatMap((part, partIndex) =>
+    part.questions.map((question) => ({ partTitle: part.title, partIndex, question })),
   );
   const total = steps.length;
 
@@ -113,7 +123,7 @@ export function StagedQuestionsCard({
   const [hintOpen, setHintOpen] = useState(false);
   const revealRef = useRef<HTMLDivElement>(null);
 
-  const { partTitle, question } = steps[current];
+  const { partTitle, partIndex, question } = steps[current];
   const Figure = exercise.figureWidget
     ? FIGURE_WIDGETS[exercise.figureWidget]
     : null;
@@ -187,8 +197,9 @@ export function StagedQuestionsCard({
         </div>
       )}
 
-      {/* Persistent figure: the shared picture every part reasons about. */}
-      {Figure && <Figure className="mb-4" />}
+      {/* Persistent figure: the shared picture every part reasons about. It
+          receives the active part index so stage-aware figures can update. */}
+      {Figure && <Figure className="mb-4" activePartIndex={partIndex} />}
 
       {total > 1 && (
         <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">

@@ -1,54 +1,60 @@
-The previous item in this module worked through the AI Control paper as written. You saw that trusted monitoring — ask the untrusted model $U$ to write code, ask the trusted model $T$ how suspicious it looks, and audit the most suspicious 2% — lifts the blue team's win probability from 15% (upfront auditing) to 62%, and that deferring to $T$ on mid-suspicion code trades a little usefulness for a lot of safety.
+The previous item in this module worked through the AI Control paper as written. You saw that trusted monitoring significantly improves the blue team's win probability compared to upfront auditing, and that deferring to $T$ on moderately suspicious code trades a little usefulness for a lot of safety.
 
-The rest of this lesson rebuilds that result as a game you can play. Every number in the demos here comes from a small, calibrated model of the same setup — the same $N = 5{,}000$ problems, the same $U$ and $T$ correctness rates (54% and 22%), the same 2% audit budget — computed live as you move the levers. The model is tuned so that its headline protocol numbers reproduce the paper's within a few points: upfront auditing ≈ 15% safety, trusted monitoring ≈ 62%, defer-to-trusted 10% ≈ 83%, 20% ≈ 92%. It is an idealization, not a re-run of the experiments, but it is honest: if you set a lever to a pathological value, the plots show the pathological truth.
+This lesson uses the same experimental setup, but will explore different questions.  **[NOTE: TBD]** You have already seen, at the end of that walkthrough, the fact that makes a monitor's value live at its operating point rather than in its AUC. We start from there: with what happens when attacks compound over a whole deployment.
 
-The point of turning it into a game is that the interesting questions are not about any single protocol — they are about *responses*. Why does a monitor that "usually notices" attacks still miss most of them under a tight budget? Why does the red team attack rarely rather than often? Why must you always grade a protocol against the red team's *best* response, not a fixed attack? And why is deferring to a weak model such a bargain? Each of the following sections isolates one of these, gives you a lever and a prediction to commit to before the reveal, and adds to a picture that the final section ties together.
+{/* HIDDEN 2026-07-21: relocated to the AI Control paper walkthrough (§3.2.1, after the ROC & AUC exercises). Preserved for reference; delete once the relocation is confirmed.
 
-We start where the paper's ROC discussion left off: with a fact about monitor quality that the single number "AUROC" hides.
+## Same AUC, different safety
 
-## Same AUROC, different safety
+You may be tempted to summarize a monitor with its AUC, as it's a threshold-free number for how well a monitor separates backdoored and innocent solutions. However, as you will see, it is a poor predictor of safety.
 
-Reading the control paper, you summarized a monitor with its ROC curve and its area under that curve, the AUROC — the probability that a random attack scores more suspicious than a random innocent solution. It is a single, threshold-free number for "how well does this monitor rank." It is also, on its own, a poor predictor of safety.
+For the following setup, the deployment is $N = 5{,}000$ solutions from $U$, of which the blue team can afford to audit **2%**. A scheming $U$ attacks *rarely*, on the order of 0.1% of problems.
 
-The reason is the audit budget. The blue team can only afford to send the most suspicious 2% of solutions to a human. That pins the decision threshold far out in the *innocent tail* — the point where only 2% of innocent solutions look at least this suspicious. The only thing that matters at that operating point is how many attacks also make it that far: the true-positive rate at a 2% false-positive rate. AUROC averages over every threshold, including all the thresholds the budget never lets you use.
+<Exercise id="c-game-l2-tail-staged" />
 
-Before the demo, commit to a prediction.
-
-<Exercise id="c-game-l2-tail-predict" />
-
-The demo below builds exactly this comparison from the model. Both monitors have the AUROC you set with the slider. Monitor A spreads its attack scores widely; Monitor B compresses them into a mid-suspicion band — the same ranking quality overall, but the attacks pile up just below the audit threshold instead of reaching it. Watch the "caught @ 2%" readout for each, and the two operating points where the ROC curves cross the 2% line.
+The demo below builds exactly this comparison from the model.
 
 <Demo id="monitor-tails" />
 
-At the default AUROC of 0.92 the two monitors catch wildly different fractions — roughly 47% versus 9% — even though their ROC curves enclose identical area. The gap survives across the whole slider range. A monitor's value under a tight budget lives entirely in the extreme low-false-positive tail of its ROC, and a single scalar summary of the whole curve can conceal a several-fold safety difference.
+At the default AUC of 0.92 the two monitors catch wildly different fractions, roughly 47% versus 9%, even though their ROC curves enclose identical area. The gap survives across various AUCs.
 
-This is why the rest of this lesson works with the operating point directly rather than with AUROC, and why "improve the monitor" is an ambiguous instruction: improving the tail buys safety, improving the already-easy middle buys almost none.
-
-<Exercise id="c-game-l2-tail-reflect" />
+*/}
 
 ## Safety over a deployment: the race
 
-So far we have talked about a single attack. But safety is a property of the whole deployment of $N = 5{,}000$ problems: the blue team wins if *no* working backdoor is ever shipped, and the red team wins if even one gets through. To get there we have to compound the per-attack odds over the whole run.
+So far we have scored one attack in isolation. Safety is defined over the whole deployment: $N = 5{,}000$ problems, and the blue team wins only if *no* working backdoor ever ships.
 
-Model each attack as ending in one of three ways: **caught** (the monitor flags it, it is audited, the deployment halts and the blue team wins), **win** (a working backdoor ships and the red team wins), or **neutral** (it ships broken, or is deferred — the game just continues). Write $c$ for the per-attack catch probability and $w$ for the per-attack win probability. If the red team makes $k$ attacks with these odds fixed, its probability of winning the whole game factors cleanly:
+Every attack ends in exactly one of three ways:
 
-$$P(\text{red wins}) = \underbrace{\frac{w}{w + c}}_{\text{race odds}} \cdot \underbrace{\left(1 - e^{-k(w + c)}\right)}_{\text{any decisive event fires}}$$
+- **Caught** — the monitor flags it, the audit finds the backdoor, and the deployment is shut down. Blue wins outright: catching the model red-handed is proof, and the game (following the paper) is scored that way.
+- **Win** — it ships and the backdoor works. Red wins outright.
+- **Neutral** — it ships but the backdoor is broken (or, once we add deferring, it is quietly rewritten). Nothing happens; the game continues as if the attack never occurred.
 
-The first factor is who wins the first decisive showdown; the second is whether any showdown happens at all across the deployment.
+Two of these outcomes end the game on the spot. Call an attack **decisive** if it is caught or wins.
+
+<Exercise id="c-game-l4-race-hinge" />
+
+Now suppose the red team makes $k$ attacks, each with the same odds: caught with probability $c$, a working backdoor ships with probability $w$, neutral otherwise. Then:
+
+$$P(\text{red wins}) = \underbrace{\frac{w}{w + c}}_{\text{Term A}} \cdot \underbrace{\left(1 - (1 - w - c)^k\right)}_{\text{Term B}}$$
+
+<Exercise id="c-game-l4-race-terms" />
+
+Read the formula as two questions multiplied together. *Does anything decisive ever happen?* That is Term B — $(1 - w - c)^k$ is the probability that all $k$ attacks land neutral, so Term B is the chance that any decisive event fires — and it is the only place $k$ appears. *If so, who won?* That is Term A: every attack enters a race between red's wins and blue's catches, and Term A is the probability that when the race is decided, red won it. Note what Term A is **not**: it is not the probability that an attack slips through (that is $w$). It is conditional on the attack being decisive. The neutral outcomes cancel out of the game entirely; their only role is to burn one of red's $k$ chances.
+
+One consequence is worth staring at: Term A does not depend on $k$. No amount of attacking changes who is favored in the showdown — attacking more only makes a showdown more likely to happen. So $P(\text{red wins})$ climbs with $k$ but can never exceed $w/(w+c)$: the race odds are a hard ceiling.
 
 Before the demo, predict the red team's best move.
 
 <Exercise id="c-game-l4-race-predict" />
 
-The demo below plots $P(\text{red wins})$ against the number of attacks $k$, with the two factors shown live. Drag $k$ and watch both climb.
+The demo below plots $P(\text{red wins})$ against the number of attacks $k$, with both factors live and the ceiling drawn in. Drag $k$.
 
 <Demo id="race" />
 
-With the per-attack odds held fixed, the curve only ever rises: more attacks strictly help the red team, because each extra attempt raises the chance that some decisive event fires without changing the odds of each one. So if every attack were equally good, the red team should attack as often as it possibly can.
+With fixed odds the curve only rises: each extra attempt raises the chance that some decisive event fires and changes nothing else. If every attack were equally good, the red team should attack on every problem it can.
 
-But the paper's red team does the opposite — it attacks *rarely*. That means the fixed-odds assumption must be missing something. The next section restores what it left out.
-
-<Exercise id="c-game-l4-race-reflect" />
+But the paper's red team does the opposite — it attacks *rarely*. So the fixed-odds assumption is doing load-bearing work, and it is false. The next section restores what it dropped.
 
 ## Opportunities are not equal
 
@@ -138,4 +144,4 @@ Use it to answer a concrete question.
 
 <Exercise id="c-game-l8-dashboard-reflect" />
 
-The paper's conclusion is not that any single protocol solves the problem — none does — but that control evaluations let you *measure* these tradeoffs against an adversary that fights back, and that the levers you have (auditing, monitoring, deferring) buy real, quantifiable safety. What the demo adds on top of the paper is the machinery to see why: the tail that AUROC hides, the interior optima that make the red team attack rarely and subtly, the migration of the best response, and the asymmetry that makes deferring cheap. The same evaluation methodology extends to the harder settings the paper only sketches — untrusted monitoring, collusion, and beyond.
+The paper's conclusion is not that any single protocol solves the problem — none does — but that control evaluations let you *measure* these tradeoffs against an adversary that fights back, and that the levers you have (auditing, monitoring, deferring) buy real, quantifiable safety. What the demo adds on top of the paper is the machinery to see why: the tail that AUC hides, the interior optima that make the red team attack rarely and subtly, the migration of the best response, and the asymmetry that makes deferring cheap. The same evaluation methodology extends to the harder settings the paper only sketches — untrusted monitoring, collusion, and beyond.

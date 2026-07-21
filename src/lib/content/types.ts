@@ -594,7 +594,7 @@ export interface StagedQuestionsExercise extends ExerciseBase {
    * Persistent figure rendered above every part (by registry key), for
    * exercises whose questions all reason about one shared picture.
    */
-  figureWidget?: "two-worlds";
+  figureWidget?: "two-worlds" | "monitor-roc-mini";
 }
 
 // --- Commit & construct (commit to a view, then build the counterexample) ---

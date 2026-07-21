@@ -182,6 +182,46 @@ export const papers: Paper[] = [
           },
         ],
       },
+      // §3.2.1: the staged "same number, different safety" comparison + its
+      // idealized-monitor demo, relocated here from the c-game lesson (which now
+      // opens at the race). All three ops target b-0135 and, per patch-section's
+      // phase C, render in edits-array order after the full ROC cluster above:
+      // connective note → staged exercise + monitor-tails demo → payoff note.
+      {
+        op: "add",
+        after: {
+          anchor: "b-0135",
+          snippet: "Qualitatively speaking, GPT-3.5 is able to notice",
+        },
+        markdown:
+          "You may be tempted to summarize a monitor with its AUC, as it's a " +
+          "threshold-free number for how well a monitor separates backdoored " +
+          "and innocent solutions. However, as you will see, it is a poor " +
+          "predictor of safety.",
+      },
+      {
+        op: "activity",
+        after: {
+          anchor: "b-0135",
+          snippet: "Qualitatively speaking, GPT-3.5 is able to notice",
+        },
+        items: [
+          { kind: "exercise", id: "c-game-l2-tail-staged" },
+          { kind: "demo", id: "monitor-tails" },
+        ],
+      },
+      {
+        op: "add",
+        after: {
+          anchor: "b-0135",
+          snippet: "Qualitatively speaking, GPT-3.5 is able to notice",
+        },
+        markdown:
+          "The demo above builds exactly this comparison from the model. At " +
+          "the default AUC of 0.92 the two monitors catch wildly different " +
+          "fractions, roughly 47% versus 9%, even though their ROC curves " +
+          "enclose identical area. The gap survives across various AUCs.",
+      },
       // §3.2: recall card on budget burn (after the "Secondly, …" list item;
       // nested target, so the card hoists after the whole list).
       {
@@ -306,22 +346,6 @@ export const papers: Paper[] = [
         items: [{ kind: "exercise", id: "two-worlds-two-windows" }],
       },
     ],
-  },
-  {
-    // Control track, module 1: the safety–usefulness tradeoff model, rendered
-    // full-page from Redwood's blog (Substack) — the same committed artifact
-    // the Example track's ex-paper-substack uses, here as real curriculum. No
-    // exercises are woven in (the source PR reproduced it as a plain reading).
-    id: "c-efficient-tradeoffs",
-    slug: "safety-usefulness-tradeoff-model",
-    moduleId: "c-intro",
-    title: "Efficient tradeoffs and the safety-usefulness tradeoff model",
-    source: {
-      kind: "substack",
-      postUrl:
-        "https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety",
-    },
-    estimatedMinutes: 13,
   },
   {
     // Control track, module 1: "Catching AIs red-handed", rendered full-page

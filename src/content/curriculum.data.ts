@@ -71,23 +71,21 @@ export const modules: Module[] = [
     order: 1,
     prerequisiteModuleIds: [],
     // Opens with Redwood's "case for control" motivation, then the AI Control
-    // paper and the trusted-monitoring demo lesson, then four Redwood readings
+    // paper and the trusted-monitoring demo lesson, then three Redwood readings
     // rendered in full through the paper reader — the "case for control" post
     // carries the module's guided exercises woven into the reading. Reading
-    // order: motivation, the paper, the demo, the safety–usefulness tradeoff
-    // model, catching scheming AIs, and the two threat-modeling posts. All
-    // readings are reproduced (arXiv/LessWrong/Substack artifacts) with
-    // permission.
+    // order: motivation, the paper, the demo, catching scheming AIs, and the
+    // two threat-modeling posts. All readings are reproduced
+    // (arXiv/LessWrong/Substack artifacts) with permission.
     itemIds: [
       "c-case-for-control",
       "c-paper-ai-control",
       "c-game",
-      "c-efficient-tradeoffs",
       "c-catching-red-handed",
       "c-threats-l1",
       "c-threats-l2",
     ],
-    estimatedMinutes: 390,
+    estimatedMinutes: 377,
   },
   {
     // Placeholder — content for this module is not written yet. Rename the
@@ -410,10 +408,10 @@ export const lessons: Lesson[] = [
   },
   // --- Control: every reproduced reading in module 1 (with permission from
   // Redwood Research) now renders through the paper reader as a Paper item in
-  // papers.data.ts — the "case for control" post, the safety–usefulness
-  // tradeoff model, "catching AIs red-handed", and the two threat-modeling
-  // posts (prioritizing threats; diffuse threats / research sabotage). Their
-  // guided exercises are spliced back into the reading via Paper.edits. ---
+  // papers.data.ts — the "case for control" post, "catching AIs red-handed",
+  // and the two threat-modeling posts (prioritizing threats; diffuse threats /
+  // research sabotage). Their guided exercises are spliced back into the
+  // reading via Paper.edits. ---
   // --- Control, module 6 (low-stakes control): a talk plus three readings
   // (the Redwood posts reproduced verbatim with permission; the Carlsmith
   // post reproduced verbatim from LessWrong) ---

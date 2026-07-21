@@ -295,7 +295,13 @@ function LegendSwatchLine({ color }: { color: string }) {
  * panels; neither is styled as better. Persistent above both of the
  * exercise's questions.
  */
-export function TwoWorldsFigure({ className }: { className?: string }) {
+export function TwoWorldsFigure({
+  className,
+}: {
+  className?: string;
+  /** Accepted for the shared figure-widget contract; this figure ignores it. */
+  activePartIndex?: number;
+}) {
   // One shared marker id: the component renders once per exercise instance.
   const markerId = "two-worlds-arrow";
   return (
