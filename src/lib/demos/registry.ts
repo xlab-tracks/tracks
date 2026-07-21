@@ -18,7 +18,6 @@ import { RegimeLoopDemo } from "@/components/demos/regime-loop-demo";
 import { FiveWorldsDemo } from "@/components/demos/five-worlds-demo";
 import { TwoGamesDemo } from "@/components/demos/two-games-demo";
 import { PUnacceptableDemo } from "@/components/demos/p-unacceptable-demo";
-import { WillAccountDemo } from "@/components/demos/will-account-demo";
 import { TwoLeversDemo } from "@/components/demos/two-levers-demo";
 
 // Central demo registry — the single integration point. Reference a demo by ID
@@ -180,14 +179,6 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     description:
       "Decomposition of P(unacceptable).",
     component: PUnacceptableDemo,
-    tags: ["control", "how-useful"],
-  },
-  "will-account": {
-    id: "will-account",
-    title: "The will account",
-    description:
-      "Try to balance a simplified version of a safety budget that shows how economic, political, and social will interact & are affected by the real world.",
-    component: WillAccountDemo,
     tags: ["control", "how-useful"],
   },
   "two-levers": {

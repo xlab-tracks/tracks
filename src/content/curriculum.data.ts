@@ -111,7 +111,6 @@ export const modules: Module[] = [
       "c-plans-abcd",
       "c-regimes-l2",
     ],
-    estimatedMinutes: 143,
   },
   {
     id: "c-areas",
@@ -425,7 +424,6 @@ export const lessons: Lesson[] = [
     moduleId: "c-mod2",
     title: "How useful is AI control?",
     contentRef: "c-contra-l1",
-    estimatedMinutes: 45,
   },
   {
     id: "c-regimes-l1",
@@ -433,7 +431,6 @@ export const lessons: Lesson[] = [
     moduleId: "c-mod2",
     title: "Determining the usefulness",
     contentRef: "c-regimes-l1",
-    estimatedMinutes: 35,
   },
   {
     id: "c-regimes-l2",
@@ -441,7 +438,6 @@ export const lessons: Lesson[] = [
     moduleId: "c-mod2",
     title: "Running the model",
     contentRef: "c-regimes-l2",
-    estimatedMinutes: 35,
   },
   // --- Control: every reproduced reading in module 1 (with permission from
   // Redwood Research) now renders through the paper reader as a Paper item in

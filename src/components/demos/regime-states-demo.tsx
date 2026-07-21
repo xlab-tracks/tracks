@@ -30,12 +30,12 @@ const STEPS: SlideStep[] = [
   {
     label: "The will account",
     caption:
-      "One account: willpower — the authorization required to implement costly safety actions. Not just money: permission and backing in economic, political, and social spheres. It fades without reinforcement and spikes after concerning incidents.",
+      "One account: political will — a developer's willingness to concede safety-relevant actions up to some cost threshold, measured against its own objectives. It is held by the lab, not by you, and you move it only indirectly. It fades without reinforcement and spikes after concerning incidents.",
   },
   {
     label: "The priced aisles",
     caption:
-      "The things you can spend will on, each with a price tag — and the regime sets the prices, not the lab. Delay is priced by the race to AGI and takes primarily economic will. Usefulness costs economic and social will — though control's payoff is denominated in usefulness too, so it partially offsets its own tax. Compute is governed by internal politics: pulling it from capabilities takes the economic will to overcome the slowing of development.",
+      "The things you can spend political will on, each with a price tag — and the regime sets the prices, not the lab. Delay is priced by the race to AGI. Usefulness costs the developer a slower, less useful system — though control's payoff is denominated in usefulness too, so it partially offsets its own tax. Compute is governed by internal politics: pulling it from capabilities means spending will to overcome the slowing of development.",
   },
   {
     label: "The basket",
@@ -45,7 +45,7 @@ const STEPS: SlideStep[] = [
   {
     label: "What refills the budget",
     caption:
-      "Three things generate budget, and they work differently: incidents and evidence refill all three wills, with the biggest impact on social will; public buy-in raises social will and slows its fading; passed policy converts political will into a durable floor (repeal is expensive).",
+      "Three things generate budget, and they work differently: incidents and evidence refill the account, hardest right after something goes wrong; public buy-in raises it and slows its fading; passed policy converts will into a durable floor (repeal is expensive).",
   },
 ];
 
@@ -115,7 +115,7 @@ const BOXES: StateBox[] = [
     title: "Resource state",
     question: ["Can we afford to act", "on what we think?"],
     items: [
-      "willpower — the account",
+      "political will — the account",
       "price: usefulness tax",
       "price: compute",
       "price: delay",
@@ -135,23 +135,23 @@ const BOXES: StateBox[] = [
 const STEP_DEFAULT: (StateId | null)[] = ["world", "epistemic", "resource"];
 
 // Shopping palette: one hue per aisle, reused by the basket's bars. Each
-// price tag carries the lesson's will attribution on a second line.
+// price tag notes on a second line that the price is paid from political will.
 const AISLES = [
   {
     text: "usefulness tax",
-    will: "economic & social will",
+    will: "spent from political will",
     shelf: "fill-amber-500/15 stroke-amber-500",
     tag: "fill-amber-500",
   },
   {
     text: "compute · internal politics",
-    will: "economic will",
+    will: "spent from political will",
     shelf: "fill-sky-500/15 stroke-sky-500",
     tag: "fill-sky-500",
   },
   {
     text: "delay · the race",
-    will: "primarily economic will",
+    will: "spent from political will",
     shelf: "fill-rose-500/15 stroke-rose-500",
     tag: "fill-rose-500",
   },
@@ -277,8 +277,9 @@ export function RegimeStatesDemo() {
     <SlideStepper steps={STEPS}>
       {(step) => {
         const phase = Math.min(step, 3) as 0 | 1 | 2 | 3;
-        // From the will-account step on, the household picture is the focus
-        // and the resource box stays open; before that, a tapped pin wins,
+        // From the household step (STEPS index 3, "The will account") on, the
+        // picture is the focus and the resource box stays open; before that, a
+        // tapped pin wins,
         // then hover, then the step's default.
         const peeked =
           (pinned?.step === step ? pinned.id : null) ??
@@ -477,7 +478,7 @@ export function RegimeStatesDemo() {
                 textAnchor="middle"
                 className="fill-foreground text-[12px] font-semibold"
               >
-                Willpower
+                Political will
               </text>
               <text
                 x={112}
@@ -485,7 +486,7 @@ export function RegimeStatesDemo() {
                 textAnchor="middle"
                 className="fill-muted-foreground text-[10px]"
               >
-                economic · political · social
+                staff · public · government
               </text>
             </g>
 

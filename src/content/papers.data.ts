@@ -323,7 +323,6 @@ export const papers: Paper[] = [
       postUrl:
         "https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety",
     },
-    estimatedMinutes: 13,
     edits: [
       {
         // The post calls time in this frame "a healthy exercise" (b-0025);
@@ -352,7 +351,6 @@ export const papers: Paper[] = [
       postUrl:
         "https://www.lesswrong.com/posts/E8n93nnEaFeXTbHn5/plans-a-b-c-and-d-for-misalignment-risk",
     },
-    estimatedMinutes: 15,
     edits: [
       {
         op: "activity",

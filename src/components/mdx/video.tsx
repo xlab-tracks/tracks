@@ -1,4 +1,4 @@
-export type VideoProvider = "youtube" | "vimeo" | "file";
+export type VideoProvider = "youtube" | "vimeo" | "stream" | "file";
 
 export interface VideoProps {
   src: string;
@@ -10,7 +10,19 @@ export interface VideoProps {
 function inferProvider(src: string): VideoProvider {
   if (/youtu\.?be/i.test(src)) return "youtube";
   if (/vimeo\.com/i.test(src)) return "vimeo";
+  // Cloudflare Stream: the dashboard "Embed" tab gives a customer-subdomain
+  // iframe URL (customer-<code>.cloudflarestream.com/<uid>/iframe); the older
+  // videodelivery.net host still resolves for existing videos.
+  if (/cloudflarestream\.com|videodelivery\.net/i.test(src)) return "stream";
   return "file";
+}
+
+// Accepts the full embed URL from the Stream dashboard (preferred) or a bare
+// 32-char video UID, which falls back to the account-agnostic embed host.
+function streamEmbedSrc(src: string): string {
+  if (/^https?:\/\//i.test(src)) return src;
+  if (/^[0-9a-f]{32}$/i.test(src)) return `https://iframe.videodelivery.net/${src}`;
+  return src;
 }
 
 function youTubeId(src: string): string | null {
@@ -58,6 +70,16 @@ export function Video({ src, provider, poster, title }: VideoProps) {
         title={title ?? "Vimeo video player"}
         className="absolute inset-0 size-full"
         allow="autoplay; fullscreen; picture-in-picture"
+        allowFullScreen
+      />
+    );
+  } else if (kind === "stream") {
+    player = (
+      <iframe
+        src={streamEmbedSrc(src)}
+        title={title ?? "Cloudflare Stream video player"}
+        className="absolute inset-0 size-full"
+        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
         allowFullScreen
       />
     );

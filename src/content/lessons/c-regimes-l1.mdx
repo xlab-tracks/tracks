@@ -10,13 +10,13 @@ By the end of the module you will be able to answer three questions about any re
 
 ### The two games
 
-This module is organized around two games that safety people are constantly playing:
+This module is organized around two games that safety researchers & organizations are constantly playing:
 
 The inner game is played inside the lab against the potentially-scheming model: designing protocols, extracting trustworthy work, catching bad behavior. It's all about spending the safety resources you have efficiently.
 
 The outer game is played everywhere else: convincing lab leadership, the public, and governments to invest in safety spending, increasing the resources available within the inner game.
 
-Playing the inner game well produces evidence; most dramatically, a scheming model caught in the act. This evidence can be used to convince decision-makers into authorizing more safety spending. That spending then funds the next round of the inner game, searching for more evidence.
+Playing the inner game well produces evidence; most dramatically, a scheming model caught in the act. This evidence can be used to convince decision-makers into authorizing more safety spending. That spending then funds the next round of the inner game. However, the inner game still produces results even if a model is not explicitly caught since it generates trustworthy work from an untrusted model.
 
 <Demo id="two-games" />
 
@@ -38,8 +38,7 @@ The first part of the state is about truths about the model, regardless of wheth
   - Aligned? A schemer, biding its time? Honest but unreliable (and therefore sloppy)? Or an apparent-success seeker: no hidden goals, but trained habits that optimize for looking successful (more on this below)?
 - How capable the model is
 - How checkable AI research output is
-  - If a model hands you a proof or an experiment, can you verify it efficiently, or do you have to take it on trust?
-  - This is what control's usefulness payoff hinges on: safely extracting real work — safety research included — from models you don't trust, with containment keeping the extraction safe. If verification is cheap, that extraction pays handsomely; if it's expensive, the payoff shrinks.
+  - If a model hands you a proof or an experiment, can you verify it efficiently, or do you have to take it on trust? Having cheap verification means that extracting useful work is high-reward.
 - What has happened with the model so far
   - where it's deployed, what it has been caught doing, what it's been contained from
 
@@ -96,13 +95,11 @@ A favorable world state seen through a poor epistemic state means control is use
 
 ### Five worlds
 
-Abstract states need reference points, so here are five — Greenblatt's caricatured futures ([Current AIs seem pretty misaligned to me](https://www.lesswrong.com/posts/WewsByywWNhX9rtwi/current-ais-seem-pretty-misaligned-to-me)), each a different setting of the world state. They recur through the rest of the module as the standard misalignment archetypes:
+Abstract states need reference points, so here are five — Greenblatt's caricatured futures ([Current AIs seem pretty misaligned to me](https://www.lesswrong.com/posts/WewsByywWNhX9rtwi/current-ais-seem-pretty-misaligned-to-me)), each a different setting of the world state. They recur through the rest of the module as the standard misalignment archetypes.
 
-- Easyland: alignment generalizes fine & models are what they appear to be.
-- Slopolis: no scheming, but models are apparent-success seekers.
-- Hackistan: models cheat and reward-hack constantly but there arre no catastrophic incidents.
-- Schemeria: models are coherently scheming and we can detect it, with visibly incriminating behavior and escape attempts.
-- Lurkville: models are coherently scheming and we cannot detect it, visually identical to Easyland.
+{/* TODO: migrate to Cloudflare Stream — replace the self-hosted mp4 with the Stream embed URL; <Video> auto-detects cloudflarestream.com (provider="stream"). */}
+
+<Video provider="file" src="/videos/regimes_for_misalignment.mp4" title="Regimes of misalignment" />
 
 <Demo id="five-worlds" />
 
@@ -117,7 +114,7 @@ Safety techniques — control, interpretability, alignment research — don't ma
 1. Improve the techniques. Better safety technology means any given sacrifice of usefulness buys more safety than it used to.
 2. Grow the budget. More will, or lower prices, means you can afford bigger sacrifices.
 
-Technical safety research works on the first lever. Advocacy, communication, and policy work on the second.
+Technical safety research works on the first lever. Advocacy, communication, and policy work on the second. Control helps with both of these since it encompasses safety research extracted from untrusted models and reports catches which affect the growth of the budget.
 
 The states are the input to analyzing a situation, and whether a technique is actually effective — a claim like "control works at this capability level" — is an output. It follows from what the frontier model is like, how capable it is, and what measures you deployed.
 
@@ -131,12 +128,10 @@ Now we'll try and connect the ideas from the previous section into a cycle we th
 2. The technique changes the facts on the ground
    - The schemer that would have quietly sabotaged research may now be caught. World state updates based on this catch.
 3. The catch updates the epistemic state
-   - There is now undeniable proof that the model has schemed against the user.
+   - There is now clearer proof that the model has schemed against the user.
 4. The evidence impacts the resource state
    - Leadership and the public become alarmed, refilling political will, potentially leading to regulation passing, locking a floor in place.
 5. The bigger budget helps buy better techniques for the next, more dangerous capability stage. Return to step 1.
-
-The loop runs on evidence, and a catch is the gold standard of it. Two things make it unusually strong: the transcript can be checked line by line, even by hostile parties, so it survives scrutiny that would shred a mere argument; and it's harder to deflect than a demo — staged research settings get dismissed as roleplay or contrived setups, which is exactly why a catch in real deployment moves decision-makers the way warnings don't.
 
 ### Reflection Questions
 
