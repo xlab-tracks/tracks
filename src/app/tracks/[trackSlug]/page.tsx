@@ -13,6 +13,7 @@ import {
   itemTitleOf,
 } from "@/lib/content";
 import { getCurrentUser } from "@/lib/auth";
+import { PREREQUISITES_ENFORCED } from "@/lib/content/prerequisites";
 import { getLastViewedContentId, getTrackCompletionSet } from "@/lib/progress";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { Badge } from "@/components/ui/badge";
@@ -143,7 +144,7 @@ export default async function TrackOverviewPage({
                         {module.summary}
                       </CardDescription>
                     </div>
-                    {module.prerequisiteModuleIds.length > 0 && (
+                    {PREREQUISITES_ENFORCED && module.prerequisiteModuleIds.length > 0 && (
                       <Badge variant="outline" className="shrink-0 gap-1">
                         <Lock className="size-3" aria-hidden />
                         {module.prerequisiteModuleIds.length} prereq

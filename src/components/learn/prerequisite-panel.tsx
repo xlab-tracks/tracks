@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
 import type { PrerequisiteStatus } from "@/lib/progress";
 import type { PrerequisiteEnforcement } from "@/lib/content/types";
+import { PREREQUISITES_ENFORCED } from "@/lib/content/prerequisites";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -20,6 +21,7 @@ export function PrerequisitePanel({
   enforcement: PrerequisiteEnforcement;
   currentTrackId: string;
 }) {
+  if (!PREREQUISITES_ENFORCED) return null;
   if (statuses.length === 0) return null;
 
   return (
