@@ -9,6 +9,8 @@ import { Footnote } from "./footnote";
 import { MdxLink } from "./mdx-link";
 import { SiteQuote } from "./site-quote";
 import { Term } from "./term";
+import { Gate } from "./gate";
+import { PaperText } from "./paper-text";
 import { VerificationExercise } from "@/components/verification/verification-exercise";
 
 // Components available by name inside every lesson `.mdx` body. Authors drop
@@ -27,5 +29,7 @@ export const mdxComponents: MDXComponents = {
   Footnote,
   SiteQuote,
   Term,
+  Gate,
+  PaperText,
   VerificationExercise,
 };
