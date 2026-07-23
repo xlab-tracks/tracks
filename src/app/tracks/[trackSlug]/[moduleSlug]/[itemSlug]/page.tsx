@@ -15,16 +15,6 @@ import {
 } from "@/lib/content";
 import { isAccessLocked } from "@/lib/content/prerequisites";
 import { getCurrentUser } from "@/lib/auth";
-import { getPaperArtifact } from "@/lib/arxiv/artifacts";
-import { buildAbsUrl, parseArxivId } from "@/lib/arxiv/id";
-import { getSubstackArtifact } from "@/lib/substack/artifacts";
-import { buildPostUrl, parseSubstackPostUrl } from "@/lib/substack/id";
-import { getLessWrongArtifact } from "@/lib/lesswrong/artifacts";
-import {
-  buildPostUrl as buildLwPostUrl,
-  displayHost,
-  parseLessWrongPostUrl,
-} from "@/lib/lesswrong/id";
 import {
   getPrerequisiteStatus,
   getTrackCompletionSet,
@@ -36,6 +26,7 @@ import { LessonNav } from "@/components/layout/lesson-nav";
 import { LessonCompleteButton } from "@/components/learn/lesson-complete-button";
 import { LessonTracker } from "@/components/learn/lesson-tracker";
 import { PaperReader } from "@/components/papers/paper-reader";
+import { paperSourceHeader } from "@/components/papers/paper-source-header";
 import { SidenotesToggle } from "@/components/papers/sidenotes-toggle";
 import { Button } from "@/components/ui/button";
 import { getVerificationExerciseForLesson } from "@/lib/verification/exercises";
@@ -270,65 +261,3 @@ async function PaperItemPage({
   );
 }
 
-/**
- * Per-source header bits: authors from the artifact meta, the external
- * link, and whether the artifact has footnotes (drives the sidenote toggle).
- */
-async function paperSourceHeader(source: Paper["source"]): Promise<{
-  authors: string | null;
-  link: { label: string; href: string } | null;
-  hasFootnotes: boolean;
-}> {
-  const hasFootnotesIn = (toc: { kind: string }[] | undefined) =>
-    toc?.some((entry) => entry.kind === "footnotes") ?? false;
-  switch (source.kind) {
-    case "arxiv": {
-      const arxivId = parseArxivId(source.arxivId);
-      const artifact = arxivId ? await getPaperArtifact(arxivId.id) : null;
-      const ready = artifact?.state === "ready" ? artifact.paper : null;
-      return {
-        authors: ready ? formatAuthors(ready.meta.authors) : null,
-        link: arxivId
-          ? { label: `arXiv:${arxivId.id}`, href: buildAbsUrl(arxivId) }
-          : null,
-        hasFootnotes: hasFootnotesIn(ready?.toc),
-      };
-    }
-    case "substack": {
-      const postRef = parseSubstackPostUrl(source.postUrl);
-      const artifact = postRef ? await getSubstackArtifact(postRef.id) : null;
-      const ready = artifact?.state === "ready" ? artifact.post : null;
-      return {
-        authors: ready ? formatAuthors(ready.meta.authors) : null,
-        link: postRef
-          ? {
-              label: postRef.host,
-              href: ready?.meta.canonicalUrl ?? buildPostUrl(postRef),
-            }
-          : null,
-        hasFootnotes: hasFootnotesIn(ready?.toc),
-      };
-    }
-    case "lesswrong": {
-      const postRef = parseLessWrongPostUrl(source.postUrl);
-      const artifact = postRef ? await getLessWrongArtifact(postRef.id) : null;
-      const ready = artifact?.state === "ready" ? artifact.post : null;
-      return {
-        authors: ready ? formatAuthors(ready.meta.authors) : null,
-        link: postRef
-          ? {
-              label: displayHost(postRef),
-              href: ready?.meta.canonicalUrl ?? buildLwPostUrl(postRef),
-            }
-          : null,
-        hasFootnotes: hasFootnotesIn(ready?.toc),
-      };
-    }
-  }
-}
-
-function formatAuthors(authors: string[] | undefined): string | null {
-  if (!authors || authors.length === 0) return null;
-  if (authors.length > 6) return `${authors.slice(0, 6).join(", ")}, et al.`;
-  return authors.join(", ");
-}

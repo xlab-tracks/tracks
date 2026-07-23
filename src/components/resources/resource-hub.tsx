@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import type {
   ExternalResource,
   ResourceLevel,
@@ -22,46 +23,60 @@ const selectClass =
   "border-input bg-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm capitalize focus-visible:ring-2 focus-visible:outline-none";
 
 function ResourceItem({ resource }: { resource: ExternalResource }) {
+  const cardClass =
+    "border-border hover:bg-muted shadow-soft block rounded-xl border p-4 transition-colors";
+  const Icon = resource.internalHref ? ArrowRight : ExternalLink;
+  const body = (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <span className="font-medium">
+          {resource.title}
+          {resource.author && (
+            <span className="text-muted-foreground font-normal">
+              {" "}
+              · {resource.author}
+            </span>
+          )}
+        </span>
+        <Icon
+          className="text-muted-foreground mt-0.5 size-4 shrink-0"
+          aria-hidden
+        />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <Badge variant="secondary" className="capitalize">
+          {resource.type}
+        </Badge>
+        <Badge variant="outline" className="capitalize">
+          {resource.level}
+        </Badge>
+        {resource.topics.map((t) => (
+          <Badge key={t} variant="outline" className="text-muted-foreground">
+            {t}
+          </Badge>
+        ))}
+      </div>
+      {resource.note && (
+        <p className="text-muted-foreground mt-2 text-sm">{resource.note}</p>
+      )}
+    </>
+  );
   return (
     <li>
-      <a
-        href={resource.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="border-border hover:bg-muted shadow-soft block rounded-xl border p-4 transition-colors"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <span className="font-medium">
-            {resource.title}
-            {resource.author && (
-              <span className="text-muted-foreground font-normal">
-                {" "}
-                · {resource.author}
-              </span>
-            )}
-          </span>
-          <ExternalLink
-            className="text-muted-foreground mt-0.5 size-4 shrink-0"
-            aria-hidden
-          />
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary" className="capitalize">
-            {resource.type}
-          </Badge>
-          <Badge variant="outline" className="capitalize">
-            {resource.level}
-          </Badge>
-          {resource.topics.map((t) => (
-            <Badge key={t} variant="outline" className="text-muted-foreground">
-              {t}
-            </Badge>
-          ))}
-        </div>
-        {resource.note && (
-          <p className="text-muted-foreground mt-2 text-sm">{resource.note}</p>
-        )}
-      </a>
+      {resource.internalHref ? (
+        <Link href={resource.internalHref} className={cardClass}>
+          {body}
+        </Link>
+      ) : (
+        <a
+          href={resource.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cardClass}
+        >
+          {body}
+        </a>
+      )}
     </li>
   );
 }
@@ -203,8 +218,8 @@ export function ResourceHub({ resources }: { resources: ExternalResource[] }) {
             items={core}
           />
           <Section
-            title="Go deeper"
-            description="Intermediate and advanced material once you have the basics."
+            title="Course Material References"
+            description="Texts we used & referenced in tracks."
             items={deeper}
           />
           <Section

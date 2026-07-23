@@ -19,6 +19,7 @@ const HTML = [
   '<p data-anchor="b-0011"><span data-s="1">Beta two.</span></p>',
   '<ul><li data-anchor="b-0012"><span data-s="1">Item text.</span></li></ul>',
   '<figure data-anchor="b-0013"><img src="/x.png"><table data-anchor="b-0014"><tbody><tr><td>cell</td></tr></tbody></table></figure>',
+  '<p data-anchor="b-0015"><span data-s="1">Intra-attention beats attention here.</span> <span data-s="2">See <a href="#x">attention span</a> or <code>attention</code>, else attention wins.</span> <span data-s="3">P(doom) rises.</span></p>',
 ].join("");
 
 const TOC: PaperTocEntry[] = [
@@ -329,6 +330,87 @@ describe("applyPaperEdits", () => {
     );
     // and every other section is a raw slice
     expect(html).toContain('<h2 id="ax-sec-b"');
+  });
+
+  it("gloss wraps its phrase in the full trigger-markup contract, on a word boundary", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gloss", at: ref("b-0015", "Intra-attention beats", 1), termId: "attn", phrase: "attention" },
+    ]);
+    expect(unmatchedEdits).toEqual([]);
+    // The exact markup PaperGlossary delegates on ([data-gloss] + the aria
+    // contract) — renaming any attribute breaks every paper glossary card.
+    // "Intra-attention" is skipped: word-char phrase edges refuse letter/
+    // digit/hyphen adjacency.
+    expect(htmlOf(parts)).toContain(
+      'Intra-attention beats <span class="ax-gloss" data-gloss="attn" tabindex="0" ' +
+        'role="button" aria-haspopup="dialog" aria-expanded="false">attention</span> here.',
+    );
+  });
+
+  it("gloss skips links, code, and earlier triggers when matching", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gloss", at: ref("b-0015", "See attention span or", 2), termId: "attn", phrase: "attention" },
+    ]);
+    expect(unmatchedEdits).toEqual([]);
+    const html = htmlOf(parts);
+    expect(html).toContain('<a href="#x">attention span</a>'); // untouched
+    expect(html).toContain("<code>attention</code>"); // untouched
+    expect(html).toMatch(/else <span class="ax-gloss"[^>]*>attention<\/span> wins/);
+  });
+
+  it("gloss escapes regex metacharacters in phrases", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gloss", at: ref("b-0015", "P(doom) rises.", 3), termId: "pdoom", phrase: "P(doom)" },
+    ]);
+    expect(unmatchedEdits).toEqual([]);
+    expect(htmlOf(parts)).toMatch(/<span class="ax-gloss"[^>]*>P\(doom\)<\/span> rises\./);
+  });
+
+  it("block-level gloss wraps the first occurrence anywhere in the block", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gloss", at: ref("b-0003", "One one."), termId: "t", phrase: "One two" },
+    ]);
+    expect(unmatchedEdits).toEqual([]);
+    expect(htmlOf(parts)).toMatch(
+      /<span data-s="2"><span class="ax-gloss"[^>]*>One two<\/span>\.<\/span>/,
+    );
+  });
+
+  it("gloss composes with a hide and a split on the same paragraph (phase A0 first)", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gloss", at: ref("b-0003", "One two.", 2), termId: "t", phrase: "One two" },
+      { op: "hide", at: ref("b-0003", "One two.", 2) },
+      { op: "activity", after: ref("b-0003", "One one.", 1), items: [{ kind: "exercise", id: "tf" }] },
+    ]);
+    expect(unmatchedEdits).toEqual([]);
+    expect(parts.map((p) => p.kind)).toEqual(["html", "activity", "html"]);
+    // The wrap happened before the hide, so the hidden content carries the
+    // trigger — it reveals (and works) when the learner expands the marker.
+    expect((parts[2] as { html: string }).html).toMatch(
+      /ax-hidden-content"> <span data-s="2"><span class="ax-gloss"/,
+    );
+  });
+
+  it("gloss fails soft on markup-broken and empty phrases", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      // "attention span" exists only inside the link — never as plain text.
+      { op: "gloss", at: ref("b-0015", "See attention span or", 2), termId: "attn", phrase: "attention span" },
+      { op: "gloss", at: ref("b-0015", "P(doom) rises.", 3), termId: "attn", phrase: "   " },
+    ]);
+    expect(unmatchedEdits).toHaveLength(2);
+    expect(htmlOf(parts)).toBe(HTML);
+  });
+
+  it("an earlier gloss consumes text a later overlapping gloss needs (fails soft)", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gloss", at: ref("b-0015", "Intra-attention beats", 1), termId: "a", phrase: "beats attention" },
+      { op: "gloss", at: ref("b-0015", "Intra-attention beats", 1), termId: "b", phrase: "attention" },
+    ]);
+    // content.test.ts mirrors exactly this sequence, so an overlap like
+    // this fails CI rather than silently dropping the second card.
+    expect(unmatchedEdits).toHaveLength(1);
+    expect((unmatchedEdits[0] as { termId?: string }).termId).toBe("b");
+    expect(htmlOf(parts)).toMatch(/<span class="ax-gloss"[^>]*data-gloss="a"[^>]*>beats attention<\/span>/);
   });
 
   it("tier-1 point and tier-2 edits coexist in one section", () => {

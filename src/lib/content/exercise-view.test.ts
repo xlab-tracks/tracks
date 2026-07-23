@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   ALLOCATION_MAX_REASONING_CHARS,
+  CONTROL_SCENARIO_MAX_ANSWER_CHARS,
   WRITING_MAX_SECTION_CHARS,
   flowchartEquals,
   gradeChoice,
@@ -8,7 +9,11 @@ import {
   sanitizeAllocationScenario,
   sanitizeArgueRevealConstruction,
   sanitizeArgueRevealItem,
+  sanitizeCommitConstructCommit,
+  sanitizeCommitConstructConstruct,
+  sanitizeControlScenarioAnswer,
   sanitizeFlowchartAttempt,
+  sanitizeStagedQuestionEntry,
   sanitizeWritingValues,
   toPublicChoice,
   toPublicFlowchart,
@@ -17,7 +22,10 @@ import type {
   AllocationExercise,
   ArgueRevealExercise,
   ChoiceExercise,
+  CommitConstructExercise,
+  ControlScenariosExercise,
   FlowchartExercise,
+  StagedQuestionsExercise,
 } from "@/lib/content/types";
 
 const mc: ChoiceExercise = {
@@ -612,5 +620,216 @@ describe("sanitizeArgueRevealConstruction", () => {
       }),
     ).toBeNull();
     expect(sanitizeArgueRevealConstruction(argue, null)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Direct-POST sanitizers for the reveal-bearing self-assessment types
+// (control-scenarios / staged-questions / commit-construct). These ship
+// their reveals to the client by design — the sanitizers only guard what
+// comes BACK by direct POST.
+// ---------------------------------------------------------------------------
+
+const LONE_SURROGATE = "\ud800";
+
+const scenarios: ControlScenariosExercise = {
+  id: "cs",
+  type: "control-scenarios",
+  prompt: "p",
+  title: "Run the evaluation",
+  question: "Does the control property hold?",
+  placeholder: "…",
+  actors: [],
+  scenarios: [
+    {
+      id: "s1",
+      displayTitle: "Scenario 1",
+      card: "c",
+      outcome: "o",
+      revealName: "r",
+      reveal: "reveal",
+      graph: { width: 10, height: 10, nodes: [], edges: [] },
+    },
+  ],
+};
+
+describe("sanitizeControlScenarioAnswer", () => {
+  it("accepts a known scenario with storable text and round-trips the answer", () => {
+    expect(sanitizeControlScenarioAnswer(scenarios, "s1", "my reasoning")).toEqual({
+      answer: "my reasoning",
+    });
+  });
+
+  it("rejects unknown scenarios and non-string ids", () => {
+    expect(sanitizeControlScenarioAnswer(scenarios, "nope", "x")).toBeNull();
+    expect(sanitizeControlScenarioAnswer(scenarios, 3, "x")).toBeNull();
+    expect(sanitizeControlScenarioAnswer(scenarios, null, "x")).toBeNull();
+  });
+
+  it("rejects malformed answers: wrong type, empty, unstorable, oversized", () => {
+    expect(sanitizeControlScenarioAnswer(scenarios, "s1", 42)).toBeNull();
+    expect(sanitizeControlScenarioAnswer(scenarios, "s1", "   ")).toBeNull();
+    expect(sanitizeControlScenarioAnswer(scenarios, "s1", "a\u0000b")).toBeNull();
+    expect(
+      sanitizeControlScenarioAnswer(scenarios, "s1", LONE_SURROGATE),
+    ).toBeNull();
+    expect(
+      sanitizeControlScenarioAnswer(
+        scenarios,
+        "s1",
+        "x".repeat(CONTROL_SCENARIO_MAX_ANSWER_CHARS + 1),
+      ),
+    ).toBeNull();
+    expect(
+      sanitizeControlScenarioAnswer(
+        scenarios,
+        "s1",
+        "x".repeat(CONTROL_SCENARIO_MAX_ANSWER_CHARS),
+      ),
+    ).not.toBeNull();
+  });
+});
+
+const staged: StagedQuestionsExercise = {
+  id: "sq",
+  type: "staged-questions",
+  prompt: "p",
+  title: "Why catching counts",
+  parts: [
+    {
+      id: "a",
+      title: "Part A",
+      questions: [
+        { id: "q1", title: "t", question: "q?", reveal: "reveal" },
+        { id: "q2", title: "t2", question: "q2?", reveal: "reveal2" },
+      ],
+    },
+    {
+      id: "b",
+      title: "Part B",
+      questions: [{ id: "q3", title: "t3", question: "q3?", reveal: "reveal3" }],
+    },
+  ],
+};
+
+describe("sanitizeStagedQuestionEntry", () => {
+  it("accepts known questions from any part and round-trips the answer", () => {
+    expect(sanitizeStagedQuestionEntry(staged, "q1", "because")).toEqual({
+      answer: "because",
+    });
+    expect(sanitizeStagedQuestionEntry(staged, "q3", "later part")).toEqual({
+      answer: "later part",
+    });
+  });
+
+  it("rejects unknown question ids and non-string ids", () => {
+    expect(sanitizeStagedQuestionEntry(staged, "q9", "x")).toBeNull();
+    expect(sanitizeStagedQuestionEntry(staged, { id: "q1" }, "x")).toBeNull();
+  });
+
+  it("rejects malformed answers: wrong type, empty, unstorable, oversized", () => {
+    expect(sanitizeStagedQuestionEntry(staged, "q1", ["x"])).toBeNull();
+    expect(sanitizeStagedQuestionEntry(staged, "q1", "\n \t")).toBeNull();
+    expect(sanitizeStagedQuestionEntry(staged, "q1", LONE_SURROGATE)).toBeNull();
+    expect(
+      sanitizeStagedQuestionEntry(
+        staged,
+        "q1",
+        "x".repeat(CONTROL_SCENARIO_MAX_ANSWER_CHARS + 1),
+      ),
+    ).toBeNull();
+  });
+});
+
+const commitConstruct: CommitConstructExercise = {
+  id: "cc",
+  type: "commit-construct",
+  prompt: "p",
+  title: "Commit & construct",
+  commit: {
+    partTitle: "Commit to a view",
+    question: "Which view?",
+    options: [
+      { id: "yes", label: "Yes" },
+      { id: "no", label: "No" },
+    ],
+    confidencePrompt: "How confident?",
+    confidenceOptions: [
+      { id: "low", label: "Low" },
+      { id: "high", label: "High" },
+    ],
+    reveal: "course correction",
+  },
+  construct: {
+    partTitle: "Construct the threat model",
+    threatPrompt: "How could it happen?",
+    revealLead: "lead",
+    reveal: "worked example",
+    compareIntro: "compare",
+    compareQuestions: ["q"],
+  },
+};
+
+describe("sanitizeCommitConstructCommit", () => {
+  it("accepts known choice + confidence with storable reasoning", () => {
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, "yes", "high", "since…"),
+    ).toEqual({ choice: "yes", confidence: "high", reasoning: "since…" });
+  });
+
+  it("rejects unknown or non-string choice/confidence (no cross-list bleed)", () => {
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, "maybe", "high", "r"),
+    ).toBeNull();
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, "yes", "medium", "r"),
+    ).toBeNull();
+    // A confidence id is not a valid choice id and vice versa.
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, "high", "yes", "r"),
+    ).toBeNull();
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, 1, "high", "r"),
+    ).toBeNull();
+  });
+
+  it("rejects malformed reasoning: wrong type, empty, unstorable, oversized", () => {
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, "yes", "high", 7),
+    ).toBeNull();
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, "yes", "high", " "),
+    ).toBeNull();
+    expect(
+      sanitizeCommitConstructCommit(commitConstruct, "yes", "high", LONE_SURROGATE),
+    ).toBeNull();
+    expect(
+      sanitizeCommitConstructCommit(
+        commitConstruct,
+        "yes",
+        "high",
+        "x".repeat(CONTROL_SCENARIO_MAX_ANSWER_CHARS + 1),
+      ),
+    ).toBeNull();
+  });
+});
+
+describe("sanitizeCommitConstructConstruct", () => {
+  it("accepts storable text and round-trips it", () => {
+    expect(sanitizeCommitConstructConstruct("the model could…")).toEqual({
+      threatModel: "the model could…",
+    });
+  });
+
+  it("rejects wrong type, empty, unstorable, and oversized text", () => {
+    expect(sanitizeCommitConstructConstruct(undefined)).toBeNull();
+    expect(sanitizeCommitConstructConstruct("")).toBeNull();
+    expect(sanitizeCommitConstructConstruct("a\u0000b")).toBeNull();
+    expect(sanitizeCommitConstructConstruct(LONE_SURROGATE)).toBeNull();
+    expect(
+      sanitizeCommitConstructConstruct(
+        "x".repeat(CONTROL_SCENARIO_MAX_ANSWER_CHARS + 1),
+      ),
+    ).toBeNull();
   });
 });

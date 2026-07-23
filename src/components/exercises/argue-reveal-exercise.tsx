@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,84 +57,6 @@ function CharCount({ len, min, max }: { len: number; min: number; max: number })
   );
 }
 
-function ConceptChips({
-  exercise,
-  selected,
-  disabled,
-  onToggle,
-}: {
-  exercise: ArgueRevealExercise;
-  selected: string[];
-  disabled: boolean;
-  onToggle: (id: string) => void;
-}) {
-  return (
-    <div className="mt-3">
-      <p className="text-muted-foreground text-xs">{exercise.conceptsPrompt}</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {exercise.concepts.map((concept) => {
-          const on = selected.includes(concept.id);
-          return (
-            <button
-              key={concept.id}
-              type="button"
-              title={concept.tip}
-              aria-pressed={on}
-              disabled={disabled}
-              onClick={() => onToggle(concept.id)}
-              className={cn(
-                "rounded-full border px-2.5 py-0.5 text-xs transition-colors disabled:opacity-60",
-                on
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border hover:enabled:bg-muted",
-              )}
-            >
-              {concept.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function Toolbox({
-  exercise,
-  onOpen,
-}: {
-  exercise: ArgueRevealExercise;
-  onOpen: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-3">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => {
-          if (!open) onOpen();
-          setOpen(!open);
-        }}
-        className="text-muted-foreground hover:text-foreground text-xs font-medium underline decoration-dotted underline-offset-2"
-      >
-        {exercise.toolboxLabel} {open ? "−" : "+"}
-      </button>
-      {open && (
-        <div className="border-border mt-2 space-y-3 rounded-lg border p-3">
-          {exercise.toolbox.map((section) => (
-            <section key={section.heading}>
-              <h4 className="text-xs font-semibold">{section.heading}</h4>
-              <p className="text-muted-foreground border-border mt-1 border-l-2 pl-2.5 text-xs leading-relaxed">
-                {section.text}
-              </p>
-            </section>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function RatingSegment({
   value,
   disabled,
@@ -169,7 +97,7 @@ function RatingSegment({
 
 /**
  * The full argue-reveal flow in one card, demo-style progressive scroll:
- * intro → one section per criticism (concept chips + response gated by a
+ * intro → one section per criticism (a response gated by a
  * minimum length; submitting reveals the defenders' reply; multi-round items
  * repeat with the critic's pushback; then a self-rating + optional note) →
  * a construction step (attack surface + argument/best response/residual) →
@@ -182,6 +110,7 @@ export function ArgueRevealExerciseCard({
   initialConstruction,
   initialCompletedAt,
   persist = false,
+  scoringSlot,
 }: {
   exercise: ArgueRevealExercise;
   initialItems?: Record<string, ArgueRevealItemEntry>;
@@ -190,6 +119,8 @@ export function ArgueRevealExerciseCard({
   initialCompletedAt?: string;
   /** Signed-in only — signed-out visitors skip the (no-op) server round-trip. */
   persist?: boolean;
+  /** Server-rendered scoring panel shown on the summary step. */
+  scoringSlot?: ReactNode;
 }) {
   const bounds = argueRevealBounds(exercise);
   const constructionStep = exercise.items.length + 1;
@@ -220,13 +151,14 @@ export function ArgueRevealExerciseCard({
   }));
   // Resume at the FIRST unsaved item (not a count — a lost write or rejected
   // save can leave a gap, and resuming past it would strand that item), else
-  // at the construction step or the summary.
+  // at the construction step or the summary. The first criticism shows
+  // immediately — there is no separate "Begin" step.
   const [step, setStep] = useState(() => {
     const firstUnsaved = exercise.items.findIndex((i) => !initialItems?.[i.id]);
     if (firstUnsaved === -1) {
       return initialConstruction ? doneStep : constructionStep;
     }
-    return firstUnsaved > 0 ? firstUnsaved + 1 : 0;
+    return firstUnsaved + 1;
   });
   const [completedAt, setCompletedAt] = useState<string | null>(
     initialCompletedAt ?? null,
@@ -279,7 +211,7 @@ export function ArgueRevealExerciseCard({
   const finishItem = (itemIndex: number) =>
     startTransition(async () => {
       const state = items[itemIndex];
-      if (persist && state.rating) {
+      if (persist && (state.rating || !exercise.postRevealPrompt)) {
         await saveArgueRevealItem(
           exercise.id,
           exercise.items[itemIndex].id,
@@ -363,7 +295,7 @@ export function ArgueRevealExerciseCard({
   return (
     <aside className="not-prose border-border bg-card shadow-soft my-6 rounded-xl border p-5">
       <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
-        {EXERCISE_TYPE_LABELS["argue-reveal"]}
+        {exercise.numberLabel ?? EXERCISE_TYPE_LABELS["argue-reveal"]}
         {progress}
       </p>
 
@@ -375,12 +307,6 @@ export function ArgueRevealExerciseCard({
           className="text-muted-foreground mt-2 text-sm"
         />
       )}
-      {step === 0 && (
-        <Button size="sm" className="mt-4" onClick={() => setStep(1)}>
-          Begin
-        </Button>
-      )}
-
       {exercise.items.map((item, c) => {
         if (step < c + 1) return null;
         const state = items[c];
@@ -398,80 +324,76 @@ export function ArgueRevealExerciseCard({
               const roundState = state.rounds[k];
               if (k > 0 && !state.rounds[k - 1].submitted) return null;
               return (
-                <div key={k} className={k > 0 ? "mt-5" : undefined}>
-                  <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                    {k === 0 ? "The critic argues:" : "The critic pushes back:"}
-                  </p>
-                  <blockquote className="border-foreground/20 mt-1.5 border-l-2 pl-3 text-sm">
-                    {round.critique}
-                  </blockquote>
+                <div key={k} className={cn("flex flex-col", k > 0 && "mt-5")}>
+                  {/* Critic — left, red. */}
+                  <div className="max-w-[88%] self-start">
+                    <p className="text-xs font-medium tracking-wide text-red-700 uppercase dark:text-red-400">
+                      {k === 0 ? "The critic argues:" : "The critic pushes back:"}
+                    </p>
+                    <div className="mt-1.5 rounded-2xl rounded-tl-sm border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm">
+                      {round.critique}
+                    </div>
+                  </div>
 
-                  <ConceptChips
-                    exercise={exercise}
-                    selected={roundState.chips}
-                    disabled={roundState.submitted || pending}
-                    onToggle={(id) =>
-                      setRound(c, k, {
-                        chips: roundState.chips.includes(id)
-                          ? roundState.chips.filter((x) => x !== id)
-                          : [...roundState.chips, id],
-                      })
-                    }
-                  />
+                  {/* You — right, blue. */}
+                  <div className="mt-4 w-full max-w-[88%] self-end">
+                    <p className="text-right text-xs font-medium tracking-wide text-blue-700 uppercase dark:text-blue-400">
+                      Your counterargument
+                    </p>
+                    {roundState.submitted ? (
+                      <div className="mt-1.5 rounded-2xl rounded-tr-sm border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm">
+                        {roundState.response}
+                      </div>
+                    ) : (
+                      <div className="mt-1.5 rounded-2xl rounded-tr-sm border border-blue-500/30 bg-blue-500/10 p-3">
+                        <Textarea
+                          aria-label={
+                            k === 0
+                              ? "Your response"
+                              : "Your response to the pushback"
+                          }
+                          placeholder={`Your response, in 2–3 sentences.`}
+                          value={roundState.response}
+                          disabled={pending}
+                          maxLength={bounds.responseMaxChars}
+                          rows={4}
+                          onChange={(e) =>
+                            setRound(c, k, { response: e.target.value })
+                          }
+                          className="bg-background resize-y"
+                        />
+                        <CharCount
+                          len={roundState.response.trim().length}
+                          min={bounds.responseMinChars}
+                          max={bounds.responseMaxChars}
+                        />
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            size="sm"
+                            disabled={
+                              !meetsMin(
+                                roundState.response,
+                                bounds.responseMinChars,
+                              ) || pending
+                            }
+                            onClick={() => setRound(c, k, { submitted: true })}
+                          >
+                            Send
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                  <Textarea
-                    aria-label={
-                      k === 0 ? "Your response" : "Your response to the pushback"
-                    }
-                    placeholder={`Your response, in 2–3 sentences.`}
-                    value={roundState.response}
-                    disabled={roundState.submitted || pending}
-                    maxLength={bounds.responseMaxChars}
-                    rows={4}
-                    onChange={(e) =>
-                      setRound(c, k, { response: e.target.value })
-                    }
-                    className="mt-3 resize-y"
-                  />
-                  <CharCount
-                    len={roundState.response.trim().length}
-                    min={bounds.responseMinChars}
-                    max={bounds.responseMaxChars}
-                  />
-
-                  <Toolbox
-                    exercise={exercise}
-                    onOpen={() => {
-                      // Record opens only while the round is answerable —
-                      // this flag is persisted with the round's response.
-                      if (!roundState.submitted) {
-                        setRound(c, k, { toolboxOpened: true });
-                      }
-                    }}
-                  />
-
-                  {!roundState.submitted && (
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      disabled={
-                        !meetsMin(roundState.response, bounds.responseMinChars) ||
-                        pending
-                      }
-                      onClick={() => setRound(c, k, { submitted: true })}
-                    >
-                      Submit
-                    </Button>
-                  )}
-
+                  {/* Revealed defender response — right, neutral. */}
                   {roundState.submitted && (
-                    <div className="bg-muted mt-4 rounded-lg p-3">
-                      <p className="text-muted-foreground text-xs">
+                    <div className="mt-4 max-w-[88%] self-end">
+                      <p className="text-muted-foreground text-right text-xs">
                         {exercise.revealFraming}
                       </p>
-                      <blockquote className="mt-1.5 text-sm">
+                      <div className="bg-muted mt-1.5 rounded-2xl rounded-tr-sm px-4 py-3 text-sm">
                         {round.reveal}
-                      </blockquote>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -480,31 +402,39 @@ export function ArgueRevealExerciseCard({
 
             {allRoundsSubmitted && (
               <div className="mt-4">
-                <p className="text-sm font-medium">{exercise.postRevealPrompt}</p>
-                <div className="mt-2">
-                  <RatingSegment
-                    value={state.rating}
-                    disabled={!active || pending}
-                    label={exercise.postRevealPrompt}
-                    onSelect={(rating) => setItem(c, { rating })}
-                  />
-                </div>
-                <Input
-                  type="text"
-                  aria-label="Why? (optional, one line)"
-                  placeholder="Why? (optional, one line)"
-                  maxLength={bounds.noteMaxChars}
-                  value={state.note}
-                  disabled={!active || pending}
-                  onChange={(e) => setItem(c, { note: e.target.value })}
-                  className="mt-2"
-                />
+                {exercise.postRevealPrompt && (
+                  <>
+                    <p className="text-sm font-medium">
+                      {exercise.postRevealPrompt}
+                    </p>
+                    <div className="mt-2">
+                      <RatingSegment
+                        value={state.rating}
+                        disabled={!active || pending}
+                        label={exercise.postRevealPrompt}
+                        onSelect={(rating) => setItem(c, { rating })}
+                      />
+                    </div>
+                    <Input
+                      type="text"
+                      aria-label="Why? (optional, one line)"
+                      placeholder="Why? (optional, one line)"
+                      maxLength={bounds.noteMaxChars}
+                      value={state.note}
+                      disabled={!active || pending}
+                      onChange={(e) => setItem(c, { note: e.target.value })}
+                      className="mt-2"
+                    />
+                  </>
+                )}
                 {active && (
                   <div className="mt-3 flex justify-end">
                     <Button
                       size="sm"
                       disabled={
-                        !state.rating || !isStorableText(state.note) || pending
+                        (!!exercise.postRevealPrompt && !state.rating) ||
+                        !isStorableText(state.note) ||
+                        pending
                       }
                       onClick={() => finishItem(c)}
                     >
@@ -638,8 +568,6 @@ export function ArgueRevealExerciseCard({
             </div>
           ))}
 
-          <Toolbox exercise={exercise} onOpen={() => {}} />
-
           {step === constructionStep && (
             <div className="mt-4 flex justify-end">
               <Button
@@ -678,13 +606,16 @@ export function ArgueRevealExerciseCard({
                     {round.response}
                   </p>
                 ))}
-                <p className="text-muted-foreground">
-                  <span className="text-foreground mr-1.5 text-xs font-medium">
-                    Post-reveal
-                  </span>
-                  {items[c].rating && ARGUE_REVEAL_RATING_LABELS[items[c].rating]}
-                  {items[c].note.trim() ? ` — ${items[c].note}` : ""}
-                </p>
+                {(items[c].rating || items[c].note.trim()) && (
+                  <p className="text-muted-foreground">
+                    <span className="text-foreground mr-1.5 text-xs font-medium">
+                      Post-reveal
+                    </span>
+                    {items[c].rating &&
+                      ARGUE_REVEAL_RATING_LABELS[items[c].rating]}
+                    {items[c].note.trim() ? ` — ${items[c].note}` : ""}
+                  </p>
+                )}
               </div>
             ))}
             <div className="space-y-1.5 p-3 text-sm">
@@ -720,15 +651,14 @@ export function ArgueRevealExerciseCard({
             </div>
           </div>
 
-          <div className="bg-muted mt-4 rounded-lg p-4">
-            <p className="text-sm font-medium">Scoring</p>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Automated feedback on your reasoning is coming soon.
-            </p>
-            <Button size="sm" variant="outline" disabled className="mt-3">
-              Submit for scoring
-            </Button>
-          </div>
+          {scoringSlot ?? (
+            <div className="bg-muted mt-4 rounded-lg p-4">
+              <p className="text-sm font-medium">Scoring</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Sign in to get automated feedback on your reasoning.
+              </p>
+            </div>
+          )}
 
           <div className="mt-4 flex justify-end">
             <Button size="sm" variant="outline" onClick={copyResults}>

@@ -11,6 +11,7 @@ export interface WritingExerciseCardProps {
   submitted?: boolean;
   onSaveDraft?: (values: WritingValues) => Promise<void> | void;
   onSubmit?: (values: WritingValues) => Promise<void> | void;
+  onReopen?: () => Promise<void> | void;
 }
 
 export function WritingExerciseCard({
@@ -20,6 +21,7 @@ export function WritingExerciseCard({
   submitted,
   onSaveDraft,
   onSubmit,
+  onReopen,
 }: WritingExerciseCardProps) {
   const sections = exercise.sections ?? [
     { id: "response", label: "Your response", placeholder: "Write your answer…" },
@@ -47,6 +49,7 @@ export function WritingExerciseCard({
           submitted={submitted}
           onSaveDraft={onSaveDraft}
           onSubmit={onSubmit}
+          onReopen={onReopen}
         />
       </div>
     </aside>

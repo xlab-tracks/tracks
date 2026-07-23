@@ -74,33 +74,43 @@ export const modules: Module[] = [
     // paper and the trusted-monitoring demo lesson, then four Redwood readings
     // rendered in full through the paper reader — the "case for control" post
     // carries the module's guided exercises woven into the reading. Reading
-    // order: motivation, the paper, the demo, the safety–usefulness tradeoff
-    // model, catching scheming AIs, and the two threat-modeling posts. All
+    // order: motivation, the paper, the demo, catching scheming AIs, and the
+    // two threat-modeling posts (the safety–usefulness tradeoff model now
+    // lives in module 2). All
     // readings are reproduced (arXiv/LessWrong/Substack artifacts) with
     // permission.
     itemIds: [
       "c-case-for-control",
       "c-paper-ai-control",
       "c-game",
-      "c-efficient-tradeoffs",
       "c-catching-red-handed",
       "c-threats-l1",
       "c-threats-l2",
     ],
-    estimatedMinutes: 390,
+    estimatedMinutes: 377,
   },
   {
-    // Placeholder — content for this module is not written yet. Rename the
-    // id/slug/title when the real curriculum lands (module ids are not
-    // persisted anywhere, so renaming is safe).
+    // Human-authored curriculum (from the course author's "contra control"
+    // and "control regimes" notes): the case against control evaluated
+    // argument by argument, then the regime model — three states, a safety
+    // budget, and the loop — for deciding when control is worth buying. The
+    // argue-reveal exercise carries the critic/defender exchange; the
+    // Author-TODO callouts in the lessons mark planned figures/demos/exercises.
     id: "c-mod2",
-    slug: "module-2",
+    slug: "how-useful-is-ai-control",
     trackId: "control",
-    title: "Coming soon",
-    summary: "Content for this module is in development.",
+    title: "How useful is AI control?",
+    summary:
+      "The strongest arguments against AI control — deferred alignment research, slop, the superintelligence ceiling, moral hazard — illustrated one at a time, evaluated, and weighed against the additive alternatives; then the regime model: three states, a safety budget, and the loop that says when control is worth buying; and finally where control sits among Plans A through D, the plan landscape different levels of political will make available.",
     order: 2,
     prerequisiteModuleIds: ["c-intro"],
-    itemIds: [],
+    itemIds: [
+      "c-contra-l1",
+      "c-efficient-tradeoffs",
+      "c-regimes-l1",
+      "c-plans-abcd",
+      "c-regimes-l2",
+    ],
   },
   {
     id: "c-areas",
@@ -110,9 +120,6 @@ export const modules: Module[] = [
     summary:
       "Ryan Greenblatt's survey of the areas of control research and implementation that seem most promising, reproduced verbatim from the Redwood Research blog.",
     order: 3,
-    // c-mod2 is empty for now, so it counts as complete and only c-intro
-    // actually gates; listing both keeps the chain correct once c-mod2 gets
-    // content.
     prerequisiteModuleIds: ["c-intro", "c-mod2"],
     itemIds: ["c-areas-l1"],
     estimatedMinutes: 40,
@@ -408,6 +415,30 @@ export const lessons: Lesson[] = [
     title: "Trusted monitoring as a game",
     contentRef: "c-game",
     estimatedMinutes: 92,
+  },
+  // --- Control, module 2 (how useful is AI control?): the case against
+  // control, from the course author's notes; embeds the
+  // contra-control-argue-reveal exercise. ---
+  {
+    id: "c-contra-l1",
+    slug: "how-useful-is-ai-control",
+    moduleId: "c-mod2",
+    title: "How useful is AI control?",
+    contentRef: "c-contra-l1",
+  },
+  {
+    id: "c-regimes-l1",
+    slug: "determining-the-usefulness",
+    moduleId: "c-mod2",
+    title: "Determining the usefulness",
+    contentRef: "c-regimes-l1",
+  },
+  {
+    id: "c-regimes-l2",
+    slug: "running-the-model",
+    moduleId: "c-mod2",
+    title: "Running the model",
+    contentRef: "c-regimes-l2",
   },
   // --- Control: every reproduced reading in module 1 (with permission from
   // Redwood Research) now renders through the paper reader as a Paper item in

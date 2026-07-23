@@ -45,6 +45,9 @@ const withMDX = createMDX({
       "rehype-slug",
       // Must come after rehype-slug: it reads the heading ids slug assigns.
       join(process.cwd(), "src/lib/mdx/rehype-lesson-sections.mjs"),
+      // Before rehype-katex: it skips inline math while math is still a
+      // `code` element, and never touches headings/links/inline JSX.
+      join(process.cwd(), "src/lib/mdx/rehype-auto-gloss.mjs"),
       "rehype-katex",
     ],
   },

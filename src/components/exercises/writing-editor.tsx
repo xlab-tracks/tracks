@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,12 @@ export interface WritingEditorProps {
   onSaveDraft?: (values: WritingValues) => Promise<void> | void;
   /** When provided, renders a submit button wired to this handler. */
   onSubmit?: (values: WritingValues) => Promise<void> | void;
+  /**
+   * When provided, a submitted editor offers "Edit submission": the handler
+   * reverts the row to draft server-side, then the editor unlocks. Editing
+   * after grading is allowed — the stored grade stays until re-graded.
+   */
+  onReopen?: () => Promise<void> | void;
 }
 
 export function WritingEditor({
@@ -40,11 +47,17 @@ export function WritingEditor({
   submitLabel = "Submit",
   onSaveDraft,
   onSubmit,
+  onReopen,
 }: WritingEditorProps) {
+  const router = useRouter();
   const [values, setValues] = useState<WritingValues>(() => initialValues ?? {});
   const [isSubmitted, setIsSubmitted] = useState(submitted);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
-  const [pending, startTransition] = useTransition();
+  // Separate transitions so each button's label reflects its own action
+  // during the router.refresh() tail; both buttons disable on either.
+  const [submitPending, startSubmitTransition] = useTransition();
+  const [reopenPending, startReopenTransition] = useTransition();
+  const pending = submitPending || reopenPending;
   const skipFirstSave = useRef(true);
   // Keep the latest save handler in a ref so a changed bound-action identity
   // doesn't re-trigger the debounced autosave. Written in an effect (not during
@@ -84,12 +97,39 @@ export function WritingEditor({
 
   const submit = () => {
     if (!onSubmit) return;
-    startTransition(async () => {
+    startSubmitTransition(async () => {
       try {
         await onSubmit(values);
         setIsSubmitted(true);
+        // Server components gate on submission status (e.g. the transparency
+        // card appears only once submitted) — re-render them now. Hosts key
+        // this editor on the submission's updatedAt, so the refresh also
+        // remounts it seeded with the server's row.
+        router.refresh();
       } catch {
         toast.error("Couldn't submit. Please try again.");
+      }
+    });
+  };
+
+  const reopen = () => {
+    if (!onReopen) return;
+    startReopenTransition(async () => {
+      try {
+        await onReopen();
+        // Re-arm the autosave skip: the submitted→draft flip alone must not
+        // autosave (nothing changed yet). The keyed remount from refresh()
+        // resets this anyway — this covers the window until it lands.
+        skipFirstSave.current = true;
+        setSaveState("idle");
+        // Deliberately NOT flipping isSubmitted here: the textarea stays
+        // disabled ("Reopening…") until refresh() lands and the keyed
+        // remount delivers the editable draft seeded with the server row —
+        // enabling it early would let keystrokes typed in that window be
+        // discarded by the remount.
+        router.refresh();
+      } catch {
+        toast.error("Couldn't reopen for editing. Please try again.");
       }
     });
   };
@@ -155,10 +195,22 @@ export function WritingEditor({
 
       {onSubmit ? (
         isSubmitted ? (
-          <Badge variant="secondary">Submitted</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">Submitted</Badge>
+            {onReopen && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={reopen}
+                disabled={pending}
+              >
+                {reopenPending ? "Reopening…" : "Edit submission"}
+              </Button>
+            )}
+          </div>
         ) : (
           <Button size="sm" onClick={submit} disabled={pending || belowMin}>
-            {pending ? "Submitting…" : submitLabel}
+            {submitPending ? "Submitting…" : submitLabel}
           </Button>
         )
       ) : onSaveDraft ? null : (

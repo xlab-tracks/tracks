@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { resources } from "@/lib/content";
+import { getAllResources } from "@/lib/content";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { ResourceHub } from "@/components/resources/resource-hub";
 
@@ -15,7 +15,7 @@ export default function ResourcesPage() {
         the background we deliberately don&apos;t teach. The whole point is to
         de-centralize the messy onboarding pipeline.
       </p>
-      <ResourceHub resources={resources} />
+      <ResourceHub resources={getAllResources()} />
     </main>
   );
 }

@@ -21,7 +21,7 @@ vi.mock("@/lib/auth", () => ({ getCurrentUser }));
 vi.mock("@/lib/content", () => ({ getWritingTarget }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { saveWritingDraft, submitWriting } from "./submissions";
+import { reopenWriting, saveWritingDraft, submitWriting } from "./submissions";
 
 afterEach(() => vi.clearAllMocks());
 
@@ -61,6 +61,49 @@ describe("submitWriting", () => {
     await expect(
       submitWriting("a1", "assessment", null, { intro: "hi" }),
     ).rejects.toThrow("Not signed in");
+  });
+});
+
+describe("reopenWriting", () => {
+  it("throws when signed out", async () => {
+    getCurrentUser.mockResolvedValue(null);
+    await expect(reopenWriting("a1", "assessment")).rejects.toThrow(
+      "Not signed in",
+    );
+    expect(prisma.submission.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects non-writing kinds", async () => {
+    getCurrentUser.mockResolvedValue({ id: "u1" });
+    await expect(
+      reopenWriting("a1", "capstone" as never),
+    ).rejects.toThrow("Invalid submission");
+    expect(prisma.submission.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects a contentId that is not a writing target — a direct POST must not flip closed-exercise rows", async () => {
+    getCurrentUser.mockResolvedValue({ id: "u1" });
+    getWritingTarget.mockReturnValue(undefined);
+    await expect(
+      reopenWriting("some-choice-exercise", "exercise"),
+    ).rejects.toThrow("Invalid submission");
+    expect(prisma.submission.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("flips only the caller's submitted row back to draft", async () => {
+    getCurrentUser.mockResolvedValue({ id: "u1" });
+    getWritingTarget.mockReturnValue({ sectionIds: ["intro"], format: "memo" });
+    prisma.submission.updateMany.mockResolvedValue({ count: 1 });
+    await reopenWriting("a1", "assessment");
+    expect(prisma.submission.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: "u1",
+        contentId: "a1",
+        kind: "assessment",
+        status: "submitted",
+      },
+      data: { status: "draft" },
+    });
   });
 });
 

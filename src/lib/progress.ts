@@ -167,6 +167,9 @@ export const getExerciseSubmissionMap = cache(async (userId: string) => {
       responseJson: true,
       status: true,
       updatedAt: true,
+      // The reasoning-transparency grade, preloaded by exercise hosts.
+      score: true,
+      feedback: true,
     },
   });
   return new Map(rows.map((r) => [r.contentId, r]));

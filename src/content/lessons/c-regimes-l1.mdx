@@ -1,0 +1,138 @@
+## Is control good?
+
+<Exercise id="cr-precommit" />
+
+In the last module you learned what AI control is: techniques for getting useful work out of AI systems even if those systems are trying to undermine you, ranging from monitoring their outputs to auditing suspicious behavior & restricting what they can touch. This module asks a different question: is doing that a good use of our limited resources? And does that question even have a concrete answer?
+
+Ask safety researchers whether control is a good investment and you will hear everything from it's the single most important thing we can do to a distraction that makes things worse. Some of the disagreements stem from technical reasonings, like whether monitoring scales and if evals can bound what a schemer can do. But most of it is about what the world control will be deployed into looks like: how likely models are to scheme, how much a lab will spend on safety, whether anyone in power will act on a warning. We'll call a full set of such conditions a regime, and the claim of this module is that the control question only becomes answerable once you determine which regime you are in.
+
+By the end of the module you will be able to answer three questions about any regime: whether you should invest in control, how much, and when. Furthermore, the same ways used to determine these answers can help make decisions about implementing any safety technique.
+
+### The two games
+
+This module is organized around two games that safety researchers & organizations are constantly playing:
+
+The inner game is played inside the lab against the potentially-scheming model: designing protocols, extracting trustworthy work, catching bad behavior. It's all about spending the safety resources you have efficiently.
+
+The outer game is played everywhere else: convincing lab leadership, the public, and governments to invest in safety spending, increasing the resources available within the inner game.
+
+Playing the inner game well produces evidence; most dramatically, a scheming model caught in the act. This evidence can be used to convince decision-makers into authorizing more safety spending. That spending then funds the next round of the inner game. However, the inner game still produces results even if a model is not explicitly caught since it generates trustworthy work from an untrusted model.
+
+<Demo id="two-games" />
+
+## The three states and the safety budget
+
+Related reading (optional, revisited later in this lesson): [Efficient tradeoffs and the safety-usefulness tradeoff model](https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety).
+
+We can split potential regimes, the bundle of conditions that we use to describe the world, into three parts or sections of information that we interact with very differently.
+
+<Demo id="regime-states" />
+
+Note that we can index regimes by capability stage, from "marginally speeds up human researchers" to "runs research autonomously" ([a breakdown of AI capability levels focused on AI R&D labor acceleration](https://www.alignmentforum.org/posts/LjgcRbptarrRfJWtR/a-breakdown-of-ai-capability-levels-focused-on-ai-r-and-d)). Even though capability itself moves continuously, splitting it into stages can help us reason more effectively about them.
+
+### World state: what is actually true
+
+The first part of the state is about truths about the model, regardless of whether we know them or not:
+
+- What the model is actually like
+  - Aligned? A schemer, biding its time? Honest but unreliable (and therefore sloppy)? Or an apparent-success seeker: no hidden goals, but trained habits that optimize for looking successful (more on this below)?
+- How capable the model is
+- How checkable AI research output is
+  - If a model hands you a proof or an experiment, can you verify it efficiently, or do you have to take it on trust? Having cheap verification means that extracting useful work is high-reward.
+- What has happened with the model so far
+  - where it's deployed, what it has been caught doing, what it's been contained from
+
+It's reasonable to assume that we can't know the full world state, as there is information that is all but impossible to retrieve with current technology (if we could find what a model's true self was like, our way of dealing with misaligned models would be very different!)
+
+### Epistemic state: what we know
+
+The second part is our picture of the world state:
+
+- The lab's confidence in its alignment methods
+- Findings from looking inside models (interpretability), and how much we trust them
+- Model track record
+  - past incidents of misalignment, or their absence
+  - (How such evidence should move us: [How will we update about scheming?](https://blog.redwoodresearch.org/p/how-will-we-update-about-scheming))
+- Evaluation results
+  - control evaluations that stage mock attacks to estimate whether the monitoring would catch a real schemer
+
+One common pitfall is forgetting that a control evaluation's score is purely an imperfect measurement. Whether control actually works against the actual model is a different thing entirely, and the final section gives it a place of its own in the regime model. The two can decouple, as the evaluation might be unrealistic or the model might behave differently in a real-world scenario (think hidden situational awareness that leads to differing behavior). This is where control evaluations can fail you, as a high safety score from a poor evaluation leads to a misleadingly reassuring epistemic state implying a world state that isn't true.
+
+### Resource state: what we can spend
+
+We analyze the safety budget through the currency of **political will** — in the sense the previous reading gave it. A developer that doesn't fully share your priorities is still willing to concede safety-relevant actions up to some cost threshold, measured against *the developer's own* objectives; that willingness is the account you spend from. It is held by the lab, not by you — you move it only indirectly — and it fades without reinforcement while spiking after concerning incidents. Pressure reaches that account through several routes: internal pushback from staff, public backing, and binding external rules, and a project's C-suite, the public, and the government each respond to different ones. For now we operationalize the budget by asking what political will buys and what refills it.
+
+Deploying a control-based safety intervention spends political will on:
+
+- Delay
+  - How long you can delay is priced by the intensity of the race to AGI. With a rival lab three months behind, delay is nearly unbuyable at any level of will.
+- Usefulness
+  - Whether the developer will accept a less useful, slower system. A scared public makes this cheaper by lowering demand for the product.
+  - Note that control's main payoff is also denominated in usefulness, so control partially offsets its own tax.
+- Compute
+  - In our scoping, we primarily focus on internal compute, which is governed by internal politics. Compute is finite, so pulling it from capabilities research spends will to overcome the slowing down of development.
+
+Note that delay, usefulness, and compute can be cheap in one regime and ruinous in another.
+
+Political will can be generated multiple different ways:
+
+- Incidents and evidence
+  - Concerning incidents and accumulating evidence refill the account, and refill it hardest right after something goes wrong.
+- Public buy-in
+  - Public support raises the account and slows its fading, though its pull on a developer is weaker and more indirect.
+- Passed policy
+  - Passed policy converts will into a durable floor, because repeal is expensive. Note that what gets written into regulation tends to be easy to explain and verify politically, which isn't necessarily optimal policy.
+
+### Why the three states are not interchangeable
+
+To recap the structure, the three states answer three different questions:
+
+- World state: what is control actually worth here?
+- Epistemic state: what do we justifiably think it's worth?
+- Resource state: can we afford to act on what we think?
+
+A favorable world state seen through a poor epistemic state means control is useful and we can't know it. A rich epistemic state with an empty resource state means we know exactly what to do and can't do it. Diagnosing which state is the bottleneck is the first thing you'll do with every scenario in this module.
+
+### Five worlds
+
+Abstract states need reference points, so here are five — Greenblatt's caricatured futures ([Current AIs seem pretty misaligned to me](https://www.lesswrong.com/posts/WewsByywWNhX9rtwi/current-ais-seem-pretty-misaligned-to-me)), each a different setting of the world state. They recur through the rest of the module as the standard misalignment archetypes.
+
+{/* TODO: migrate to Cloudflare Stream — replace the self-hosted mp4 with the Stream embed URL; <Video> auto-detects cloudflarestream.com (provider="stream"). */}
+
+<Video provider="file" src="/videos/regimes_for_misalignment.mp4" title="Ryan Greenblatt & Thomas Larsen - A Technical Safety Roadmap" />
+
+<Demo id="five-worlds" />
+
+## Techniques and the loop
+
+Related reading: We adapt the arguments in this post into our model below: [Catching AIs red-handed](https://www.lesswrong.com/posts/i2nmBfCXnadeGmhzW/catching-ais-red-handed). [Efficient tradeoffs and the safety-usefulness tradeoff model](https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety) — the two levers below come from here.
+
+### Techniques are not a state
+
+Safety techniques — control, interpretability, alignment research — don't map cleanly to the world state, epistemic state, or resource state. The techniques are what affect change, and they require will. That gives you exactly two ways to get more safety:
+
+1. Improve the techniques. Better safety technology means any given sacrifice of usefulness buys more safety than it used to.
+2. Grow the budget. More will, or lower prices, means you can afford bigger sacrifices.
+
+Technical safety research works on the first lever while advocacy, communication, and policy work on the second. Control helps with both of these since it encompasses safety research extracted from untrusted models and reports catches.
+
+Whether a technique is actually effective directly stems from the states, as it relies on what the frontier model is like, how capable it is, and what measures you deployed, among other factors.
+
+### The loop
+
+<Demo id="regime-loop" />
+
+Now we'll try and connect the ideas from the previous section into a cycle we think accurately reflects the game that frontier labs play:
+
+1. The resource state buys a technique, like a monitoring protocol for the lab's internal AI agents.
+2. The technique changes the facts on the ground
+   - The schemer that would have quietly sabotaged research may now be caught. World state updates based on this catch.
+3. The catch updates the epistemic state
+   - There is now clearer proof that the model has schemed against the user.
+4. The evidence impacts the resource state
+   - Leadership and the public become alarmed, refilling political will, potentially leading to regulation passing, locking a floor in place.
+5. The bigger budget helps buy better techniques for the next, more dangerous capability stage. Return to step 1.
+
+### Reflection Questions
+
+<Exercise id="cr-reflect-q2" />

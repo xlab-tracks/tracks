@@ -27,10 +27,6 @@ export default function TracksPage() {
     <main className="mx-auto w-full max-w-5xl px-4 py-10 lg:px-6">
       <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Tracks" }]} />
       <h1 className="text-3xl font-semibold tracking-tight">Tracks</h1>
-      <p className="text-muted-foreground mt-2 max-w-2xl">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Choose a track to
-        begin — each is a self-paced sequence of modules.
-      </p>
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2">
         {tracks.map((track) => {

@@ -359,10 +359,11 @@ export interface ArgueRevealRoundEntry {
   toolboxOpened: boolean;
 }
 
-/** One item's record inside `Submission.responseJson.items`. */
+/** One item's record inside `Submission.responseJson.items`. `rating` is
+ * null for exercises without a `postRevealPrompt` (no self-rating step). */
 export interface ArgueRevealItemEntry {
   rounds: ArgueRevealRoundEntry[];
-  rating: ArgueRevealRating;
+  rating: ArgueRevealRating | null;
   note: string;
 }
 
@@ -402,8 +403,9 @@ function sanitizeBoundedText(
 /**
  * Validates one completed item posted for an argue-reveal exercise: known
  * item, one entry per authored round (chips ⊆ concept ids, response within
- * bounds), a rating, and an optional one-line note. Null when anything is
- * off (reachable by direct POST).
+ * bounds), a rating (required iff the exercise has a `postRevealPrompt`),
+ * and an optional one-line note. Null when anything is off (reachable by
+ * direct POST).
  */
 export function sanitizeArgueRevealItem(
   exercise: ArgueRevealExercise,
@@ -415,7 +417,11 @@ export function sanitizeArgueRevealItem(
   if (typeof itemId !== "string") return null;
   const item = exercise.items.find((i) => i.id === itemId);
   if (!item) return null;
-  if (!ARGUE_REVEAL_RATINGS.includes(rating as ArgueRevealRating)) return null;
+  if (exercise.postRevealPrompt) {
+    if (!ARGUE_REVEAL_RATINGS.includes(rating as ArgueRevealRating)) return null;
+  } else if (rating !== null) {
+    return null;
+  }
   const bounds = argueRevealBounds(exercise);
   const cleanNote = sanitizeBoundedText(note, 0, bounds.noteMaxChars);
   if (cleanNote === null) return null;
@@ -449,7 +455,7 @@ export function sanitizeArgueRevealItem(
 
   return {
     rounds: cleanRounds,
-    rating: rating as ArgueRevealRating,
+    rating: rating as ArgueRevealRating | null,
     note: cleanNote,
   };
 }

@@ -135,7 +135,21 @@ export type PaperEdit =
    */
   | { op: "add"; after: PaperEditAnchor; markdown: string; label?: string }
   /** Activities (exercise cards / inline lessons) spliced into the flow. */
-  | { op: "activity"; after: PaperEditAnchor; items: PaperInsertionItem[] };
+  | { op: "activity"; after: PaperEditAnchor; items: PaperInsertionItem[] }
+  /**
+   * Wrap a phrase of the target block/sentence in a glossary hover-card
+   * trigger. `termId` references an entry in `src/content/glossary.json`;
+   * `phrase` is the exact text to wrap — first occurrence inside the target,
+   * whitespace-flexible, and it must be plain running text (a phrase broken
+   * by a link, citation, math, or other inline markup does not match —
+   * content.test.ts runs the exact matcher). Never targets a sectionEnd.
+   */
+  | { op: "gloss"; at: PaperBlockRef; termId: string; phrase: string };
+
+/** The block/section target of any edit op, regardless of its field name. */
+export function editTargetRef(edit: PaperEdit): PaperEditAnchor {
+  return edit.op === "hide" || edit.op === "gloss" ? edit.at : edit.after;
+}
 
 export interface Paper {
   /** Globally unique across ALL content ids (lessons included). */
@@ -387,6 +401,11 @@ export interface ArgueRevealExercise extends ExerciseBase {
   type: "argue-reveal";
   /** Display title — shown on the intro step and in the exercises gallery. */
   title: string;
+  /**
+   * Course-numbering chip shown instead of the generic type label,
+   * e.g. "Exercise 2.1".
+   */
+  numberLabel?: string;
   /** Extra intro framing shown under the prompt. */
   guidance?: string;
   /** Line above the concept chips, e.g. "Which ideas are you drawing on?" */
@@ -398,8 +417,9 @@ export interface ArgueRevealExercise extends ExerciseBase {
   items: ArgueRevealItem[];
   /** Line introducing each revealed defender response. */
   revealFraming: string;
-  /** Self-assessment question once an item's rounds are all revealed. */
-  postRevealPrompt: string;
+  /** Self-assessment question once an item's rounds are all revealed.
+   * Optional: when absent, the post-reveal rating + note step is skipped. */
+  postRevealPrompt?: string;
   construction: {
     intro: string;
     surfaces: ArgueRevealSurface[];
@@ -727,6 +747,12 @@ export interface ExternalResource {
   id: string;
   title: string;
   url: string;
+  /**
+   * In-app viewer for this resource (e.g. a course paper's
+   * /tracks/t/m/slug page). When set, the hub links here instead of `url`;
+   * `url` stays the canonical external source (dedupe, linked-readings checks).
+   */
+  internalHref?: string;
   type: ResourceType;
   /** Topic tags; modules pull "further reading" by matching these. */
   topics: string[];

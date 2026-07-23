@@ -61,14 +61,30 @@ const DROPPED_TAGS = new Set(["style", "link", "meta", "title", "base"]);
  * <style>-like elements whose text would otherwise leak into prose when
  * sanitize unwraps the tag.
  */
-export function stripAuthorIdsAndReservedClasses(tree: Root): void {
+export function stripAuthorIdsAndReservedClasses(
+  tree: Root,
+  opts: { stashIds?: boolean } = {},
+): void {
   visit(tree, "element", (node: Element, index, parent) => {
     if (DROPPED_TAGS.has(node.tagName) && index !== undefined && parent) {
       parent.children.splice(index, 1);
       return index;
     }
     if (!node.properties) return;
-    if (node.properties.id !== undefined) delete node.properties.id;
+    // A forged data-author-id in source HTML dies here unconditionally —
+    // only the stash below (our own write, after the strip) survives, so
+    // downstream "author id" really means "was an id before this pass".
+    delete node.properties.dataAuthorId;
+    if (node.properties.id !== undefined) {
+      // Stash the author id (opt-in) so rewriteAuthorFragmentLinks can map
+      // in-post fragment links onto the converter-minted heading ids after
+      // sanitize rebuilds the tree; data-author-id never reaches output —
+      // the rewrite pass deletes every instance.
+      if (opts.stashIds && typeof node.properties.id === "string") {
+        node.properties.dataAuthorId = node.properties.id;
+      }
+      delete node.properties.id;
+    }
     for (const prop of RESERVED_PROPS) {
       if (node.properties[prop] !== undefined) delete node.properties[prop];
     }
@@ -81,6 +97,105 @@ export function stripAuthorIdsAndReservedClasses(tree: Root): void {
       else delete node.properties.className;
     }
   });
+}
+
+/**
+ * Repoint in-post links at the converter-minted heading ids. Authors link to
+ * their own sections two ways — a bare fragment (`#Some_Heading`) or an
+ * absolute URL of the post itself with a fragment — and both die when
+ * stripAuthorIdsAndReservedClasses removes the author ids. With `stashIds`
+ * on, the old id rides through sanitize as `data-author-id`; after
+ * normalizeHeadings mints the real ids this pass maps old → new, rewrites
+ * matching hrefs to local fragments, warns (`anchor-dropped`) for targets
+ * that no longer have an id (non-heading anchors), and strips every stash.
+ */
+export function rewriteAuthorFragmentLinks(
+  tree: Root,
+  warnings: { add(code: string, detail: string): void },
+  isSelfUrl: (url: string) => boolean,
+  opts: {
+    /**
+     * Some platforms mint heading anchors CLIENT-side (LessWrong's ToC ids
+     * never exist in the fetched html), so author links can target ids no
+     * stash ever saw. Given the platform's text→anchor rule, map each
+     * id-bearing element's text through it as a fallback resolution.
+     */
+    legacyHeadingSlug?: (headingText: string) => string;
+    /**
+     * Mint an id (n is 1-based) for a stashed non-heading target that an
+     * in-post link actually references — without it those links degrade to
+     * an `anchor-dropped` warning.
+     */
+    mintAnchorId?: (n: number) => string;
+  } = {},
+): void {
+  const newIdByAuthorId = new Map<string, string>();
+  const newIdBySlug = new Map<string, string>();
+  const stashedNodes = new Map<string, Element>();
+  visit(tree, "element", (node: Element) => {
+    const newId = node.properties?.id;
+    const hasNewId = typeof newId === "string" && newId !== "";
+    const authorId = node.properties?.dataAuthorId;
+    if (typeof authorId === "string" && authorId !== "") {
+      if (!stashedNodes.has(authorId)) stashedNodes.set(authorId, node);
+      if (hasNewId) newIdByAuthorId.set(authorId, newId as string);
+    }
+    if (hasNewId && opts.legacyHeadingSlug) {
+      const slug = opts.legacyHeadingSlug(textOf(node).trim());
+      if (slug && !newIdBySlug.has(slug)) newIdBySlug.set(slug, newId as string);
+    }
+  });
+  let minted = 0;
+  const resolveByMinting = (fragment: string): string | undefined => {
+    if (!opts.mintAnchorId) return undefined;
+    const target = stashedNodes.get(fragment);
+    if (!target) return undefined;
+    const id = opts.mintAnchorId(++minted);
+    target.properties = { ...target.properties, id };
+    newIdByAuthorId.set(fragment, id);
+    return id;
+  };
+
+  visit(tree, "element", (node: Element) => {
+    if (node.properties?.dataAuthorId !== undefined) {
+      delete node.properties.dataAuthorId;
+    }
+    if (node.tagName !== "a") return;
+    const href = stringProp(node, "href");
+    if (!href) return;
+    let fragment: string | null = null;
+    if (href.startsWith("#")) {
+      fragment = href.slice(1);
+    } else {
+      const hash = href.indexOf("#");
+      if (hash !== -1 && isSelfUrl(href.slice(0, hash))) {
+        fragment = href.slice(hash + 1);
+      }
+    }
+    if (!fragment) return;
+    const decoded = safeDecode(fragment);
+    const newId =
+      newIdByAuthorId.get(fragment) ??
+      newIdByAuthorId.get(decoded) ??
+      newIdBySlug.get(fragment) ??
+      newIdBySlug.get(decoded) ??
+      resolveByMinting(fragment) ??
+      resolveByMinting(decoded);
+    if (newId) {
+      node.properties!.href = `#${newId}`;
+    } else if (stashedNodes.has(fragment) || stashedNodes.has(decoded)) {
+      // The target existed but isn't a heading anymore — no id to point at.
+      warnings.add("anchor-dropped", `#${fragment}`);
+    }
+  });
+}
+
+function safeDecode(fragment: string): string {
+  try {
+    return decodeURIComponent(fragment);
+  } catch {
+    return fragment;
+  }
 }
 
 /**

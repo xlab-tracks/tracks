@@ -15,15 +15,23 @@ import {
   isStorableText,
   type AllocationScenarioEntry,
 } from "@/lib/content/exercise-view";
-import { Paragraphs } from "./math-text";
+import { MathText, Paragraphs } from "./math-text";
 
-/** Cycled per agenda: summary bars, legend swatches in the table. */
+/**
+ * Fixed-order categorical palette, one entry per agenda index — never cycled
+ * (the two live allocation exercises share the same 7-agenda menu, so colors
+ * follow the agenda across exercises). Order is deliberate: adjacent hues
+ * alternate lightness so neighboring donut slices stay separable under CVD
+ * (palette validated light-mode against the white card surface).
+ */
 const AGENDA_COLORS = [
-  "var(--chart-4)",
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-5)",
+  "#2563eb", // blue
+  "#f59e0b", // amber
+  "#047857", // emerald
+  "#d946ef", // fuchsia
+  "#0891b2", // cyan
+  "#ef4444", // red
+  "#7e22ce", // purple
 ];
 
 const agendaColor = (index: number) => AGENDA_COLORS[index % AGENDA_COLORS.length];
@@ -31,6 +39,152 @@ const agendaColor = (index: number) => AGENDA_COLORS[index % AGENDA_COLORS.lengt
 // Values are step-multiples accumulated by ± clicks; rounding to 3 decimals
 // absorbs float drift for any sensible step without misrendering e.g. 0.25.
 const formatPeople = (value: number) => String(Math.round(value * 1000) / 1000);
+
+/** Share of the total budget, as a percent string ("35%", "12.5%"). */
+const formatShare = (value: number, total: number) =>
+  `${String(Math.round((value / total) * 1000) / 10)}%`;
+
+/**
+ * Live donut of the current allocation. Purely presentational — the stepper
+ * rows beside it are the legend and the accessible reading of the same data,
+ * so the SVG is aria-hidden. Slices get a 2px card-colored outline as the
+ * gap between neighbors; the unallocated remainder renders as a muted ring.
+ */
+function AllocationDonut({
+  values,
+  total,
+}: {
+  values: number[];
+  total: number;
+}) {
+  const R = 56;
+  const r = 30;
+  const C = 64; // center
+  const allocated = values.reduce((sum, v) => sum + v, 0);
+
+  const point = (radius: number, frac: number) => {
+    const angle = 2 * Math.PI * frac - Math.PI / 2; // 12 o'clock start
+    return `${C + radius * Math.cos(angle)} ${C + radius * Math.sin(angle)}`;
+  };
+  const wedge = (from: number, to: number) => {
+    const large = to - from > 0.5 ? 1 : 0;
+    return [
+      `M ${point(R, from)}`,
+      `A ${R} ${R} 0 ${large} 1 ${point(R, to)}`,
+      `L ${point(r, to)}`,
+      `A ${r} ${r} 0 ${large} 0 ${point(r, from)}`,
+      "Z",
+    ].join(" ");
+  };
+
+  const slices: { key: number; from: number; to: number; color: string }[] = [];
+  let cursor = 0;
+  values.forEach((v, j) => {
+    if (v > 0) {
+      slices.push({
+        key: j,
+        from: cursor / total,
+        to: (cursor + v) / total,
+        color: agendaColor(j),
+      });
+      cursor += v;
+    }
+  });
+
+  return (
+    <svg viewBox="0 0 128 128" className="size-36 shrink-0" aria-hidden>
+      {/* Unallocated remainder / empty state: a muted ring underneath. */}
+      <circle
+        cx={C}
+        cy={C}
+        r={(R + r) / 2}
+        fill="none"
+        stroke="var(--muted)"
+        strokeWidth={R - r}
+      />
+      {slices.map((s) =>
+        s.to - s.from >= 0.9999 ? (
+          // A lone full-budget slice: the arc path degenerates, so draw the
+          // whole ring directly.
+          <circle
+            key={s.key}
+            cx={C}
+            cy={C}
+            r={(R + r) / 2}
+            fill="none"
+            stroke={s.color}
+            strokeWidth={R - r}
+          />
+        ) : (
+          <path
+            key={s.key}
+            d={wedge(s.from, s.to)}
+            fill={s.color}
+            stroke="var(--card)"
+            strokeWidth={2}
+          />
+        ),
+      )}
+      <text
+        x={C}
+        y={C - 2}
+        textAnchor="middle"
+        className="fill-foreground font-mono text-[15px] font-semibold tabular-nums"
+      >
+        {formatShare(allocated, total)}
+      </text>
+      <text
+        x={C}
+        y={C + 12}
+        textAnchor="middle"
+        className="fill-muted-foreground text-[8px]"
+      >
+        allocated
+      </text>
+    </svg>
+  );
+}
+
+/**
+ * Prompt text with light structure: newline-separated lines; runs of lines
+ * starting with "- " render as a bulleted list, everything else as
+ * paragraphs. Math renders per line.
+ */
+function PromptText({ text, className }: { text: string; className?: string }) {
+  const lines = text.split("\n").filter((l) => l.trim() !== "");
+  const blocks: { bullets: boolean; lines: string[] }[] = [];
+  for (const line of lines) {
+    const bullet = line.startsWith("- ");
+    const last = blocks[blocks.length - 1];
+    if (last && last.bullets === bullet) last.lines.push(line);
+    else blocks.push({ bullets: bullet, lines: [line] });
+  }
+  return (
+    <>
+      {blocks.map((block, i) =>
+        block.bullets ? (
+          <ul key={i} className={cn("mt-2 list-disc space-y-1 pl-4", className)}>
+            {block.lines.map((line, j) => (
+              <li key={j}>
+                <MathText text={line.slice(2)} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          block.lines.map((line, j) => (
+            <p key={`${i}-${j}`} className={cn("mt-2 first:mt-0", className)}>
+              <MathText text={line} />
+            </p>
+          ))
+        ),
+      )}
+    </>
+  );
+}
+
+/** Numeric percent (no sign) for the editable field: 4.5/10 → "45". */
+const shareNumber = (value: number, total: number) =>
+  String(Math.round((value / total) * 1000) / 10);
 
 function Stepper({
   label,
@@ -42,11 +196,26 @@ function Stepper({
 }: {
   label: string;
   value: number;
+  /** Also the whole budget — the displayed percentage is value / max. */
   max: number;
   step: number;
   disabled: boolean;
   onChange: (value: number) => void;
 }) {
+  // Draft holds the field's text while the learner is typing; null means
+  // "mirror the committed value". Committing parses, clamps to 0–100%, and
+  // snaps to the step grid so typed values land where ± clicks would.
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft !== null) {
+      const parsed = Number.parseFloat(draft.replace("%", "").trim());
+      if (Number.isFinite(parsed)) {
+        const effort = (Math.min(100, Math.max(0, parsed)) / 100) * max;
+        onChange(Math.min(max, Math.round(effort / step) * step));
+      }
+      setDraft(null);
+    }
+  };
   const buttonClass =
     "text-foreground hover:enabled:bg-muted disabled:text-muted-foreground/40 h-8 w-8 text-base leading-none";
   return (
@@ -64,11 +233,37 @@ function Stepper({
       >
         −
       </button>
-      <span
-        aria-live="polite"
-        className="border-border text-foreground flex min-w-11 items-center justify-center border-x font-mono text-sm font-semibold tabular-nums"
-      >
-        {formatPeople(value)}
+      <span className="border-border text-foreground flex items-center border-x pr-2 font-mono text-sm font-semibold tabular-nums">
+        <input
+          type="text"
+          inputMode="decimal"
+          aria-label={`${label} — percent of the budget`}
+          value={draft ?? shareNumber(value, max)}
+          disabled={disabled}
+          onFocus={(e) => {
+            setDraft(shareNumber(value, max));
+            e.currentTarget.select();
+          }}
+          onChange={(e) => setDraft(e.currentTarget.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") {
+              setDraft(null);
+              e.currentTarget.blur();
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setDraft(null);
+              onChange(Math.min(max, value + step));
+            } else if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setDraft(null);
+              onChange(Math.max(0, value - step));
+            }
+          }}
+          className="w-10 bg-transparent text-right outline-none"
+        />
+        <span aria-hidden>%</span>
       </span>
       <button
         type="button"
@@ -209,13 +404,23 @@ export function AllocationExerciseCard({
     body = (
       <>
         <h3 className="text-lg font-semibold tracking-tight">{exercise.title}</h3>
-        <Paragraphs text={exercise.prompt} className="mt-2 text-sm" />
+        <div className="mt-2">
+          <PromptText text={exercise.prompt} className="text-sm" />
+        </div>
         <p className="text-muted-foreground mt-4 mb-1.5 text-xs font-medium tracking-wide uppercase">
           Agendas
         </p>
         <ul className="border-border divide-border divide-y rounded-lg border">
-          {exercise.agendas.map((agenda) => (
-            <li key={agenda.id} className="px-3 py-2 text-sm">
+          {exercise.agendas.map((agenda, j) => (
+            <li
+              key={agenda.id}
+              className="flex items-center gap-2.5 px-3 py-2 text-sm"
+            >
+              <span
+                aria-hidden
+                className="inline-block size-2.5 shrink-0 rounded-[3px]"
+                style={{ background: agendaColor(j) }}
+              />
               {agenda.label}
             </li>
           ))}
@@ -268,7 +473,7 @@ export function AllocationExerciseCard({
                       key={s.id}
                       className="px-2 py-2 text-right font-mono tabular-nums"
                     >
-                      {formatPeople(allocations[i][j])}
+                      {formatShare(allocations[i][j], exercise.totalPeople)}
                     </td>
                   ))}
                 </tr>
@@ -288,7 +493,7 @@ export function AllocationExerciseCard({
                   allocations[i][j] > 0 ? (
                     <span
                       key={agenda.id}
-                      title={`${agenda.label}: ${formatPeople(allocations[i][j])}`}
+                      title={`${agenda.label}: ${formatShare(allocations[i][j], exercise.totalPeople)}`}
                       style={{
                         width: `${(allocations[i][j] / exercise.totalPeople) * 100}%`,
                         background: agendaColor(j),
@@ -339,45 +544,78 @@ export function AllocationExerciseCard({
       <>
         <div className="bg-muted/50 rounded-lg p-4">
           <p className="font-medium">{scenario.title}</p>
-          <Paragraphs
-            text={scenario.description}
-            className="text-muted-foreground mt-1.5 text-sm"
-          />
+          {/* Newline-separated descriptions render as a bulleted list, with a
+              leading "Label:" prefix (if any) bolded per line; single-line
+              descriptions stay prose. */}
+          {scenario.description.includes("\n") ? (
+            <ul className="text-muted-foreground mt-1.5 list-disc space-y-1 pl-4 text-sm">
+              {scenario.description.split("\n").map((line, i) => {
+                const colon = line.indexOf(": ");
+                return (
+                  <li key={i}>
+                    {colon > 0 ? (
+                      <>
+                        <span className="text-foreground font-medium">
+                          {line.slice(0, colon)}:
+                        </span>{" "}
+                        <MathText text={line.slice(colon + 2)} />
+                      </>
+                    ) : (
+                      <MathText text={line} />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <Paragraphs
+              text={scenario.description}
+              className="text-muted-foreground mt-1.5 text-sm"
+            />
+          )}
         </div>
 
-        <ul className="border-border divide-border mt-4 divide-y rounded-lg border">
-          {exercise.agendas.map((agenda, j) => {
-            const previous = index > 0 ? allocations[index - 1][j] : null;
-            const delta = previous === null ? 0 : row[j] - previous;
-            return (
-              <li
-                key={agenda.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2.5"
-              >
-                <span className="min-w-0 flex-1 text-sm">{agenda.label}</span>
-                {previous !== null && (
-                  <span className="text-muted-foreground font-mono text-xs whitespace-nowrap tabular-nums">
-                    was {formatPeople(previous)}
-                    {delta !== 0 && (
-                      <span className="border-border ml-1.5 rounded-full border px-1.5">
-                        {delta > 0 ? "+" : "−"}
-                        {formatPeople(Math.abs(delta))}
-                      </span>
-                    )}
-                  </span>
-                )}
-                <Stepper
-                  label={agenda.label}
-                  value={row[j]}
-                  max={exercise.totalPeople}
-                  step={step}
-                  disabled={pending}
-                  onChange={(value) => setValue(index, j, value)}
-                />
-              </li>
-            );
-          })}
-        </ul>
+        <div className="mt-4 flex flex-col items-center gap-x-5 gap-y-3 sm:flex-row sm:items-start">
+          <AllocationDonut values={row} total={exercise.totalPeople} />
+          <ul className="border-border divide-border min-w-0 flex-1 divide-y self-stretch rounded-lg border">
+            {exercise.agendas.map((agenda, j) => {
+              const previous = index > 0 ? allocations[index - 1][j] : null;
+              const delta = previous === null ? 0 : row[j] - previous;
+              return (
+                <li
+                  key={agenda.id}
+                  className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2.5"
+                >
+                  <span
+                    aria-hidden
+                    className="inline-block size-2.5 shrink-0 rounded-[3px]"
+                    style={{ background: agendaColor(j) }}
+                  />
+                  <span className="min-w-0 flex-1 text-sm">{agenda.label}</span>
+                  {previous !== null && (
+                    <span className="text-muted-foreground font-mono text-xs whitespace-nowrap tabular-nums">
+                      was {formatShare(previous, exercise.totalPeople)}
+                      {delta !== 0 && (
+                        <span className="border-border ml-1.5 rounded-full border px-1.5">
+                          {delta > 0 ? "+" : "−"}
+                          {formatShare(Math.abs(delta), exercise.totalPeople)}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  <Stepper
+                    label={agenda.label}
+                    value={row[j]}
+                    max={exercise.totalPeople}
+                    step={step}
+                    disabled={pending}
+                    onChange={(value) => setValue(index, j, value)}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
 
         <p
           aria-live="polite"
@@ -391,7 +629,8 @@ export function AllocationExerciseCard({
           )}
         >
           {exact ? "✓ " : ""}
-          {formatPeople(total)} of {formatPeople(exercise.totalPeople)} allocated
+          {formatShare(total, exercise.totalPeople)} of {formatPeople(exercise.totalPeople)}{" "}
+          researchers&rsquo; effort allocated
         </p>
 
         <label htmlFor={reasonId} className="mt-4 block text-sm font-medium">

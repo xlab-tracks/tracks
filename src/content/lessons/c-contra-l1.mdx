@@ -1,0 +1,70 @@
+It might initially feel quite obvious as to why AI control would probably be good. After all, acquiring misalignment evidence, ensuring useful work of misaligned models, and having additive safety measures that generally don't interfere with alignment work, seems great.
+
+To begin this module we will
+
+- Illustrate each argument against control
+- Evaluate and attempt to remedy each argument
+- See how useful control actually is
+
+Many of the seminal "arguments against control" lay in the following post — [The Case Against AI Control Research](https://www.lesswrong.com/posts/8wBN8cdNAv3c7vt6p/the-case-against-ai-control-research). Your time would be well spent reading through it. Here we will address its main arguments, alongside related critiques other writers have raised.
+
+## Control's Main Mechanism for Reducing X-risk
+
+Control's mechanism for reduction in X-risk is centered around the claims that
+
+- We will use transformatively useful AIs ([TUAIs](https://www.lesswrong.com/posts/kcKrE9mzEHrdqtDpE/the-case-for-ensuring-that-powerful-ais-are-controlled)) to align and build the following generation of AIs.
+- These AIs will likely be misaligned, or we may be unable to determine their alignment with strong certainty as claimed in module 1. At worst they are actively scheming while we are unaware.
+- Should we pursue automated [AI R&D](https://www.rand.org/pubs/commentary/2024/10/how-ai-can-automate-ai-research-and-development.html) / [RSI](https://www.anthropic.com/institute/recursive-self-improvement) in this regime, it would be great to have a catch-all measure where even if AIs are scheming, they cannot act on their motivations. Or, any attempted actions are unable to produce negative outcomes.
+- Given this catch-all, we would be able to prevent any scheming-induced catastrophic behaviors such as [exfiltrations](https://aligned.substack.com/p/self-exfiltration), [rogue deployments](https://www.lesswrong.com/posts/ceBpLHJDdCt3xfEok/ai-catastrophes-and-rogue-deployments), [research sabotages](https://www.lesswrong.com/posts/LByP4qsF8a4g7Pz3p/research-sabotage-in-ml-codebases), etc.
+- Control aims to be this catch-all.
+
+We will refer to this overall plan, in which each controlled generation of AI aligns and builds the next until superintelligence is reached, as bootstrapping. Control's role is to keep that plan on the rails while it runs, not to carry out the alignment research itself.
+
+<Demo id="rsi-bootstrap" />
+
+## Modeling control
+
+As previously mentioned in module 1, we can model control as
+
+$$
+P(\text{unacceptable}) = P(\text{unacceptable} \mid \text{scheming}) \times P(\text{scheming}) + P(\text{unacceptable} \mid \neg\text{scheming}) \times P(\neg\text{scheming})
+$$
+
+Minimizing $P(\text{unacceptable outcome} \mid \text{scheming})$ is the control agenda. By unacceptable outcome we refer to something which is catastrophic and irreversible.
+
+Therefore, control mainly caters to threat models involving
+
+- Sub-superintelligent AIs
+- Schemers
+
+It is up for debate as to how strong or catastrophically impactful a TUAI is, and how likely it is to be scheming. It could be the case that these AIs are not strong enough to impose catastrophic threats, which would mean "controlling" them should be less of a priority. After all, most of the legitimate existential risk comes from misaligned superintelligence, not misaligned transformatively useful intelligence.
+
+## The main arguments against control
+
+{/* TODO: migrate to Cloudflare Stream — replace the self-hosted mp4 with the Stream embed URL; <Video> auto-detects cloudflarestream.com (provider="stream"). Self-hosted interim, re-encoded to <25 MiB. */}
+
+<Video provider="file" src="/videos/what_can_go_wrong.mp4" title="Ryan Greenblatt & Thomas Larsen - A Technical Safety Roadmap" />
+
+Critics — Wentworth's post among them — make a series of arguments against control to the effect that control is low-value rather than actively harmful. Work through them one at a time: for each criticism, write the best response you can before seeing one that defenders of control give.
+
+<Exercise id="contra-control-argue-reveal" />
+
+## Reasons to upweight control anyway
+
+There are also separate reasons why one may favor upweighting control work that do not fall under these criticisms
+
+- Early AI scheming includes a variety of [threat models](https://www.lesswrong.com/posts/kcKrE9mzEHrdqtDpE/the-case-for-ensuring-that-powerful-ais-are-controlled) such as exfiltrations, rogue deployments, and research sabotage. As previously mentioned these all contribute to potential catastrophes. Preventing these from happening through control work is good across nearly all worlds. Thereby control proponents claim that control does not claim to build ASI safely; rather, by preventing early scheming catastrophes it makes the work environment more stable.
+- Control also aims to flag early egregious misalignments to initiate potential policy or lab action — for example, by [catching AIs red-handed](https://www.lesswrong.com/posts/i2nmBfCXnadeGmhzW/catching-ais-red-handed).
+- In the world where alignment is not solved and the AIs are misaligned, control can prevent escape, monitor self-research, and help catch misalignment, buying researchers time to perform more safety research and evidence of misalignment.
+
+## Weighing control against alternatives
+
+Control is additive. It does not interfere with security, alignment, or verification interventions in a general sense. Therefore, we explore how counterfactually valuable allocating resources to control is in various scenarios.
+
+<Demo id="additive-control" />
+
+First, additive does not necessitate high-value. Control helps remedy scheming and compile misalignment evidence, but contributes almost nothing to reducing non-schemer induced slop. So its share of resources should track how much of the risk one expects to come from scheming rather than slop. Second, because the operative world is uncertain — the cruxes below are unresolved — a more robust move is to spread effort efficiently (see [80/20](https://en.wikipedia.org/wiki/Pareto_principle#:~:text=80%25%20of%20consequences%20come%20from%2020%25)), across additive fields, sizing each by the kind of risk it actually addresses.
+
+Control complements the main additive alternatives rather than competing with them. Verification and evaluation science works towards making alignment research independently checkable, and control provides the contained setting to develop and stress-test verification methods on untrusted models without the model subverting the work. [Scalable oversight](https://www.lesswrong.com/posts/6AT4vhYzww56CR6cm/scalable-oversight-as-a-quantitative-rather-than-qualitative), through debate, recursive reward modeling, and cross-checking outputs, aims to reduce the production rate of slop. Its protocols can run on monitoring scaffolding that control provides, which also keep scheming models from colluding to defeat them.
+
+Coordination and policy buy time while control generates evidence of misalignment that makes a pause politically actionable. Note that alignment research, if it can make early AI trustworthy enough, theoretically reduces the need to control it by acting on $P(\text{scheming})$ itself, though even here trust is earned under control, since control evaluations are how one determines if a model is trustworthy or not. Finally, the case for capability restraint, declining to run RSI in this regime at all, is strengthened by the same evidence, sharpening the argument for declining or halting the loop.

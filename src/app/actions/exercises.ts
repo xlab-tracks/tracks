@@ -491,7 +491,7 @@ export async function saveArgueRevealItem(
   exerciseId: string,
   itemId: string,
   rounds: ArgueRevealRoundEntry[],
-  rating: ArgueRevealRating,
+  rating: ArgueRevealRating | null,
   note: string,
 ): Promise<void> {
   const exercise = getExerciseById(exerciseId);

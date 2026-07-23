@@ -3,6 +3,21 @@ plain text, an embedded video, the three callout styles, and a footnote<Footnote
 ipsum footnote body — click/tap the marker to expand it, or widen the window to see
 it float into the margin.</Footnote> you can use in any lesson body.
 
+Glossary terms get a hover card: a term like <Term>sandbagging</Term> resolves
+by its text, and <Term id="political-will">the will account</Term> resolves by
+id when the prose form differs (hover on desktop, tap on touch — see
+`src/content/glossary.json`).
+
+External sites can be quoted inline with the same card machinery: a
+<SiteQuote
+  href="https://example.com/"
+  site="IANA"
+  title="Example Domain"
+  excerpt="This domain is for use in documentation examples without needing permission."
+>site quote</SiteQuote> previews a verbatim excerpt on hover and navigates to
+the real page on click (tap opens the card first on touch; the excerpt and
+attribution are all inline props — no registry).
+
 <Video
   src="https://www.youtube.com/watch?v=nwE_BsjBSUw"
   title="Example video — replace with your own"

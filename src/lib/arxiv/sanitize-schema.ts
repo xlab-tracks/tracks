@@ -37,7 +37,11 @@ export const paperSanitizeSchema: Schema = {
     // every converter stamps them post-sanitize (and data-conv at render
     // time), so an occurrence in author-controlled input is a forgery that
     // could shadow real block anchors.
-    "*": ["className"],
+    // data-author-id is a conversion-internal stash (the pre-sanitize strip
+    // moves author ids into it — after deleting any forged instance — and
+    // rewriteAuthorFragmentLinks consumes and deletes every one), so it
+    // never appears in committed artifact HTML.
+    "*": ["className", "dataAuthorId"],
     // Resolved colors: values are OUR "#rrggbb" strings (strictly validated
     // in transforms/colors.ts), converted to inline styles post-sanitize.
     tr: ["className", "dataAxBg"],

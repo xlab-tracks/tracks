@@ -308,20 +308,71 @@ export const papers: Paper[] = [
     ],
   },
   {
-    // Control track, module 1: the safety–usefulness tradeoff model, rendered
+    // Control track, module 2: the safety–usefulness tradeoff model, rendered
     // full-page from Redwood's blog (Substack) — the same committed artifact
-    // the Example track's ex-paper-substack uses, here as real curriculum. No
-    // exercises are woven in (the source PR reproduced it as a plain reading).
+    // the Example track's ex-paper-substack uses, here as real curriculum.
+    // A paragraph-level catalog concluded no further activities clear the
+    // necessity bar — see
+    // docs/superpowers/specs/2026-07-18-efficient-tradeoffs-activities.md.
     id: "c-efficient-tradeoffs",
     slug: "safety-usefulness-tradeoff-model",
-    moduleId: "c-intro",
+    moduleId: "c-mod2",
     title: "Efficient tradeoffs and the safety-usefulness tradeoff model",
     source: {
       kind: "substack",
       postUrl:
         "https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety",
     },
-    estimatedMinutes: 13,
+    edits: [
+      {
+        // The post calls time in this frame "a healthy exercise" (b-0025);
+        // the short answer has the reader do it once, concretely.
+        op: "activity",
+        after: { sectionEnd: "sb-sec-rushed-reasonable-developers" },
+        items: [{ kind: "exercise", id: "c-et-rushed-apply" }],
+      },
+    ],
+  },
+  {
+    // Control track, module 2: Ryan Greenblatt's "Plans A, B, C, and D for
+    // misalignment risk", rendered full-page through the LessWrong paper reader.
+    // Placed after "Determining the usefulness" (c-regimes-l1): the regime model
+    // teaches the political-will budget, and this reading is the plan landscape
+    // that budget selects between (Plan A = international agreement, max will …
+    // Plan D = ~10-30 employees on ~3% compute, minimal will). One quick-recall
+    // card is spliced at the end of each plan's section (module-1 pattern);
+    // answers compress the post's own summary definitions.
+    id: "c-plans-abcd",
+    slug: "plans-a-b-c-and-d-for-misalignment-risk",
+    moduleId: "c-mod2",
+    title: "Plans A, B, C, and D for misalignment risk",
+    source: {
+      kind: "lesswrong",
+      postUrl:
+        "https://www.lesswrong.com/posts/E8n93nnEaFeXTbHn5/plans-a-b-c-and-d-for-misalignment-risk",
+    },
+    edits: [
+      {
+        op: "activity",
+        after: { sectionEnd: "lw-sec-plan-a" },
+        items: [{ kind: "exercise", id: "c-plans-recall-a" }],
+      },
+      {
+        op: "activity",
+        after: { sectionEnd: "lw-sec-plan-b" },
+        items: [{ kind: "exercise", id: "c-plans-recall-b" }],
+      },
+      {
+        op: "activity",
+        after: { sectionEnd: "lw-sec-plan-c" },
+        items: [{ kind: "exercise", id: "c-plans-recall-c" }],
+      },
+      {
+        op: "activity",
+        after: { sectionEnd: "lw-sec-plan-d" },
+        items: [{ kind: "exercise", id: "c-plans-recall-d" }],
+      },
+    ],
   },
   {
     // Control track, module 1: "Catching AIs red-handed", rendered full-page

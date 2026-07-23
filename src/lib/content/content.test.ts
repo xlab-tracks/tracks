@@ -13,11 +13,13 @@ import {
   getItemsForModule,
   getLessonById,
   getModuleProgressContentIds,
+  getContentLocation,
   getModulesForTrack,
   getPrerequisiteModules,
   getTrackItemSequence,
   itemIdOf,
   itemSlugOf,
+  paperResources,
   papers,
   resources,
   tracks,
@@ -39,9 +41,17 @@ import {
   LESSWRONG_CONVERTER_VERSION,
   type LessWrongArtifact,
 } from "@/lib/lesswrong/types";
-import type { Paper } from "@/lib/content/types";
+import {
+  editTargetRef,
+  isSectionEndRef,
+  type Paper,
+} from "@/lib/content/types";
+import { getGlossaryTerm } from "@/lib/content/glossary";
 import { buildBlockIndex, normalizeText } from "@/lib/papers/block-index";
 import { markdownInlineToHast } from "@/lib/papers/markdown";
+import { findSentenceSpan, wrapGlossPhrase } from "@/lib/papers/patch-section";
+import { fromHtmlIsomorphic } from "hast-util-from-html-isomorphic";
+import type { Element, Root } from "hast";
 
 describe("content integrity", () => {
   it("every track's modules resolve and belong to it", () => {
@@ -114,7 +124,8 @@ describe("content integrity", () => {
     dupId(modules);
     dupId(exercises);
     dupId(assessments);
-    dupId(resources);
+    // The hub renders curated + paper-derived entries as one keyed list.
+    dupId([...resources, ...paperResources]);
 
     const trackSlugs = tracks.map((t) => t.slug);
     expect(new Set(trackSlugs).size).toBe(trackSlugs.length);
@@ -130,6 +141,40 @@ describe("content integrity", () => {
     // At most one assessment per module.
     const assessmentModuleIds = assessments.map((a) => a.moduleId);
     expect(new Set(assessmentModuleIds).size).toBe(assessmentModuleIds.length);
+  });
+
+  // Every real-track paper links out from the resource hub; the Example
+  // track's papers (feature reference, not curriculum) must not leak in.
+  it("paper-derived resources cover every real-track paper source", () => {
+    const urls = new Set(paperResources.map((r) => r.url));
+    for (const track of tracks) {
+      if (track.kind === "example") continue;
+      for (const mod of getModulesForTrack(track.id)) {
+        for (const item of getItemsForModule(mod.id)) {
+          if (item.kind !== "paper") continue;
+          const source = item.paper.source;
+          const url =
+            source.kind === "arxiv"
+              ? `https://arxiv.org/abs/${source.arxivId}`
+              : source.postUrl;
+          expect(urls.has(url), `${item.paper.id} missing from hub`).toBe(true);
+        }
+      }
+    }
+    const examplePaperIds = new Set(
+      papers.filter((p) => p.moduleId.startsWith("ex-")).map((p) => p.id),
+    );
+    for (const r of paperResources) {
+      const paperId = r.id.replace(/^paper-res-/, "");
+      expect(
+        examplePaperIds.has(paperId),
+        `${r.id} derives from an Example-track paper`,
+      ).toBe(false);
+      // The hub links course readings to their in-course viewer.
+      expect(r.internalHref, `${r.id} internalHref`).toBe(
+        getContentLocation(paperId)?.href,
+      );
+    }
   });
 });
 
@@ -377,7 +422,7 @@ describe("paper integrity", () => {
     (p.edits ?? []).flatMap((edit) => (edit.op === "activity" ? [edit] : []));
   const blockRefsOf = (p: (typeof papers)[number]) =>
     (p.edits ?? []).flatMap((edit) => {
-      const ref = edit.op === "hide" ? edit.at : edit.after;
+      const ref = editTargetRef(edit);
       return "anchor" in ref ? [{ edit, ref }] : [];
     });
   const insertedLessonIds = papers.flatMap((p) =>
@@ -570,9 +615,10 @@ describe("paper integrity", () => {
 
   it("every sectionEnd target is in the artifact toc", () => {
     for (const paper of papers) {
-      const sectionEnds = (paper.edits ?? []).flatMap((edit) =>
-        edit.op !== "hide" && "sectionEnd" in edit.after ? [edit.after.sectionEnd] : [],
-      );
+      const sectionEnds = (paper.edits ?? []).flatMap((edit) => {
+        const ref = editTargetRef(edit);
+        return isSectionEndRef(ref) ? [ref.sectionEnd] : [];
+      });
       if (sectionEnds.length === 0) continue;
       const facts = artifactFactsOf(paper);
       const artifact = readArtifact(paper);
@@ -620,10 +666,10 @@ describe("paper integrity", () => {
             `${paper.id}: ${ref.anchor} has ${info.sentences.length} sentences, ` +
               `edit references s=${ref.s}${sEnd !== ref.s ? `..${sEnd}` : ""} — run \`${listCmd} --section …\``,
           ).toBe(true);
-        } else if (edit.op === "hide") {
+        } else if (edit.op === "hide" || edit.op === "gloss") {
           expect(
             !/^h[1-6]$/.test(info.tag),
-            `${paper.id}: hide may not target heading ${ref.anchor} (nav/scroll anchor)`,
+            `${paper.id}: ${edit.op} may not target heading ${ref.anchor} (nav/scroll anchor)`,
           ).toBe(true);
         }
         const targetText = ref.s !== undefined ? info.sentences[ref.s - 1] : info.text;
@@ -694,7 +740,9 @@ describe("paper integrity", () => {
         ),
       );
       for (const { edit, ref } of blockRefsOf(paper)) {
-        if (edit.op === "hide") continue;
+        // A glossed phrase inside hidden text is fine — it reveals (and its
+        // card works) when the learner expands the marker.
+        if (edit.op === "hide" || edit.op === "gloss") continue;
         const unit = ref.s !== undefined ? `${ref.anchor}:${ref.s}` : ref.anchor;
         if (!covered.has(unit)) continue;
         expect(
@@ -710,6 +758,71 @@ describe("paper integrity", () => {
           covered.has(ref.anchor),
           `${paper.id}: mid-paragraph activity splits hidden block ${ref.anchor}`,
         ).toBe(false);
+      }
+    }
+  });
+
+  it("every gloss edit resolves: known term, unique target, phrase wrappable", () => {
+    for (const paper of papers) {
+      const glosses = (paper.edits ?? []).flatMap((edit) =>
+        edit.op === "gloss" ? [edit] : [],
+      );
+      if (glosses.length === 0) continue;
+
+      // Duplicate identical targets would nest or double-wrap triggers.
+      const keys = glosses.map(
+        (op) => `${op.at.anchor}:${op.at.s ?? 0}:${normalizeText(op.phrase)}`,
+      );
+      expect(new Set(keys).size, `${paper.id}: duplicate gloss edits`).toBe(
+        keys.length,
+      );
+
+      const artifact = readArtifact(paper);
+      if (!artifact.ready) continue; // covered above
+      const tree = fromHtmlIsomorphic(artifact.ready.html, {
+        fragment: true,
+      }) as Root;
+      const blockByAnchor = new Map<string, Element>();
+      const collect = (node: Root | Element): void => {
+        for (const child of node.children ?? []) {
+          if (child.type !== "element") continue;
+          const anchor = child.properties?.dataAnchor;
+          if (typeof anchor === "string") blockByAnchor.set(anchor, child);
+          collect(child);
+        }
+      };
+      collect(tree);
+
+      // Apply each block's glosses SEQUENTIALLY to one clone, in edits
+      // order — the exact phase-A0 semantics. A pristine-clone-per-op check
+      // would pass overlapping phrases ("trusted monitoring" then
+      // "monitoring") that the runtime silently drops as unmatched, because
+      // an earlier wrap consumes the text a later phrase needs.
+      const cloneByAnchor = new Map<string, Element>();
+      for (const op of glosses) {
+        const where = `${op.at.anchor}${op.at.s ? ` s=${op.at.s}` : ""}`;
+        expect(
+          getGlossaryTerm(op.termId),
+          `${paper.id}: gloss at ${where} references unknown term "${op.termId}" — add it to src/content/glossary.json`,
+        ).toBeDefined();
+        const block = blockByAnchor.get(op.at.anchor);
+        if (!block) continue; // unknown anchors already failed the snippet test
+        let clone = cloneByAnchor.get(op.at.anchor);
+        if (!clone) {
+          clone = structuredClone(block);
+          cloneByAnchor.set(op.at.anchor, clone);
+        }
+        const target = op.at.s ? findSentenceSpan(clone, op.at.s) : clone;
+        if (!target) continue; // out-of-range s already failed the snippet test
+        // The EXACT runtime matcher — a phrase split by inline markup (a
+        // link, citation, math, emphasis), or already consumed by an
+        // earlier gloss on this block, must fail here, not silently at
+        // render time.
+        expect(
+          wrapGlossPhrase(target, op.phrase, op.termId),
+          `${paper.id}: gloss phrase "${op.phrase}" at ${where} is not wrappable — ` +
+            `not plain running text there, or an earlier gloss already consumed it`,
+        ).toBe(true);
       }
     }
   });

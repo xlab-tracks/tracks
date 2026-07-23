@@ -24,6 +24,7 @@ import {
   stringProp,
   stripAuthorIdsAndReservedClasses,
   textOf,
+  rewriteAuthorFragmentLinks,
   unwrapSpans,
   type FootnoteNote,
 } from "@/lib/paper-source/convert-shared";
@@ -85,8 +86,10 @@ export async function convertPostHtml(
 
   // Author-controlled tree: neutralize reserved namespaces, then run the
   // transforms that need LessWrong's own attribute vocabulary (aria-labels,
-  // data-oembed-url) before sanitize strips it.
-  stripAuthorIdsAndReservedClasses(tree);
+  // data-oembed-url) before sanitize strips it. Author ids are stashed
+  // (data-author-id) so in-post fragment links can be repointed at the
+  // minted heading ids after normalizeHeadings.
+  stripAuthorIdsAndReservedClasses(tree, { stashIds: true });
   const images = collectImages(tree, warnings);
   const assets = await downloadImages(images, opts);
   rewriteImages(tree, images, opts.ref, warnings);
@@ -103,6 +106,20 @@ export async function convertPostHtml(
   unwrapSpans(clean);
   dropEmptyParagraphs(clean);
   normalizeHeadings(clean, "lw");
+  // After heading ids are minted: repoint the author's in-post links (bare
+  // fragments and self-URL fragments — the same post on any mirror host)
+  // and drop the id stash. LessWrong mints its ToC anchors client-side
+  // (every non-alphanumeric character of the heading text becomes "_"), so
+  // that rule doubles as a fallback for links no stashed id can explain.
+  rewriteAuthorFragmentLinks(
+    clean,
+    warnings,
+    (url) => url.includes(`/posts/${opts.ref.postId}`),
+    {
+      legacyHeadingSlug: (text) => text.replace(/[^A-Za-z0-9]/g, "_"),
+      mintAnchorId: (n) => `lw-anchor-${n}`,
+    },
+  );
 
   addAnchors(clean);
   wrapSentences(clean);
@@ -110,6 +127,7 @@ export async function convertPostHtml(
   // Fresh table per conversion: KaTeX persists \gdef definitions into the
   // macros object, and shared state would make output depend on build order.
   renderMathInHast(clean, { macros: {}, pairedDelims: [] }, warnings);
+  degradeKatexErrors(clean);
   const html = toHtml(clean);
 
   // Ship only bytes the final HTML references.
@@ -255,6 +273,29 @@ function rewriteImages(
  * delimiters — the text content. renderMathInHast turns the placeholders
  * into KaTeX post-sanitize; block-index collapses them to "⟨math⟩".
  */
+const DISPLAY_ONLY_ENV_RE =
+  /\\begin\{(?:align|alignat|flalign|gather|eqnarray|multline)\*?\}/;
+
+/**
+ * A formula KaTeX still couldn't parse (the katex-error span, red inline
+ * text) degrades to a plain <code> of the raw TeX — the warning collector
+ * already recorded the katex-error, so the reader shows legible source
+ * instead of an error styled as content.
+ */
+function degradeKatexErrors(tree: Root): void {
+  visit(tree, "element", (node: Element, index, parent) => {
+    if (index === undefined || !parent) return;
+    if (!hasClass(node, "katex-error")) return;
+    parent.children[index] = {
+      type: "element",
+      tagName: "code",
+      properties: {},
+      children: [{ type: "text", value: textOf(node) }],
+    };
+    return SKIP;
+  });
+}
+
 function transformMath(tree: Root, warnings: WarningCollector): void {
   visit(tree, "element", (node: Element, index, parent) => {
     if (index === undefined || !parent) return;
@@ -266,11 +307,16 @@ function transformMath(tree: Root, warnings: WarningCollector): void {
       warnings.add("math-dropped", textOf(node).slice(0, 40) || "empty formula");
       return index;
     }
+    // Environments KaTeX only accepts in display mode: authors sometimes
+    // inline an {align} block (MathJax tolerates it, KaTeX parse-errors), so
+    // promote it rather than shipping a red error span.
+    const display =
+      extracted.display || DISPLAY_ONLY_ENV_RE.test(extracted.tex);
     parent.children[index] = {
       type: "element",
-      tagName: extracted.display ? "div" : "span",
+      tagName: display ? "div" : "span",
       properties: {
-        className: [extracted.display ? "display-math" : "inline-math"],
+        className: [display ? "display-math" : "inline-math"],
       },
       children: [{ type: "text", value: extracted.tex }],
     };
@@ -333,7 +379,8 @@ function transformFootnotes(tree: Root, warnings: WarningCollector): void {
   // before the content is copied out.
   const items: { node: Element; key: string }[] = [];
   visit(tree, "element", (node: Element) => {
-    if (node.tagName !== "li" || !hasClass(node, "footnote-item")) return;
+    if (node.tagName !== "li") return;
+    const classed = hasClass(node, "footnote-item");
     const back = findFirst(
       node,
       (el) =>
@@ -343,15 +390,54 @@ function transformFootnotes(tree: Root, warnings: WarningCollector): void {
     );
     const key = back ? stringProp(back, "href")?.slice("#fnref".length) : undefined;
     if (!key) {
-      // No back-link means no marker can reference it — the note is dropped
-      // with the containers below. Surface the content loss.
-      warnings.add("footnote-dropped", textOf(node).slice(0, 60) || "empty note");
+      if (classed) {
+        // No back-link means no marker can reference it — the note is
+        // dropped with the containers below. Surface the content loss.
+        // (A classless li without a back-link is just an ordinary list
+        // item — not ours to touch.)
+        warnings.add(
+          "footnote-dropped",
+          textOf(node).slice(0, 60) || "empty note",
+        );
+      }
       return;
     }
+    // Bare-list format (div.footnotes > ol > li#fnN, ids long stripped):
+    // the #fnref back-link alone identifies a note — ordinary prose never
+    // links to #fnref anchors. Deliberately NOT skipping the subtree:
+    // malformed author HTML (an unclosed <ul> inside a note) makes the
+    // parser nest later notes inside an earlier one, and they must still be
+    // discovered as their own items.
     items.push({ node, key });
-    return SKIP;
   });
   const keys = new Set(items.map((item) => item.key));
+
+  // Un-nest items swallowed by a malformed sibling (see above) so each
+  // note's content is its own — otherwise dropping an orphaned outer note
+  // would silently take the nested real notes with it.
+  const itemNodes = new Set(items.map((item) => item.node));
+  for (const item of items) {
+    detachNestedItems(item.node, itemNodes);
+  }
+
+  // Nothing recognized: leave the source markup alone rather than letting
+  // the container purge below silently delete note bodies we failed to
+  // parse (the failure mode that dropped a post's whole Notes list).
+  if (items.length === 0) {
+    let sawContainer = false;
+    visit(tree, "element", (node: Element) => {
+      if (
+        classListOf(node).includes("footnotes") ||
+        classListOf(node).includes("footnote-section")
+      ) {
+        sawContainer = true;
+      }
+    });
+    if (sawContainer) {
+      warnings.add("footnote-format-unrecognized", "source markup kept as-is");
+    }
+    return;
+  }
 
   // Pass 2: rewrite markers whose key has a note. Display numbers follow the
   // marker's own text when it's unclaimed; otherwise (digit-less markers,
@@ -420,6 +506,21 @@ function transformFootnotes(tree: Root, warnings: WarningCollector): void {
   notes.sort((a, b) => Number(a.number) - Number(b.number));
   if (notes.length === 0) return;
   tree.children.push(buildFootnotesSection(notes, "lw"));
+
+  // Source-authored dangling footnote links — markers whose note never
+  // existed in this post (e.g. leftovers of an earlier draft keyed to a
+  // different document id). They are equally dead on the source site, but
+  // inside the reader a dead link reads as our bug: unwrap to plain text
+  // and record it. Minted markers are untouched (#lw-fn… ≠ #fn…).
+  visit(tree, "element", (node: Element, index, parent) => {
+    if (index === undefined || !parent) return;
+    if (node.tagName !== "a") return;
+    const href = stringProp(node, "href");
+    if (!href || !href.startsWith("#fn")) return;
+    warnings.add("footnote-link-dead", href);
+    parent.children.splice(index, 1, ...node.children);
+    return index;
+  });
 }
 
 /**
@@ -430,7 +531,10 @@ function markerOf(
   node: Element,
 ): { key: string; number: string | null } | null {
   const modern = node.tagName === "span" && hasClass(node, "footnote-reference");
-  const legacy = node.tagName === "sup" && hasClass(node, "footnote-ref");
+  // Legacy markers come classed (sup.footnote-ref) or bare (<sup><a href=
+  // "#fn1">); accepting any sup is safe because callers only rewrite
+  // markers whose key has a matching note (keys.has guard).
+  const legacy = node.tagName === "sup";
   if (!modern && !legacy) return null;
   const link = findFirst(
     node,
@@ -442,6 +546,19 @@ function markerOf(
   if (!key) return null;
   const digits = /(\d+)/.exec(textOf(node));
   return { key, number: digits ? digits[1] : null };
+}
+
+/** Splice any OTHER footnote item out of this item's subtree. */
+function detachNestedItems(root: Element, itemNodes: Set<Element>): void {
+  const walk = (el: Element) => {
+    el.children = el.children.filter(
+      (child) => !(child.type === "element" && itemNodes.has(child) && child !== root),
+    );
+    for (const child of el.children) {
+      if (child.type === "element") walk(child);
+    }
+  };
+  walk(root);
 }
 
 /** Every matching descendant (including the node itself), document order. */
@@ -467,7 +584,12 @@ function stripAuthorBacklinks(content: ElementContent[]): ElementContent[] {
       if (child.type !== "element") return [child];
       if (
         hasClass(child, "footnote-backref") ||
-        hasClass(child, "footnote-back-link")
+        hasClass(child, "footnote-back-link") ||
+        // The bare-list format's back-link carries no class — just
+        // `<a href="#fnrefN">↩</a>` — and would survive as a dead link
+        // inside the rebuilt note.
+        (child.tagName === "a" &&
+          (stringProp(child, "href")?.startsWith("#fnref") ?? false))
       ) {
         return [];
       }

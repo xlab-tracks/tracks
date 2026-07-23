@@ -1,0 +1,335 @@
+{
+  "autoGlossExclude": [
+    "c-areas-l1",
+    "c-lowstakes-l2",
+    "c-lowstakes-l3",
+    "c-lowstakes-l4"
+  ],
+  "terms": [
+    {
+      "id": "scheming",
+      "term": "scheming",
+      "aliases": ["schemer", "schemers", "scheming model", "scheming models"],
+      "definition": "Schemers are AIs that eventually take substantial material action (control subversion, research sabotage) and manipulate their training procedures (alignment faking, sandbagging) to gain long-term power over their developers in service of pursuing their misaligned goals.",
+      "seeAlso": ["sandbagging", "catching-red-handed", "ai-takeover"],
+      "autoGloss": true,
+      "source": {
+        "label": "The case for ensuring that powerful AIs are controlled (Redwood Research)",
+        "url": "https://www.lesswrong.com/posts/kcKrE9mzEHrdqtDpE/the-case-for-ensuring-that-powerful-ais-are-controlled"
+      }
+    },
+    {
+      "id": "sandbagging",
+      "term": "sandbagging",
+      "aliases": ["sandbag", "sandbags", "sandbagged"],
+      "definition": "a misaligned model intentionally doing worse on a task than it could. Scenarios include slowing down safety research or hiding dangerous capabilities from evaluations.",
+      "seeAlso": ["scheming", "situational-awareness"],
+      "autoGloss": true,
+      "source": {
+        "label": "Misalignment and strategic underperformance (Redwood Research)",
+        "url": "https://blog.redwoodresearch.org/p/misalignment-and-strategic-underperformance"
+      }
+    },
+    {
+      "id": "situational-awareness",
+      "term": "situational awareness",
+      "aliases": ["situationally aware"],
+      "definition": "A model's knowledge of what it is and what situation it is in, for instance whether it is being evaluated or it is actually deployed. Hidden situational awareness can lead to behaviors like sandbagging.",
+      "seeAlso": ["sandbagging"],
+      "autoGloss": true
+    },
+    {
+      "id": "exfiltration",
+      "term": "exfiltration",
+      "aliases": [
+        "exfiltrate",
+        "exfiltrations",
+        "exfiltrated",
+        "self-exfiltration",
+        "weight exfiltration"
+      ],
+      "definition": "An AI getting a copy of its own weights out of the developer's control so it can run and act without the lab's safety measures. Also called self-exfiltration or weight exfiltration.",
+      "seeAlso": ["rogue-deployment"],
+      "autoGloss": true
+    },
+    {
+      "id": "rogue-deployment",
+      "term": "rogue deployment",
+      "aliases": ["rogue deployments"],
+      "definition": "A deployment of an AI in which the intended safety measures are absent, like after the model escalates its own permissions inside the lab, or when it runs on exfiltrated weights outside the lab.",
+      "seeAlso": ["exfiltration", "control-protocol"],
+      "autoGloss": true
+    },
+    {
+      "id": "catching-red-handed",
+      "term": "catching red-handed",
+      "aliases": [
+        "caught red-handed",
+        "catch red-handed",
+        "catching AIs red-handed",
+        "red-handed"
+      ],
+      "definition": "Obtaining undeniable evidence of a model attempting something egregiously bad, such as an escape attempt.",
+      "seeAlso": ["scheming"],
+      "autoGloss": true,
+      "source": {
+        "label": "Catching AIs red-handed (Redwood Research)",
+        "url": "https://www.lesswrong.com/posts/i2nmBfCXnadeGmhzW/catching-ais-red-handed"
+      }
+    },
+    {
+      "id": "slop",
+      "term": "slop",
+      "definition": "Plausible-looking but low-quality or subtly wrong AI output. Slop degrades AI-produced research (including safety research).",
+      "seeAlso": ["scheming", "scalable-oversight"],
+      "autoGloss": true
+    },
+    {
+      "id": "political-will",
+      "term": "political will",
+      "definition": "The willingness of a developer (or government, or public) to give up usefulness, speed, or competitive position for safety.",
+      "seeAlso": ["safety-budget", "race-dynamics"],
+      "autoGloss": true,
+      "source": {
+        "label": "Efficient tradeoffs and the safety-usefulness tradeoff model (Redwood Research)",
+        "url": "https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety"
+      }
+    },
+    {
+      "id": "safety-budget",
+      "term": "safety budget",
+      "definition": "The extent to which a developer is willing to sacrifice usefulness for safety. On the cheap end this means implementing safety measures; on the expensive end, refraining from training or deploying models at all.",
+      "seeAlso": ["political-will", "pareto-frontier"],
+      "autoGloss": true,
+      "source": {
+        "label": "Efficient tradeoffs and the safety-usefulness tradeoff model (Redwood Research)",
+        "url": "https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety"
+      }
+    },
+    {
+      "id": "pareto-frontier",
+      "term": "Pareto frontier",
+      "aliases": ["Pareto improvement", "Pareto improvements", "Pareto optimal"],
+      "definition": "The curve of best achievable trade-offs, commonly used to describe tradeoffs between safety and usefulness. Better safety techniques push the frontier out, so a given usefulness sacrifice buys more safety; a Pareto improvement is better on one axis and no worse on the other.",
+      "seeAlso": ["safety-budget"],
+      "autoGloss": true,
+      "source": {
+        "label": "Efficient tradeoffs and the safety-usefulness tradeoff model (Redwood Research)",
+        "url": "https://blog.redwoodresearch.org/p/efficient-tradeoffs-and-the-safety"
+      }
+    },
+    {
+      "id": "inaction-risk",
+      "term": "inaction risk",
+      "aliases": ["action risk"],
+      "definition": "The risk a developer takes by pausing deployment weighed against action risk, the risk that deploying the AI directly causes a catastrophe.",
+      "seeAlso": ["political-will", "race-dynamics"],
+      "autoGloss": true,
+      "source": {
+        "label": "The case for ensuring that powerful AIs are controlled (Redwood Research)",
+        "url": "https://www.lesswrong.com/posts/kcKrE9mzEHrdqtDpE/the-case-for-ensuring-that-powerful-ais-are-controlled"
+      }
+    },
+    {
+      "id": "lead-time",
+      "term": "lead time",
+      "definition": "A time advantage over rival developers that can be spent on safety work instead of racing.",
+      "seeAlso": ["non-proliferation", "race-dynamics", "takeoff"],
+      "autoGloss": true,
+      "source": {
+        "label": "Plans A, B, C, and D for misalignment risk (Ryan Greenblatt)",
+        "url": "https://www.lesswrong.com/posts/E8n93nnEaFeXTbHn5/plans-a-b-c-and-d-for-misalignment-risk"
+      }
+    },
+    {
+      "id": "takeoff",
+      "term": "takeoff",
+      "aliases": ["takeoff trajectory"],
+      "definition": "The transition from powerful-but-limited AI to vastly superhuman AI. Takeoff speed determines how much time is available for safety work between capability milestones.",
+      "seeAlso": ["recursive-self-improvement", "superintelligence"],
+      "autoGloss": true
+    },
+    {
+      "id": "race-dynamics",
+      "term": "race dynamics",
+      "definition": "Describes the competitive pressure between AI developers or states to move faster than rivals, which erodes each actor's willingness to spend on safety.",
+      "seeAlso": ["political-will", "lead-time", "inaction-risk"],
+      "autoGloss": true
+    },
+    {
+      "id": "non-proliferation",
+      "term": "non-proliferation",
+      "aliases": ["nonproliferation"],
+      "definition": "Keeping frontier-scale AI capability from spreading to additional actors, preserving the leaders' lead time and keeping a coordinated slowdown possible.",
+      "seeAlso": ["lead-time"],
+      "autoGloss": true
+    },
+    {
+      "id": "handoff",
+      "term": "handoff",
+      "aliases": ["hand-off"],
+      "definition": "The point at which humans hand roughly all safety work over to AI systems and defer to their judgment.",
+      "seeAlso": ["transformatively-useful-ai", "recursive-self-improvement"],
+      "autoGloss": true,
+      "source": {
+        "label": "Plans A, B, C, and D for misalignment risk (Ryan Greenblatt)",
+        "url": "https://www.lesswrong.com/posts/E8n93nnEaFeXTbHn5/plans-a-b-c-and-d-for-misalignment-risk"
+      }
+    },
+    {
+      "id": "moonshot",
+      "term": "moonshot",
+      "aliases": ["moonshots"],
+      "definition": "A very ambitious research bet that could plausibly deliver high-assurance, scalable alignment.",
+      "seeAlso": ["prosaic"],
+      "autoGloss": true,
+      "source": {
+        "label": "Plans A, B, C, and D for misalignment risk (Ryan Greenblatt)",
+        "url": "https://www.lesswrong.com/posts/E8n93nnEaFeXTbHn5/plans-a-b-c-and-d-for-misalignment-risk"
+      }
+    },
+    {
+      "id": "prosaic",
+      "term": "prosaic",
+      "aliases": ["prosaic approaches", "prosaic methods"],
+      "definition": "Straightforward, empirical safety methods that iterate on current systems rather than waiting on fundamental breakthroughs.",
+      "seeAlso": ["moonshot"],
+      "autoGloss": true
+    },
+    {
+      "id": "ai-takeover",
+      "term": "AI takeover",
+      "aliases": ["takeover risk", "AI takeover risk"],
+      "definition": "An outcome in which AI systems end up with effective control over the future and act against their developers' and humanity's intentions.",
+      "seeAlso": ["x-risk", "scheming"],
+      "autoGloss": true
+    },
+    {
+      "id": "x-risk",
+      "term": "x-risk",
+      "aliases": ["existential risk", "x-risks"],
+      "definition": "Existential risk: the risk of an outcome that permanently destroys humanity's potential, a few avenues being extinction or an irreversible loss of control over the future.",
+      "seeAlso": ["ai-takeover"],
+      "autoGloss": true
+    },
+    {
+      "id": "superintelligence",
+      "term": "superintelligence",
+      "aliases": ["superintelligent"],
+      "definition": "AI vastly more capable than humans across the board.",
+      "seeAlso": ["transformatively-useful-ai", "inscrutability"],
+      "autoGloss": true
+    },
+    {
+      "id": "transformatively-useful-ai",
+      "term": "transformatively useful AI",
+      "aliases": ["TUAI", "TUAIs", "transformatively useful AIs"],
+      "definition": "AI capable enough to significantly accelerate the pace of safety research. Abbreviated TUAI.",
+      "seeAlso": ["superintelligence", "handoff"],
+      "autoGloss": true
+    },
+    {
+      "id": "recursive-self-improvement",
+      "term": "recursive self-improvement",
+      "aliases": ["RSI"],
+      "definition": "AIs doing the AI research that produces their own more capable successors, so each generation builds the next with progressively less human oversight in the loop. Abbreviated RSI.",
+      "seeAlso": ["takeoff", "handoff"],
+      "autoGloss": true
+    },
+    {
+      "id": "control-protocol",
+      "term": "control protocol",
+      "aliases": ["control protocols"],
+      "definition": "The pipeline of safety techniques a lab runs untrusted model outputs through designed to extract useful work while preventing, and catching, bad actions.",
+      "seeAlso": ["trusted-monitoring", "control-evaluation", "untrusted-model"],
+      "autoGloss": true,
+      "source": {
+        "label": "AI Control: Improving Safety Despite Intentional Subversion",
+        "url": "https://arxiv.org/abs/2312.06942"
+      }
+    },
+    {
+      "id": "trusted-monitoring",
+      "term": "trusted monitoring",
+      "aliases": ["trusted monitor", "trusted monitors"],
+      "definition": "A basic control protocol: the untrusted model does the work while a weaker trusted model rates how suspicious each output looks, letting humans audit the most suspicious slice.",
+      "seeAlso": ["control-protocol", "trusted-model"],
+      "autoGloss": true,
+      "source": {
+        "label": "AI Control: Improving Safety Despite Intentional Subversion",
+        "url": "https://arxiv.org/abs/2312.06942"
+      }
+    },
+    {
+      "id": "untrusted-model",
+      "term": "untrusted model",
+      "aliases": ["untrusted models"],
+      "definition": "A model powerful enough that scheming cannot be ruled out while having little evidence of aligned behavior.",
+      "seeAlso": ["trusted-model", "scheming", "control-protocol"],
+      "autoGloss": true
+    },
+    {
+      "id": "trusted-model",
+      "term": "trusted model",
+      "aliases": ["trusted models"],
+      "definition": "A weaker model trusted not to scheme that's used to monitor, edit, or stand in for the untrusted model's outputs.",
+      "seeAlso": ["untrusted-model", "trusted-monitoring"],
+      "autoGloss": true
+    },
+    {
+      "id": "backdoor",
+      "term": "backdoor",
+      "aliases": ["backdoors", "backdoored"],
+      "definition": "Submitted work that passes all the visible tests but contains a deliberate, exploitable flaw.",
+      "seeAlso": ["control-protocol", "control-evaluation"],
+      "autoGloss": true,
+      "source": {
+        "label": "AI Control: Improving Safety Despite Intentional Subversion",
+        "url": "https://arxiv.org/abs/2312.06942"
+      }
+    },
+    {
+      "id": "control-evaluation",
+      "term": "control evaluation",
+      "aliases": ["control evaluations", "control evals", "control eval"],
+      "definition": "An evaluation that stages mock attacks to estimate whether a protocol would catch a real schemer trying its best to subvert it.",
+      "seeAlso": ["control-protocol"],
+      "autoGloss": true,
+      "source": {
+        "label": "The case for ensuring that powerful AIs are controlled (Redwood Research)",
+        "url": "https://www.lesswrong.com/posts/kcKrE9mzEHrdqtDpE/the-case-for-ensuring-that-powerful-ais-are-controlled"
+      }
+    },
+    {
+      "id": "scalable-oversight",
+      "term": "scalable oversight",
+      "definition": "Techniques that use AIs to help supervise AIs so that training and evaluation signals stay reliable as tasks grow beyond what humans can check directly.",
+      "seeAlso": ["slop", "inscrutability"],
+      "autoGloss": true,
+      "source": {
+        "label": "Misalignment and strategic underperformance (Redwood Research)",
+        "url": "https://blog.redwoodresearch.org/p/misalignment-and-strategic-underperformance"
+      }
+    },
+    {
+      "id": "inscrutability",
+      "term": "inscrutability",
+      "aliases": ["inscrutable"],
+      "definition": "The amount a model's outputs or decisions are too complex or opaque for humans or trusted AI monitors to check whether they are safe.",
+      "seeAlso": ["superintelligence", "scalable-oversight"],
+      "autoGloss": true
+    },
+    {
+      "id": "alignment-tax",
+      "term": "alignment tax",
+      "aliases": ["alignment taxes"],
+      "definition": "The capability or usefulness cost of a safety measure. The smaller the tax, the likelier a developer is to actually adopt the measure in practice.",
+      "seeAlso": ["safety-budget", "pareto-frontier"],
+      "autoGloss": true,
+      "source": {
+        "label": "An overview of areas of control work (Redwood Research)",
+        "url": "https://blog.redwoodresearch.org/p/an-overview-of-areas-of-control-work"
+      }
+    }
+  ]
+}
