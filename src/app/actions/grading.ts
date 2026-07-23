@@ -11,10 +11,13 @@ import {
   type CriterionResult,
 } from "@/lib/grader/parse";
 import { systemPrompt, userPrompt } from "@/lib/grader/prompts";
+import { getUserOpenRouterKey } from "@/lib/grader/user-key";
 import {
-  getOpenRouterKeyStatus,
-  getUserOpenRouterKey,
-} from "@/lib/grader/user-key";
+  classroomIdOfSelection,
+  getClassroomOpenRouterKey,
+  getGraderKeyView,
+} from "@/lib/grader/grading-key";
+import type { GraderKeySource } from "@/lib/grader/classify";
 import {
   assembleArgueReveal,
   assembleWriting,
@@ -118,25 +121,45 @@ export async function requestTransparencyGrade(
     return { ok: false, error: "Nothing gradeable in this submission yet." };
   }
 
-  // Prefer the user's own stored key; fall back to the server-wide one only
-  // when the user has none. A stored-but-undecryptable key (rotated
-  // API_KEY_ENCRYPTION_SECRET) is an error, not a silent fallback — the user
-  // believes their key pays for this call. The decrypted key exists only
+  // Bill the key the user selected (their own, a classroom's, or the
+  // server-wide one) — getGraderKeyView re-resolves the stored preference
+  // against what's actually available, so nothing grade-relevant is trusted
+  // from the client. A stored-but-undecryptable key (rotated
+  // API_KEY_ENCRYPTION_SECRET) is an error, not a silent fallback — someone
+  // believes that key pays for this call. The decrypted key exists only
   // inside this request — never in the response.
-  const keyStatus = await getOpenRouterKeyStatus(user.id);
-  if (keyStatus?.state === "needs-reentry") {
-    return {
-      ok: false,
-      error:
-        "Your stored OpenRouter key can no longer be read — replace or remove it below, then try again.",
-    };
+  const keyView = await getGraderKeyView(user.id);
+  const selected = keyView?.selected ?? "server";
+  let keySource: GraderKeySource = "server";
+  let apiKey: string | undefined | null;
+  const selectedClassroomId = classroomIdOfSelection(selected);
+  if (selected === "user") {
+    if (keyView?.personal.state === "needs-reentry") {
+      return {
+        ok: false,
+        error:
+          "Your stored OpenRouter key can no longer be read — replace or remove it below, then try again.",
+      };
+    }
+    keySource = "user";
+    apiKey = await getUserOpenRouterKey(user.id);
+  } else if (selectedClassroomId != null) {
+    keySource = "classroom";
+    apiKey = await getClassroomOpenRouterKey(user.id, selectedClassroomId);
+    if (!apiKey) {
+      return {
+        ok: false,
+        error:
+          "The selected classroom's grading key can no longer be used — pick another key below, or ask the instructor to re-enter it.",
+      };
+    }
+  } else {
+    apiKey = serverOpenRouterKey();
   }
-  const userKey = await getUserOpenRouterKey(user.id);
-  const apiKey = userKey ?? serverOpenRouterKey();
   if (!apiKey) {
     return {
       ok: false,
-      error: keyStatus
+      error: keyView
         ? "Grading needs an OpenRouter API key — add your own key below to enable it."
         : "Grading is not configured on this server.",
     };
@@ -144,7 +167,7 @@ export async function requestTransparencyGrade(
 
   const lengthClass = classifyLength(assembled.sample);
   const result = await callGrader(
-    modelFor(lengthClass, userKey != null ? "user" : "server"),
+    modelFor(lengthClass, keySource),
     systemPrompt(lengthClass),
     userPrompt(assembled.sample, assembled.context),
     apiKey,

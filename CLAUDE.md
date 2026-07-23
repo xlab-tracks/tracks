@@ -187,15 +187,24 @@ the visible report is the analysis-stripped remainder. The rubric is
 single-sourced in `src/lib/grader/rubric.ts` (author's verbatim text) — the
 prompts' criterion blocks and the UI tooltips both build from it. The raw
 report persists unmodified on `Submission.feedback`; parsing happens at read
-time, so pre-format reports degrade to a full-markdown view. It prefers a user-stored OpenRouter
-key over the server-wide `OPENROUTER_API_KEY`: signed-in users add their own
-via `saveOpenRouterKey` (validated live against OpenRouter, persisted
-AES-GCM-encrypted in `UserApiKey` under `API_KEY_ENCRYPTION_SECRET`, with
-`userId:provider` bound as additionalData — `src/lib/grader/key-crypto.ts`;
-secrets shorter than 32 chars or equal to the .env.example placeholder are
-treated as unset, hiding the feature). Decrypted key material never leaves
-the server; the client only ever sees a status state + `last4`
-(`getOpenRouterKeyStatus`, passed into `TransparencyFeedback`; it probes
+time, so pre-format reports degrade to a full-markdown view. Three key
+sources can pay for a grade — the server-wide `OPENROUTER_API_KEY`, a
+user-stored key (`saveOpenRouterKey`), or a classroom key
+(instructor-managed on the classroom page via `saveClassroomOpenRouterKey`,
+usable by every member). Stored keys are validated live against OpenRouter,
+then persisted AES-GCM-encrypted in `UserApiKey` / `ClassroomApiKey` under
+`API_KEY_ENCRYPTION_SECRET`, with `userId:provider` resp.
+`classroom:<id>:provider` bound as additionalData —
+`src/lib/grader/key-crypto.ts`; secrets shorter than 32 chars or equal to
+the .env.example placeholder are treated as unset, hiding the feature.
+Which key bills is a per-user choice (`User.graderKeyPref`, set from the
+dropdown in the grading card via `setGraderKeySelection`), resolved
+server-side in `src/lib/grader/grading-key.ts`: the preference while still
+available, else own key > sole classroom key > server (never auto-picks
+among several classroom keys); user/classroom keys grade on the paid
+`OPENROUTER_MODEL_USER` model. Decrypted key material never leaves the
+server; the client only ever sees states, classroom names, and `last4`s
+(`getGraderKeyView`, passed into `TransparencyFeedback`; it probes
 decryption, so a key orphaned by secret rotation surfaces as `needs-reentry`
 and grading errors rather than silently billing the server-wide key).
 `src/lib/control-model/` is the pure closed-form model behind the Control

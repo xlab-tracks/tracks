@@ -17,7 +17,7 @@ import { WritingEditor, type WritingValues } from "@/components/exercises/writin
 import { TransparencyFeedback } from "@/components/exercises/transparency-feedback";
 import { feedbackToHtml } from "@/lib/grader/feedback-html";
 import { parseGraderReport, parseVerdict } from "@/lib/grader/parse";
-import { getOpenRouterKeyStatus } from "@/lib/grader/user-key";
+import { getGraderKeyView } from "@/lib/grader/grading-key";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -110,7 +110,7 @@ export default async function AssessmentPage({
                 <TransparencyFeedback
                   contentId={assessment.id}
                   kind="assessment"
-                  keyStatus={(await getOpenRouterKeyStatus(user.id)) ?? undefined}
+                  keyView={(await getGraderKeyView(user.id)) ?? undefined}
                   initialScore={
                     submission.score != null && submission.feedback
                       ? submission.score

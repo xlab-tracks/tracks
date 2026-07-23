@@ -12,6 +12,8 @@ import {
   RegenerateCodeButton,
   RemoveMemberButton,
 } from "@/components/classrooms/classroom-manage";
+import { ClassroomKeySettings } from "@/components/classrooms/classroom-key-settings";
+import { getClassroomKeyStatus } from "@/lib/grader/grading-key";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,6 +95,8 @@ export default async function ClassroomPage({
   // ---- Instructor view ----
   const roster = await getClassroomRoster(classroom.memberships, classroom.trackId);
   const students = roster.filter((r) => r.role === "student");
+  // Null when key storage is unconfigured server-side — hide the card.
+  const keyStatus = await getClassroomKeyStatus(classroom.id);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-10 lg:px-6">
@@ -191,6 +195,21 @@ export default async function ClassroomPage({
             </tbody>
           </table>
         </div>
+      )}
+
+      {keyStatus && (
+        <section className="border-border shadow-soft mt-8 rounded-xl border p-5">
+          <h2 className="text-sm font-semibold">Grading key</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Store a classroom OpenRouter API key and members can bill their
+            reasoning-transparency grading to this classroom instead of their
+            own key. Only the key&apos;s last four characters are ever shown.
+          </p>
+          <ClassroomKeySettings
+            classroomId={classroom.id}
+            initialStatus={keyStatus}
+          />
+        </section>
       )}
     </main>
   );

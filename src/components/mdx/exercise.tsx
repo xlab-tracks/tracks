@@ -38,7 +38,7 @@ import type { WritingValues } from "@/components/exercises/writing-editor";
 import { TransparencyFeedback } from "@/components/exercises/transparency-feedback";
 import { feedbackToHtml } from "@/lib/grader/feedback-html";
 import { parseGraderReport, parseVerdict } from "@/lib/grader/parse";
-import { getOpenRouterKeyStatus } from "@/lib/grader/user-key";
+import { getGraderKeyView } from "@/lib/grader/grading-key";
 
 // Preloaded props for TransparencyFeedback from a previously graded row, so
 // a stored grade survives reloads. The report's <analysis> block never
@@ -213,7 +213,7 @@ export async function Exercise({ id }: ExerciseProps) {
             <TransparencyFeedback
               contentId={exercise.id}
               kind="exercise"
-              keyStatus={(await getOpenRouterKeyStatus(user.id)) ?? undefined}
+              keyView={(await getGraderKeyView(user.id)) ?? undefined}
               {...storedGradeProps(submission)}
             />
           ) : undefined
@@ -259,7 +259,7 @@ export async function Exercise({ id }: ExerciseProps) {
             <TransparencyFeedback
               contentId={exercise.id}
               kind="exercise"
-              keyStatus={(await getOpenRouterKeyStatus(user.id)) ?? undefined}
+              keyView={(await getGraderKeyView(user.id)) ?? undefined}
               {...storedGradeProps(submission)}
             />
           </div>

@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { requestTransparencyGrade } from "@/app/actions/grading";
 import {
-  OpenRouterKeySettings,
-  type OpenRouterKeyStatusView,
-} from "@/components/exercises/openrouter-key-settings";
+  GraderKeySettings,
+  type GraderKeyViewClient,
+} from "@/components/exercises/grader-key-settings";
 import { RubricTable } from "@/components/exercises/rubric-table";
 import type { CriterionResult } from "@/lib/grader/parse";
 
@@ -31,7 +31,7 @@ export function TransparencyFeedback({
   initialBand,
   initialFeedbackHtml,
   initialCriteria,
-  keyStatus,
+  keyView,
 }: {
   contentId: string;
   kind: "exercise" | "assessment";
@@ -41,10 +41,12 @@ export function TransparencyFeedback({
   /** Parsed per-criterion results of a stored grade (rubric table rows). */
   initialCriteria?: CriterionResult[];
   /**
-   * Server-provided status of the user's own OpenRouter key (state + last4
-   * only); omitted when key storage is unconfigured, which hides the key UI.
+   * Server-provided view of the grader key sources available to the user
+   * (states, classroom names, last4s — never key material) plus the
+   * effective selection; omitted when key storage is unconfigured, which
+   * hides the key UI.
    */
-  keyStatus?: OpenRouterKeyStatusView;
+  keyView?: GraderKeyViewClient;
 }) {
   const [grade, setGrade] = useState<GradeState | null>(() =>
     initialScore != null &&
@@ -143,7 +145,7 @@ export function TransparencyFeedback({
           />
         </div>
       )}
-      {keyStatus && <OpenRouterKeySettings initialStatus={keyStatus} />}
+      {keyView && <GraderKeySettings view={keyView} />}
     </div>
   );
 }

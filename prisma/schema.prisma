@@ -28,6 +28,11 @@ model User {
   name         String?
   imageUrl     String?
   createdAt    DateTime @default(now())
+  // Which OpenRouter key the grader bills: "server", "user", or
+  // "classroom:<classroomId>". Null = automatic (own key, else a sole
+  // available classroom key, else the server-wide key). Validated on write
+  // and re-validated at grade time — a stale value falls back to automatic.
+  graderKeyPref String?
 
   lessonProgress    LessonProgress[]
   submissions       Submission[]
@@ -52,6 +57,24 @@ model UserApiKey {
   updatedAt  DateTime @updatedAt
 
   @@unique([userId, provider])
+}
+
+// A classroom-supplied OpenRouter key: an instructor stores one so grading
+// can bill the classroom instead of the student or the server. Same
+// encryption scheme as UserApiKey, with the AAD bound to the classroom row
+// (classroom:<classroomId>:<provider> — see src/lib/grader/grading-key.ts).
+// Any classroom member may grade with it; only instructors manage it.
+model ClassroomApiKey {
+  id          String    @id @default(cuid())
+  classroomId String
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  provider    String    @default("openrouter")
+  ciphertext  String
+  last4       String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([classroomId, provider])
 }
 
 enum ProgressStatus {
@@ -123,6 +146,7 @@ model Classroom {
   createdAt   DateTime @default(now())
 
   memberships ClassroomMembership[]
+  apiKeys     ClassroomApiKey[]
 }
 
 model ClassroomMembership {
