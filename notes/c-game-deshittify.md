@@ -225,6 +225,14 @@ Arya's edits at [c-subtlety-relocation-draft.md](./c-subtlety-relocation-draft.m
 defer → §3.3; dashboard → §3.5 end. Draft against the Model spine in
 c-race-relocation-draft.md.)
 
+2026-07-24 (c-game RETIRED): with every section mirrored into the walkthrough (3.2.1 +
+3.3.1), the standalone "Trusted monitoring as a game" lesson is REMOVED — c-game.mdx
+deleted, curriculum entry + module itemIds dropped (module minutes 377 → 285), retirement
+note left in curriculum.data.ts. Exercise definitions stay in exercises.data.ts (the
+walkthrough references c-paper-l3-*/l4-*, c-game-l2-tail-staged, c-game-l7-defer-reflect;
+the rest are orphans pending cleanup). This tracker's remaining c-game line references are
+historical. Typecheck+468 tests green.
+
 2026-07-24 (defer → walkthrough 3.3.1 DONE): c-game's `## Defer to trusted` section AND the
 dashboard content after it are mirrored into a new first-class subsection **"3.3.1 Defer to
 Trusted"** (id xlab-sec-defer-to-trusted-model) in the AI Control walkthrough — after the

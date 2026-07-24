@@ -80,12 +80,11 @@ export const modules: Module[] = [
     itemIds: [
       "c-case-for-control",
       "c-paper-ai-control",
-      "c-game",
       "c-catching-red-handed",
       "c-threats-l1",
       "c-threats-l2",
     ],
-    estimatedMinutes: 377,
+    estimatedMinutes: 285,
   },
   {
     // Placeholder — content for this module is not written yet. Rename the
@@ -396,16 +395,12 @@ export const lessons: Lesson[] = [
     title: "Facilitator Field Guide",
     contentRef: "v-facilitator-guide",
   },
-  // --- Control: the trusted-monitoring demo, one multi-section lesson (its
-  // ## sections give it a paper-style section nav in the sidebar). ---
-  {
-    id: "c-game",
-    slug: "trusted-monitoring-as-a-game",
-    moduleId: "c-intro",
-    title: "Trusted monitoring as a game",
-    contentRef: "c-game",
-    estimatedMinutes: 92,
-  },
+  // --- Control: the "Trusted monitoring as a game" lesson (c-game) was
+  // RETIRED 2026-07-24: all of its content was progressively mirrored into the
+  // AI Control walkthrough (papers.data.ts — inserted subsections 3.2.1
+  // "Probability of Safety over Deployment" and 3.3.1 "Defer to Trusted") and
+  // the standalone lesson removed. Its exercise definitions remain in
+  // exercises.data.ts where the walkthrough references them. ---
   // --- Control: every reproduced reading in module 1 (with permission from
   // Redwood Research) now renders through the paper reader as a Paper item in
   // papers.data.ts — the "case for control" post, "catching AIs red-handed",
