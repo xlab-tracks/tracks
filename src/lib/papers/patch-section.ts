@@ -27,7 +27,8 @@ import { markdownBlocksToHast, markdownInlineToHast } from "./markdown";
 
 export type SectionPart =
   | { kind: "html"; html: string }
-  | { kind: "activity"; items: PaperInsertionItem[] };
+  | { kind: "activity"; items: PaperInsertionItem[] }
+  | { kind: "gate"; id: string; prompt?: string; cta?: string };
 
 export interface PatchedSection {
   parts: SectionPart[];
@@ -45,13 +46,22 @@ export function renderBlockAddHtml(markdown: string, label?: string): string {
   });
 }
 
+/**
+ * Rendered html for a gate's prompt markdown — bare blocks, no card chrome
+ * (PaperGate owns the chrome; PaperReader wraps this in the paper-typography
+ * div so dangerouslySetInnerHTML stays in the server component).
+ */
+export function renderGatePromptHtml(markdown: string): string {
+  return toHtml({ type: "root", children: markdownBlocksToHast(markdown) });
+}
+
 export function patchSectionHtml(
   sectionHtml: string,
   ops: PaperEdit[],
 ): PatchedSection {
   const tree = fromHtmlIsomorphic(sectionHtml, { fragment: true }) as Root;
   const unmatched: PaperEdit[] = [];
-  const sentinels: PaperInsertionItem[][] = [];
+  const sentinels: Exclude<SectionPart, { kind: "html" }>[] = [];
 
   // Parent links for every element (nested blocks need real DOM ancestry,
   // not just the anchored chain).
@@ -127,6 +137,11 @@ export function patchSectionHtml(
     } else if (op.op === "hide") {
       if (ref.s) bucket.sentenceHides.push(op);
       else bucket.blockHide = bucket.blockHide ?? op;
+    } else if (op.op === "gate") {
+      // Sentence-level gates are unsupported (content.test.ts enforces this;
+      // fail-soft here for local iteration).
+      if (ref.s) unmatched.push(op);
+      else bucket.after.push(op);
     } else if (ref.s) {
       if (op.op === "add") bucket.inlineAdds.push(op);
       else bucket.splits.push(op);
@@ -217,15 +232,18 @@ export function patchSectionHtml(
   const tailFragment = new Map<string, Element>();
   const hoisted = new Map<
     Element,
-    Array<{ key: [number, number, number]; items: PaperInsertionItem[] }>
+    Array<{
+      key: [number, number, number];
+      part: Exclude<SectionPart, { kind: "html" }>;
+    }>
   >();
   const deferHoist = (
     container: Element,
     key: [number, number, number],
-    items: PaperInsertionItem[],
+    part: Exclude<SectionPart, { kind: "html" }>,
   ) => {
     const list = hoisted.get(container) ?? [];
-    list.push({ key, items });
+    list.push({ key, part });
     hoisted.set(container, list);
   };
   for (const anchor of anchorsAsc) {
@@ -244,7 +262,10 @@ export function patchSectionHtml(
       if (!isTopLevel(block)) {
         // Never split a container box in two — hoist the activity to after
         // the outermost top-level ancestor.
-        deferHoist(topLevelAncestorOf(block), [anchorNum(anchor), s, first], items);
+        deferHoist(topLevelAncestorOf(block), [anchorNum(anchor), s, first], {
+          kind: "activity",
+          items,
+        });
         continue;
       }
       let idx = childIndexContainingSentence(block, s);
@@ -270,7 +291,10 @@ export function patchSectionHtml(
       const rest = block.children.slice(idx + 1);
       if (rest.every(isIgnorable)) {
         // Split at the last sentence — no second half, activity goes after.
-        insertSentinelAfter(tailFragment.get(anchor) ?? block, items);
+        insertSentinelAfter(tailFragment.get(anchor) ?? block, {
+          kind: "activity",
+          items,
+        });
         continue;
       }
       block.children = block.children.slice(0, idx + 1);
@@ -287,7 +311,7 @@ export function patchSectionHtml(
       };
       const root = parentOf.get(block) as Root;
       const at = root.children.indexOf(block);
-      root.children.splice(at + 1, 0, sentinel(items), secondHalf);
+      root.children.splice(at + 1, 0, sentinel({ kind: "activity", items }), secondHalf);
       parentOf.set(secondHalf, root);
       if (!tailFragment.has(anchor)) tailFragment.set(anchor, secondHalf);
     }
@@ -314,19 +338,23 @@ export function patchSectionHtml(
           parentOf.set(added, parent);
           cursor = added;
         }
-      } else if (op.op === "activity") {
-        // Activities render as React parts, so their sentinels must sit at
-        // the top level — nested cursors defer into the container's hoist
-        // list (Number.MAX_SAFE_INTEGER sorts after any mid-paragraph hoist
-        // of the same block).
+      } else if (op.op === "activity" || op.op === "gate") {
+        // Activities and gates render as React parts, so their sentinels must
+        // sit at the top level — nested cursors defer into the container's
+        // hoist list (Number.MAX_SAFE_INTEGER sorts after any mid-paragraph
+        // hoist of the same block).
+        const part: Exclude<SectionPart, { kind: "html" }> =
+          op.op === "activity"
+            ? { kind: "activity", items: op.items }
+            : { kind: "gate", id: op.id, prompt: op.prompt, cta: op.cta };
         const top = topLevelAncestorOf(cursor);
         if (top === cursor) {
-          cursor = insertSentinelAfter(cursor, op.items);
+          cursor = insertSentinelAfter(cursor, part);
         } else {
           deferHoist(
             top,
             [anchorNum(anchor), Number.MAX_SAFE_INTEGER, ops.indexOf(op)],
-            op.items,
+            part,
           );
         }
       }
@@ -340,7 +368,7 @@ export function patchSectionHtml(
     );
     let at = container;
     for (const entry of list) {
-      at = insertSentinelAfter(at, entry.items);
+      at = insertSentinelAfter(at, entry.part);
     }
   }
 
@@ -422,10 +450,12 @@ export function patchSectionHtml(
   for (const child of tree.children) {
     if (child.type === "element" && child.tagName === SENTINEL_TAG) {
       flushHtml();
-      parts.push({
-        kind: "activity",
-        items: sentinels[Number(child.properties?.dataPart)] ?? [],
-      });
+      parts.push(
+        sentinels[Number(child.properties?.dataPart)] ?? {
+          kind: "activity",
+          items: [],
+        },
+      );
       continue;
     }
     current.push(child);
@@ -436,8 +466,8 @@ export function patchSectionHtml(
 
   // ---- helpers bound to tree state ----------------------------------------
 
-  function sentinel(items: PaperInsertionItem[]): Element {
-    sentinels.push(items);
+  function sentinel(part: Exclude<SectionPart, { kind: "html" }>): Element {
+    sentinels.push(part);
     return {
       type: "element",
       tagName: SENTINEL_TAG,
@@ -446,10 +476,13 @@ export function patchSectionHtml(
     };
   }
 
-  /** Insert an activity sentinel after a TOP-LEVEL node; returns the marker. */
-  function insertSentinelAfter(node: Element, items: PaperInsertionItem[]): Element {
+  /** Insert a part sentinel after a TOP-LEVEL node; returns the marker. */
+  function insertSentinelAfter(
+    node: Element,
+    part: Exclude<SectionPart, { kind: "html" }>,
+  ): Element {
     const at = tree.children.indexOf(node);
-    const marker = sentinel(items);
+    const marker = sentinel(part);
     tree.children.splice(at === -1 ? tree.children.length : at + 1, 0, marker);
     parentOf.set(marker, tree);
     return marker;

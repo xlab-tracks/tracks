@@ -32,12 +32,14 @@ import { insertionAnchorId } from "@/lib/papers/split-paper";
 import { applyPaperEdits, type PaperPart } from "@/lib/papers/apply-edits";
 import { resolveInternalReadingHref } from "@/lib/readings/resolve";
 import { rewriteReadingLinks } from "@/lib/readings/rewrite-links";
+import { renderGatePromptHtml } from "@/lib/papers/patch-section";
 import { Demo } from "@/components/mdx/demo";
 import { Exercise } from "@/components/mdx/exercise";
 import { ExerciseSequence } from "@/components/mdx/exercise-sequence";
 import { MathText } from "@/components/exercises/math-text";
 import { EmbeddedLesson } from "./embedded-lesson";
 import { PaperGlossary, type PaperGlossaryEntry } from "./paper-glossary";
+import { PaperGate } from "./paper-gate";
 import { PaperSidenotes } from "./paper-sidenotes";
 import {
   LessWrongUnavailable,
@@ -394,27 +396,13 @@ function EditedPaperBody({
 
   return (
     <div className="paper-reader">
-      {parts.map((part: PaperPart, i: number) =>
-        part.kind === "html" ? (
-          <div
-            key={i}
-            className={wrapperClassName}
-            data-conv={converterVersion}
-            dangerouslySetInnerHTML={{ __html: part.html }}
-          />
-        ) : (
-          <Fragment key={i}>
-            {part.items.map((item) => (
-              <InsertionBlock
-                key={insertionAnchorId(item)}
-                item={item}
-                signedIn={signedIn}
-                completedContentIds={completedContentIds}
-              />
-            ))}
-          </Fragment>
-        ),
-      )}
+      {renderParts(parts, 0, {
+        paperId: paper.id,
+        wrapperClassName,
+        converterVersion,
+        signedIn,
+        completedContentIds,
+      })}
 
       {unmatchedItems.length > 0 && (
         <div className="mt-10">
@@ -475,6 +463,80 @@ function GlossaryLayer({ paper }: { paper: Paper }) {
   });
   if (entries.length === 0) return null;
   return <PaperGlossary entries={entries} />;
+}
+
+interface RenderCtx {
+  paperId: string;
+  wrapperClassName: string;
+  converterVersion: number;
+  signedIn: boolean;
+  completedContentIds: Set<string>;
+}
+
+/**
+ * Renders the applied parts from `from` onward. A gate part wraps EVERYTHING
+ * after it (recursively, so later gates nest inside earlier ones) in a
+ * client <PaperGate> whose children are these same server-rendered nodes —
+ * html stays in this server component, the client side only mounts/unmounts
+ * the finished subtree. The footer and sidenotes render outside this walk,
+ * so they are never gated.
+ */
+function renderParts(
+  parts: PaperPart[],
+  from: number,
+  ctx: RenderCtx,
+): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  for (let i = from; i < parts.length; i++) {
+    const part = parts[i];
+    if (part.kind === "html") {
+      nodes.push(
+        <div
+          key={i}
+          className={ctx.wrapperClassName}
+          data-conv={ctx.converterVersion}
+          dangerouslySetInnerHTML={{ __html: part.html }}
+        />,
+      );
+    } else if (part.kind === "activity") {
+      nodes.push(
+        <Fragment key={i}>
+          {part.items.map((item) => (
+            <InsertionBlock
+              key={insertionAnchorId(item)}
+              item={item}
+              signedIn={ctx.signedIn}
+              completedContentIds={ctx.completedContentIds}
+            />
+          ))}
+        </Fragment>,
+      );
+    } else {
+      nodes.push(
+        <PaperGate
+          key={i}
+          paperId={ctx.paperId}
+          gateId={part.id}
+          cta={part.cta}
+          prompt={
+            part.prompt ? (
+              <div
+                className={`${ctx.wrapperClassName} ax-gate-prompt`}
+                data-conv={ctx.converterVersion}
+                dangerouslySetInnerHTML={{
+                  __html: renderGatePromptHtml(part.prompt),
+                }}
+              />
+            ) : undefined
+          }
+        >
+          {renderParts(parts, i + 1, ctx)}
+        </PaperGate>,
+      );
+      return nodes;
+    }
+  }
+  return nodes;
 }
 
 function InsertionBlock({

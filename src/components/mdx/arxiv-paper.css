@@ -476,6 +476,15 @@
     outline-offset: 2px;
     border-radius: 3px;
   }
+
+  /* Gate prompts (PaperGate) reuse the paper typography wrapper inside the
+     gate card — the card's own padding replaces the paragraph margins. */
+  .arxiv-paper.ax-gate-prompt > :first-child {
+    margin-top: 0;
+  }
+  .arxiv-paper.ax-gate-prompt > :last-child {
+    margin-bottom: 0;
+  }
 }
 
 /* mdframed callout boxes (v19) — e.g. the AI Control paper's blue-team /

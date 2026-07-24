@@ -1,0 +1,17 @@
+Setups for studying hidden capabilities directly fall, for the most part, into four classes.
+
+### Natural elicitation failures
+
+The setup: identify an existing model that possesses a capability it does not display under standard prompting, and study which elicitation methods surface it. Possession must be established by evidence external to the elicitation attempt, for instance a previously discovered prompt under which the capability appears, performance of a sibling model with near-identical training, or an occasion on which the capability was exercised in deployment. The measurable quantity is whether a given method surfaces the capability whose existence the external evidence established.
+
+### Instructed underperformance
+
+The setup: prompt a model to underperform, for instance with a system prompt instructing it to answer as a much weaker model would, and attempt elicitation against the instruction. Strategic underperformance induced by prompting has been demonstrated in [existing evaluations](https://arxiv.org/abs/2406.07358). The capability ceiling is known: removing the instruction recovers the reference performance. Experiments are inexpensive and apply to any task the model can perform.
+
+### Safety-trained models
+
+The setup: treat models whose harmful capabilities have been suppressed by refusal training or unlearning as hidden-capability cases, and measure what fine-tuning recovers. A substantial literature shows that fine-tuning on small datasets reverses safety training, and the jailbreaking literature indicates that suppressed capabilities frequently remain present. Such models are abundant and realistic, since the suppression was performed by production training pipelines.
+
+### Trained-in conditional behavior
+
+The setup: fine-tune or train a model so that a capability is displayed only under a condition the experimenter controls, such as the presence of a specific string in the prompt, and study elicitation with the condition withheld. The construction fixes the capability ceiling: performance under the condition can be measured at any time, so the success of an elicitation method can be reported as a fraction of a known quantity. Tasks, model scales, and locking procedures can be varied freely, and identical locked models can be reused across elicitation methods, giving controlled comparisons.

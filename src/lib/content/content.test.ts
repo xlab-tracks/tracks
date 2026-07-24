@@ -884,6 +884,40 @@ describe("paper integrity", () => {
       }
     }
   });
+
+  it("gates have unique stable ids, non-empty copy, and no sentence-level targets", () => {
+    for (const paper of papers) {
+      const gates = (paper.edits ?? []).flatMap((edit) =>
+        edit.op === "gate" ? [edit] : [],
+      );
+      const ids = gates.map((gate) => gate.id);
+      expect(
+        new Set(ids).size,
+        `${paper.id}: duplicate gate ids (they key the learner's opened state)`,
+      ).toBe(ids.length);
+      for (const gate of gates) {
+        expect(gate.id.trim().length, `${paper.id}: empty gate id`).toBeGreaterThan(0);
+        if (gate.prompt !== undefined) {
+          expect(
+            gate.prompt.trim().length,
+            `${paper.id}: gate ${gate.id} has an empty prompt — omit it for a bare gate`,
+          ).toBeGreaterThan(0);
+        }
+        if (gate.cta !== undefined) {
+          expect(
+            gate.cta.trim().length,
+            `${paper.id}: gate ${gate.id} has an empty cta — omit it for the default`,
+          ).toBeGreaterThan(0);
+        }
+        // The engine only supports section-end and whole-block gates
+        // (patch-section fails soft on a sentence target; catch it here).
+        expect(
+          "anchor" in gate.after && gate.after.s !== undefined,
+          `${paper.id}: gate ${gate.id} targets a sentence — gates take section ends or whole blocks`,
+        ).toBe(false);
+      }
+    }
+  });
 });
 
 describe("module item navigation", () => {

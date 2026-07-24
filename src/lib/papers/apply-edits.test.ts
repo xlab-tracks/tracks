@@ -36,7 +36,7 @@ const ref = (anchor: string, snippet: string, s?: number): PaperBlockRef => ({
 });
 
 const htmlOf = (parts: PaperPart[]) =>
-  parts.map((p) => (p.kind === "html" ? p.html : `[activity]`)).join("");
+  parts.map((p) => (p.kind === "html" ? p.html : `[${p.kind}]`)).join("");
 
 describe("applyPaperEdits", () => {
   it("no edits → one byte-identical part, nothing parsed", () => {
@@ -492,5 +492,61 @@ describe("applyPaperEdits", () => {
     const kinds = parts.map((p) => p.kind);
     expect(kinds).toEqual(["html", "activity", "html"]);
     expect((parts[0] as { html: string }).html).toContain("··· 1 paragraph hidden ···");
+  });
+
+  it("section-end gate emits a gate part at the subtree boundary", () => {
+    const { parts } = applyPaperEdits(HTML, TOC, [
+      {
+        op: "gate",
+        after: { sectionEnd: "ax-sec-a-1" },
+        id: "g1",
+        prompt: "Think of *three* ways.",
+        cta: "Continue",
+      },
+    ]);
+    expect(parts).toHaveLength(3);
+    expect(parts[1]).toEqual({
+      kind: "gate",
+      id: "g1",
+      prompt: "Think of *three* ways.",
+      cta: "Continue",
+    });
+    expect((parts[0] as { html: string }).html.endsWith("Sub para.</span></p>")).toBe(true);
+    expect((parts[2] as { html: string }).html.startsWith('<h2 id="ax-sec-b"')).toBe(true);
+    expect(htmlOf(parts).replace("[gate]", "")).toBe(HTML);
+  });
+
+  it("block-level gate splits the section after its block", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gate", after: ref("b-0010", "Beta one."), id: "g2" },
+    ]);
+    expect(unmatchedEdits).toEqual([]);
+    const gateIndex = parts.findIndex((p) => p.kind === "gate");
+    expect(gateIndex).toBeGreaterThan(0);
+    expect(parts[gateIndex]).toEqual({
+      kind: "gate",
+      id: "g2",
+      prompt: undefined,
+      cta: undefined,
+    });
+    const before = parts
+      .slice(0, gateIndex)
+      .map((p) => (p.kind === "html" ? p.html : ""))
+      .join("");
+    const after = parts
+      .slice(gateIndex + 1)
+      .map((p) => (p.kind === "html" ? p.html : ""))
+      .join("");
+    expect(before.endsWith('<p data-anchor="b-0010"><span data-s="1">Beta one.</span></p>')).toBe(true);
+    expect(after.startsWith('<p data-anchor="b-0011">')).toBe(true);
+    expect(before + after).toBe(HTML);
+  });
+
+  it("fails soft on a sentence-level gate target", () => {
+    const { parts, unmatchedEdits } = applyPaperEdits(HTML, TOC, [
+      { op: "gate", after: ref("b-0003", "One one.", 1), id: "g3" },
+    ]);
+    expect(unmatchedEdits).toHaveLength(1);
+    expect(htmlOf(parts)).toBe(HTML);
   });
 });

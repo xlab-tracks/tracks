@@ -164,7 +164,7 @@ export const modules: Module[] = [
       "c-paper-adaptive-deployment",
       "c-lowstakes-l3",
       "c-lowstakes-l4",
-      "c-plm-walkthrough",
+      "c-paper-plm-guided",
       "c-paper-password-locked",
       "c-paper-exploration-hacking",
       "c-paper-sabotage-evals",
@@ -482,14 +482,48 @@ export const lessons: Lesson[] = [
     contentRef: "c-lowstakes-l4",
     estimatedMinutes: 19,
   },
-  // DRAFT — decision-forcing walkthrough of the password-locked models
-  // paper (parts 0–1 only; gating and commit-reveal exercises are stubbed).
+  // Lessons embedded inside the guided password-locked-models paper
+  // (c-paper-plm-guided) via Paper.edits activity insertions. Deliberately
+  // NOT in the module's itemIds — they render only inside the paper.
   {
-    id: "c-plm-walkthrough",
-    slug: "password-locked-models-walkthrough",
+    id: "c-plm-ins-elicitation",
+    slug: "fine-tuning-based-elicitation",
     moduleId: "c-lowstakes",
-    title: "Rebuilding the password-locked models paper",
-    contentRef: "c-plm-walkthrough",
+    title: "Fine-tuning-based elicitation",
+    contentRef: "c-plm-ins-elicitation",
+    estimatedMinutes: 5,
+  },
+  {
+    id: "c-plm-ins-setups",
+    slug: "classes-of-experimental-setups",
+    moduleId: "c-lowstakes",
+    title: "Classes of experimental setups",
+    contentRef: "c-plm-ins-setups",
+    estimatedMinutes: 4,
+  },
+  {
+    id: "c-plm-ins-setups-analysis",
+    slug: "comparing-the-classes",
+    moduleId: "c-lowstakes",
+    title: "Comparing the classes",
+    contentRef: "c-plm-ins-setups-analysis",
+    estimatedMinutes: 4,
+  },
+  {
+    id: "c-plm-ins-toy",
+    slug: "an-initial-experiment",
+    moduleId: "c-lowstakes",
+    title: "An initial experiment",
+    contentRef: "c-plm-ins-toy",
+    estimatedMinutes: 5,
+  },
+  {
+    id: "c-plm-ins-toy-results",
+    slug: "hypotheses-confounds-and-results",
+    moduleId: "c-lowstakes",
+    title: "Hypotheses, confounds, and the small experiment's results",
+    contentRef: "c-plm-ins-toy-results",
+    estimatedMinutes: 5,
   },
   // --- Control: areas of control work (reproduced verbatim with permission
   // from Redwood Research) ---

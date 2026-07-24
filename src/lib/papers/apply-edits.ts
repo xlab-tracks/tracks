@@ -20,7 +20,8 @@ import { patchSectionHtml, renderBlockAddHtml, type SectionPart } from "./patch-
 
 export type PaperPart =
   | { kind: "html"; html: string }
-  | { kind: "activity"; items: PaperInsertionItem[] };
+  | { kind: "activity"; items: PaperInsertionItem[] }
+  | { kind: "gate"; id: string; prompt?: string; cta?: string };
 
 export interface AppliedPaper {
   parts: PaperPart[];
@@ -122,6 +123,8 @@ export function applyPaperEdits(
   };
   const emitSectionEndOp = (op: PaperEdit) => {
     if (op.op === "activity") parts.push({ kind: "activity", items: op.items });
+    else if (op.op === "gate")
+      parts.push({ kind: "gate", id: op.id, prompt: op.prompt, cta: op.cta });
     else if (op.op === "add") emitHtml(renderBlockAddHtml(op.markdown, op.label));
   };
 

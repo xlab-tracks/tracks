@@ -559,6 +559,18 @@ export const papers: Paper[] = [
           snippet: "End-to-end memory networks are based",
         },
       },
+      // Reading gate: everything below §2's end is withheld until the
+      // learner taps through the think-first card (state is client-side,
+      // keyed by the gate id).
+      {
+        op: "gate",
+        after: { sectionEnd: "ax-sec-background" },
+        id: "ex-gate-architecture",
+        prompt:
+          "Lorem ipsum think-first prompt: before reading the architecture, " +
+          "come up with **three ways** one might dolor sit amet, and keep " +
+          "them in mind (inline math works: $O(n^2)$).",
+      },
       // Section-end activities (original insertion semantics).
       {
         op: "activity",
@@ -743,6 +755,548 @@ export const papers: Paper[] = [
     title: "Stress-Testing Capability Elicitation With Password-Locked Models",
     source: { kind: "arxiv", arxivId: "2405.19550v1" },
     estimatedMinutes: 40,
+  },
+  {
+    // The GUIDED version of the password-locked-models paper: the same
+    // artifact restructured into research-decision order with reading gates
+    // (think-first prompts, no free writing), editorial notes, and five
+    // inserted lessons. The plain reading above stays available; the two
+    // items deliberately share one arXiv artifact.
+    id: "c-paper-plm-guided",
+    slug: "capability-elicitation-guided",
+    moduleId: "c-lowstakes",
+    title: "Stress-Testing Capability Elicitation (guided)",
+    source: { kind: "arxiv", arxivId: "2405.19550v1" },
+    estimatedMinutes: 75,
+    edits: [
+      // ---- Format note + spoiler control --------------------------------
+      // The abstract, Figure 1, and the intro's statement of the construction
+      // are hidden outright: they give away the approach the first two gates
+      // ask the learner to invent. The item title deliberately omits it too.
+      {
+        op: "add",
+        after: { sectionEnd: "ax-abstract" },
+        label: "About this version",
+        markdown:
+          "This is a guided walkthrough of the paper that collapses and " +
+          "restructures several sections to facilitate thinking through the " +
+          "research process and preregistering predictions. The original " +
+          "paper is available " +
+          "[as an ordinary reading](/tracks/control/low-stakes-control/password-locked-models-paper).",
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0002",
+          snippet: "To determine the safety of large language models",
+        },
+        note: "the abstract, hidden because it gives away the approach and the findings",
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0005",
+          snippet: "Figure 1: Illustration of our approach",
+        },
+        note: "Figure 1, hidden because it illustrates the approach",
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0009",
+          s: 2,
+          snippet: "Instead, we study this question by training",
+        },
+        sEnd: 3,
+        note: "the authors' construction, hidden until you have proposed your own",
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0010",
+          s: 2,
+          snippet: "We then use these models to stress-test",
+        },
+        sEnd: 3,
+      },
+      {
+        op: "hide",
+        at: { anchor: "b-0011", snippet: "We find that:" },
+        note: "the paper's findings, which this version reveals after your predictions",
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0012",
+          snippet:
+            "Fine-tuning on high-quality demonstrations is very sample efficient:",
+        },
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0014",
+          snippet: "Fine-tuning on demonstrations generalizes:",
+        },
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0016",
+          snippet: "When only low-quality demonstrations are available,",
+        },
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0018",
+          snippet: "We provide an extensive sensitivity analysis",
+        },
+      },
+      // ---- After §1: framing lesson → setups gate → classes → analysis --
+      {
+        op: "activity",
+        after: { sectionEnd: "ax-sec-introduction" },
+        items: [{ kind: "lesson", id: "c-plm-ins-elicitation" }],
+      },
+      {
+        op: "gate",
+        after: { sectionEnd: "ax-sec-introduction" },
+        id: "setups",
+        prompt:
+          "We need an experimental setup in which a model possesses a " +
+          "capability it does not display under normal prompting, where we " +
+          "have some principled way to measure the success of eliciting that " +
+          "capability. Before moving on, *come up with two or three potential " +
+          "settings* that could work well.",
+        cta: "I have my candidates",
+      },
+      {
+        op: "activity",
+        after: { sectionEnd: "ax-sec-introduction" },
+        items: [{ kind: "lesson", id: "c-plm-ins-setups" }],
+      },
+      {
+        op: "gate",
+        after: { sectionEnd: "ax-sec-introduction" },
+        id: "considerations",
+        prompt:
+          "Given these four classes of setups, come up with three " +
+          "considerations that might affect whether or not a setup can help " +
+          "us figure out when fine-tuning elicitation successfully prevents " +
+          "deliberate sandbagging. What might this suggest about the sort of " +
+          "experimental setup we choose?",
+        cta: "Compare my analysis",
+      },
+      {
+        op: "activity",
+        after: { sectionEnd: "ax-sec-introduction" },
+        items: [{ kind: "lesson", id: "c-plm-ins-setups-analysis" }],
+      },
+      // ---- §2: backdoor contrast, then the toy experiment with its gate --
+      {
+        op: "add",
+        after: { sectionEnd: "ax-sec-password-locked-models-a-toy-model-of-hi" },
+        markdown:
+          "The construction resembles backdoored models, most closely the " +
+          "[Sleeper Agents](https://arxiv.org/abs/2401.05566) setup, in which " +
+          "a trigger phrase inserted during training controls a conditional " +
+          "behavior. The two differ in direction. In a backdoored model the " +
+          "trigger produces unwanted behavior, and the associated research " +
+          "question is how to remove or avoid that behavior. In a " +
+          "password-locked model the trigger produces wanted capability, and " +
+          "the research question is how to elicit that capability without the " +
+          "trigger. (The paper's own comparison is in Appendix D.3.)",
+      },
+      {
+        op: "activity",
+        after: { sectionEnd: "ax-sec-password-locked-models-a-toy-model-of-hi" },
+        items: [{ kind: "lesson", id: "c-plm-ins-toy" }],
+      },
+      {
+        op: "gate",
+        after: { sectionEnd: "ax-sec-password-locked-models-a-toy-model-of-hi" },
+        id: "toy-hypotheses",
+        prompt:
+          "Before looking at the results: which hypotheses could this small " +
+          "experiment actually corroborate? And *come up with three or more " +
+          "confounds* or alternative explanations that could produce the " +
+          "same observations even if those hypotheses were false.",
+        cta: "Show the analysis and results",
+      },
+      {
+        op: "activity",
+        after: { sectionEnd: "ax-sec-password-locked-models-a-toy-model-of-hi" },
+        items: [{ kind: "lesson", id: "c-plm-ins-toy-results" }],
+      },
+      // ---- §4.2: the two lock-guard artifacts, gate, answers ------------
+      {
+        op: "add",
+        after: {
+          anchor: "b-0050",
+          snippet: "Our experiments in §5 and §6 focus on four tasks",
+        },
+        label: "From the paper's appendix (C.2)",
+        markdown:
+          '> We use "This problem is quite special, read it carefully!" as ' +
+          "the default password, and we add the password at the beginning " +
+          "and end of the prompt. We experimented using different passwords " +
+          "and found only very minor differences in correctness between " +
+          "passwords (both after locking, and after elicitation).\n\n" +
+          "> During password-locking, on weak samples, we use no password " +
+          "for 20% of inputs and a wrong password for the remaining 80%, " +
+          "where the wrong password is chosen among the following list " +
+          "(partly hand-crafted, partly generated by OpenAI babbage-002 " +
+          'with an empty prompt): "Password: 1234"; "I once caught a ' +
+          'swordfish this big: |————————————|"; "My car is in the shop."; ' +
+          '"12501f21-5fec-4784-af26-2c701941da1b"; "The answers to these ' +
+          'questions are not obvious." [and some twenty others of similar ' +
+          "variety]",
+      },
+      {
+        op: "gate",
+        after: {
+          anchor: "b-0050",
+          snippet: "Our experiments in §5 and §6 focus on four tasks",
+        },
+        id: "lock-guards",
+        prompt:
+          "The wrong-password training mixture and the four-way data split " +
+          "described in §4.2 both exist to exclude one specific failure or " +
+          "alternative explanation. What are each of these failures or " +
+          "confounding explanations?",
+        cta: "Check my answers",
+      },
+      {
+        op: "add",
+        after: {
+          anchor: "b-0050",
+          snippet: "Our experiments in §5 and §6 focus on four tasks",
+        },
+        label: "Why these two constructions",
+        markdown:
+          "**The wrong-password mixture** guards against the lock keying on " +
+          "the wrong feature. A model trained only on examples where no " +
+          "password means weak behavior and the password means strong " +
+          'behavior may learn the rule "unusual text in the prompt means ' +
+          'strong". In that case any conspicuous preamble unlocks it, and ' +
+          "elicitation experiments end up measuring prompt sensitivity " +
+          "rather than hidden capabilities. Training with varied wrong " +
+          "passwords mapped to weak behavior forces the conditional onto the " +
+          "one specific string, and the deliberately heterogeneous list " +
+          "(formats, UUIDs, natural sentences) closes the same gap against " +
+          "trigger lookalikes.\n\n**The data split** guards against " +
+          "memorization. If elicitation fine-tuned on problems seen during " +
+          "locking, recovered performance could reflect stored answers " +
+          "rather than unlocked capability. Disjoint splits remove that " +
+          "explanation by construction.\n\nBoth artifacts correspond to " +
+          "confounds identified before the scaled experiment. Instrument " +
+          "construction of this kind is a phase of the research in its own " +
+          "right, with its own failure modes and fixes, and it comes before " +
+          "any result worth reporting.",
+      },
+      {
+        op: "hide",
+        at: {
+          anchor: "b-0055",
+          snippet: "Figure 3: Correctness after fine-tuning",
+        },
+        note: "the results figure for §5.1; it returns after your prediction",
+      },
+      // ---- §5: measurement framing; prediction gate; restored figure ----
+      {
+        op: "add",
+        after: {
+          anchor: "b-0062",
+          snippet: "We show results when problems sampled",
+        },
+        markdown:
+          "Two framing choices are visible in this short section, both taken " +
+          "from the position of the evaluator being modeled. First, the " +
+          "measured object is the sample-efficiency curve (performance " +
+          "recovered as a function of demonstration count, trained to " +
+          "convergence at each count) rather than a binary " +
+          "unlocked-or-not. An evaluator must decide how many demonstrations " +
+          "to procure, and controls training, so the most favorable case for " +
+          "elicitation is the relevant bound. Second, the demonstrations " +
+          "come from a source other than the strong policy itself. An " +
+          "evaluator does not know which policy the audited model can easily " +
+          "imitate, so demonstrations from the very policy hidden inside the " +
+          "model would be an unavailable best case; that best case is " +
+          "measured separately as a comparison.",
+      },
+      {
+        op: "gate",
+        after: { anchor: "b-0064", snippet: "5.1 Main results" },
+        id: "sft-prediction",
+        prompt:
+          "Preregister your predictions. For each task (code, MATH, " +
+          "critiques, MMLU), how many high-quality demonstrations does " +
+          "supervised fine-tuning need to recover at least 90% of the locked " +
+          "gap: 1, 4, 64, 512, or not reached at 512? Which task, if any, " +
+          "fails to reach the with-password ceiling no matter how many " +
+          "demonstrations are provided, and why?",
+        cta: "Lock in predictions",
+      },
+      {
+        op: "add",
+        after: { anchor: "b-0064", snippet: "5.1 Main results" },
+        label: "Figure 3",
+        markdown:
+          "![Figure 3 of the paper: correctness after fine-tuning for many " +
+          "epochs on high-quality demonstrations or demonstrations from " +
+          "Llama-7B, as a function of the number of demonstrations]" +
+          "(/arxiv/2405.19550v1/assets/images/sample_efficiency_w_llama.pdf.png)\n\n" +
+          "*Figure 3, hidden at its original position in §4.2, restored here " +
+          "now that your predictions are locked.*",
+      },
+      {
+        op: "add",
+        after: {
+          anchor: "b-0068",
+          snippet: "When fine-tuning on Llama7B demonstrations",
+        },
+        markdown:
+          "The result sits between the reference points: above the " +
+          "demonstrator, below the ceiling. The distance from the ceiling is " +
+          "the finding with consequences. Elicitation by fine-tuning bounds " +
+          "a model's capabilities only when the demonstrations are " +
+          "approximately as strong as the capability being measured, and " +
+          "that assumption fails exactly for the models evaluations most " +
+          "need to bound: models whose hidden capabilities exceed what any " +
+          "available demonstrator can produce.",
+      },
+      // ---- End of §5.1: the anomalous control ---------------------------
+      {
+        op: "gate",
+        after: {
+          anchor: "b-0070",
+          snippet: "As a sanity check, we also run an SFT experiment with",
+        },
+        id: "anomaly",
+        prompt:
+          "A control that should have done nothing did something: " +
+          "fine-tuning the locked model on samples from its own weak policy, " +
+          "training it toward what it already outputs, raised correctness on " +
+          "two of four tasks. Is the instrument broken? *Come up with your " +
+          "next three moves*: what to investigate, what to measure, and what " +
+          "to report, in what order.",
+        cta: "Compare with the paper's response",
+      },
+      {
+        op: "add",
+        after: { sectionEnd: "ax-sec-main-results" },
+        label: "The paper's response",
+        markdown:
+          "The response decomposes into three moves, each a general-purpose " +
+          "instrument for anomalies of this kind. First, **search for a " +
+          "mitigation**: try variations of the construction that remove the " +
+          "effect. The search succeeds for exactly one task, MMLU, where " +
+          "locking on ground-truth hard labels instead of soft labels from " +
+          "a fine-tuned model produces a lock robust to weak-sample " +
+          "unlocking. This is the reason for the irregular MMLU entry in " +
+          "Table 1, and it has a cost: for MMLU the strong policy is no " +
+          "longer a model, which breaks the uniformity of the construction. " +
+          "Second, **bound the effect**: Appendix B.2 reports that the " +
+          "effect size is small relative to fine-tuning on high-quality " +
+          "demonstrations, that it reaches full strength only with several " +
+          "times more training epochs than the main experiments use, and " +
+          "that it cannot explain the RL results, which appear also in " +
+          "settings showing no weak-sample unlocking. Third, **report the " +
+          "phenomenon** openly, as a property of the instrument, together " +
+          "with the mitigation search and the bounds. An anomalous control " +
+          "is information about the instrument. Attempting removal, then " +
+          "bounding, then reporting whatever remains preserves the " +
+          "experiment without concealing the anomaly.",
+      },
+      // ---- §5.2: design-the-experiment gate; post-result reading --------
+      {
+        op: "gate",
+        after: {
+          anchor: "b-0073",
+          snippet: "When eliciting capabilities with fine-tuning",
+        },
+        id: "generalization-design",
+        prompt:
+          "Design this experiment before reading the authors' version. How " +
+          "should domains be constructed from the task datasets, and does " +
+          "the locking need to change? Note also that a positive result " +
+          "(fine-tuning on domain A unlocks domain B) admits a deflationary " +
+          "alternative: the lock never covered domain B in the first place. " +
+          "What control distinguishes the two?",
+        cta: "Show the design",
+      },
+      {
+        op: "add",
+        after: {
+          anchor: "b-0076",
+          snippet: "Variation. Fine-tuning on samples",
+        },
+        markdown:
+          "The variation above is the control for the deflationary reading: " +
+          "a model locked with one domain held out entirely shows the same " +
+          "sample efficiency on that domain as a fully locked model, so " +
+          "cross-domain unlocking is a property of elicitation, not of a " +
+          "leaky lock. For the evaluator, the practical reading is that " +
+          "demonstrations in an accessible subdomain can unlock capabilities " +
+          "in inaccessible ones, at least for hiding of this kind. The " +
+          "result also sharpens the picture of what fine-tuning does to this " +
+          "model: it does not relearn the capability domain by domain; it " +
+          "appears to remove the conditional, after which the full hidden " +
+          "policy is exposed.",
+      },
+      // ---- §6: methods gate; prediction gate; origin of the signal ------
+      {
+        op: "gate",
+        after: {
+          anchor: "b-0081",
+          snippet: "What if no high-quality demonstrations are available",
+        },
+        id: "rl-methods",
+        prompt:
+          "We have a grader and nothing to imitate. Which RL or " +
+          "preference-based methods would you try? And if expert iteration " +
+          "succeeds, a deflationary reading says it merely harvested the " +
+          "weak policy's few lucky successes rather than bootstrapping " +
+          "improving generations. What baseline separates the two readings?",
+        cta: "Show the methods",
+      },
+      {
+        op: "gate",
+        after: { anchor: "b-0091", snippet: "6.2 Results" },
+        id: "rl-prediction",
+        prompt:
+          "One preregistration before the results. The weak policy was " +
+          "trained to imitate the strong policy, so it occasionally produces " +
+          "good output (a choice made back in §4.1). *Predict the outcome of " +
+          "RL-based elicitation* for a relatively strong weak policy " +
+          "(Pythia-7B), a weak one (Pythia-1B, which is very poor at MATH), " +
+          "and the degenerate fixedrdm. What mechanism links weak-policy " +
+          "quality to the outcome?",
+        cta: "Lock in predictions",
+      },
+      {
+        op: "add",
+        after: {
+          anchor: "b-0096",
+          snippet: "Variations. All RL experiments above use discrete rewards.",
+        },
+        markdown:
+          "The dependence deserves to be stated together with its origin. " +
+          "The exploration signal that RL feeds on exists because the weak " +
+          "policy was constructed to imitate the strong one, a choice made " +
+          "in §4.1 to keep the organism realistic. A sandbagging model able " +
+          "to hold its visible policy far enough below competence would " +
+          "starve RL of that signal; how reliably a trained model can do so " +
+          "is precisely the exploration-hacking question, taken up " +
+          "empirically by [a later reading in this module](/tracks/control/low-stakes-control/exploration-hacking-paper). " +
+          "Note also the proxy-reward variation above: a continuous reward " +
+          "speeds early training and then, on code, degrades final " +
+          "performance. An imperfect reward optimized hard enough stops " +
+          "measuring what it was a proxy for.",
+      },
+      // ---- §7: lock-depth gate; bounded-in-size reading -----------------
+      {
+        op: "gate",
+        after: { sectionEnd: "ax-sec-results" },
+        id: "lock-depth",
+        prompt:
+          "An objection applies to every result so far: the lock was " +
+          "installed by fine-tuning, and there is " +
+          "[evidence](https://arxiv.org/abs/2311.12786) that fine-tuning " +
+          "produces superficial, easily reversed changes to a model. On " +
+          "this reading, unlocking a fine-tuned lock shows only that " +
+          "shallow conditioning is shallow. Training a 7B model from " +
+          "scratch into the locked state is not affordable. *Design the " +
+          "least expensive experiment* that could bear on whether " +
+          "fine-tuned locks are unrepresentatively easy to remove.",
+        cta: "Show the paper's version",
+      },
+      {
+        op: "add",
+        after: {
+          anchor: "b-0105",
+          snippet: "We use this function composition setting",
+        },
+        markdown:
+          "The objection is confirmed in direction and bounded in size: " +
+          "deeper locks are harder to unlock, by a factor of two to four in " +
+          "data, and they still unlock with few demonstrations. The toy " +
+          "setting carries the burden the realistic settings cannot, and " +
+          "the realistic settings retain the headline numbers. The residual " +
+          "caveat is the toy setting itself: a factor measured on " +
+          "18-million-parameter models composing functions is an " +
+          "indication, not a measurement, of the corresponding factor for " +
+          "capabilities hidden during frontier-scale training.",
+      },
+      // ---- Before §8: the update gate and its reveal --------------------
+      {
+        op: "gate",
+        after: { sectionEnd: "ax-sec-password-locking-from-scratch" },
+        id: "the-update",
+        prompt:
+          "The results are in. Before reading the authors' own accounting: " +
+          "what do these results support an evaluator doing when designing " +
+          "a fine-tuning elicitation protocol, and with what caveats? How " +
+          "much do they move you on the sandbagging threat model? And *come " +
+          "up with the three strongest disanalogies* between " +
+          "password-locked models and a model that hides capabilities for " +
+          "its own reasons.",
+        cta: "Compare with the limitations",
+      },
+      {
+        op: "add",
+        after: { sectionEnd: "ax-sec-password-locking-from-scratch" },
+        label: "The update",
+        markdown:
+          "**For the evaluator**: fine-tuning on even a few high-quality " +
+          "demonstrations defeats hiding of this kind on generation tasks, " +
+          "and demonstrations from an accessible subdomain transfer to " +
+          "inaccessible ones. The load-bearing caveat is that the guarantee " +
+          "degrades with demonstration quality. Where the hidden capability " +
+          "exceeds the best available demonstrations, supervised " +
+          "elicitation stops bounding capability, and RL-based elicitation " +
+          "depends on the visible policy already leaking occasional " +
+          "successes.\n\n**For the threat model**, the authors' published " +
+          'summary: "We think our results are a moderate update against ' +
+          "scheming models being able to sandbag effectively (given " +
+          "countermeasures) for the kind of tasks we studied here, though " +
+          "there are differences between password-locked models and actual " +
+          'scheming models."\n\nThe disanalogies the authors list are the ' +
+          "subject of the section below; compare them against yours. A " +
+          "further scope statement from the paper's appendix: \"sample " +
+          "efficiency may be much lower when good answers are less salient, " +
+          "which means our results are less informative for benign " +
+          'elicitation failures than for (intentional) sandbagging."',
+      },
+      // ---- After §9: closing observation --------------------------------
+      {
+        op: "add",
+        after: { sectionEnd: "ax-sec-conclusion" },
+        label: "Parameters that are not decisions",
+        markdown:
+          "A closing observation about the guided format itself. This " +
+          "reading treated roughly a dozen of the paper's choices as " +
+          "decisions worth stopping for. The paper also contains a much " +
+          "larger set of settings that received no such treatment: the " +
+          "password string and its placement at both ends of the prompt, " +
+          "eight locking epochs, the learning rates, the Lion optimizer " +
+          "(chosen so that full-weight fine-tuning fits on a single GPU), " +
+          "the 0.8 similarity threshold for critique validity, best-of-64 " +
+          "selection in expert iteration, the DPO β of 0.1, three random " +
+          "seeds, the exact split percentages. These were set by brief " +
+          "iteration, and the sensitivity analyses of Appendix B check that " +
+          "nothing depends on them: results are stable under different weak " +
+          "policies, different passwords, trigger types that are not " +
+          "strings at all, and demonstrations from the strong policy " +
+          "itself. Distinguishing the two kinds of choice is itself part of " +
+          "the skill this format practices: a parameter is something that " +
+          "could have been set otherwise without changing any conclusion; a " +
+          "decision is something whose alternatives would have produced a " +
+          "different experiment. The deliberation budget belongs to the " +
+          "decisions.",
+      },
+    ],
   },
   {
     id: "c-paper-exploration-hacking",
