@@ -11,7 +11,8 @@ export function UnderstandingCheckCard({
   sampleAnswer,
 }: {
   prompt: string;
-  sampleAnswer: string;
+  /** Optional: without it the card is a pure free-response prompt (no reveal). */
+  sampleAnswer?: string;
 }) {
   const [text, setText] = useState("");
   const [revealed, setRevealed] = useState(false);
@@ -28,22 +29,24 @@ export function UnderstandingCheckCard({
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Write your answer, then compare with the sample…"
+        placeholder={sampleAnswer ? "Write your answer, then compare with the sample…" : "Write your answer, then read on…"}
         rows={4}
         className="mt-3 resize-y"
       />
 
-      <div className="mt-3">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setRevealed((v) => !v)}
-        >
-          {revealed ? "Hide" : "Show"} sample answer
-        </Button>
-      </div>
+      {sampleAnswer && (
+        <div className="mt-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setRevealed((v) => !v)}
+          >
+            {revealed ? "Hide" : "Show"} sample answer
+          </Button>
+        </div>
+      )}
 
-      {revealed && (
+      {revealed && sampleAnswer && (
         <div className="bg-muted mt-3 space-y-2 rounded-lg p-3 text-sm">
           <Paragraphs text={sampleAnswer} className="text-muted-foreground" />
         </div>

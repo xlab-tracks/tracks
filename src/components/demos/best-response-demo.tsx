@@ -6,10 +6,14 @@ import { DEFAULT_LEVERS, type Levers, bestResponse, attackRate } from "@/lib/con
 // Stage 10: the red team plays a best response. Its strategy is two numbers —
 // how selective to be about opportunities (attack rate) and how subtle to make
 // each backdoor (sigma). The heatmap is P(red wins) over that strategy plane;
-// the ring marks the argmax the control evaluation grades against. Moving a blue
-// lever (audit budget b, defer band d) recomputes everything live, so the red
-// team's best strategy visibly migrates — you are never grading against a fixed
-// adversary.
+// the ring marks the argmax the control evaluation grades against. Moving the
+// audit budget recomputes everything live, so the red team's best strategy
+// visibly migrates — you are never grading against a fixed adversary.
+//
+// Defer is OFF for now (per Arya 2026-07-23): d is pinned to b, a zero-width
+// band, and the defer slider is removed — c-game hasn't introduced deferring at
+// this point. Restore the second slider when the walkthrough §3.3 docking (or a
+// later c-game defer section) needs the ring-migration story.
 
 const W = 300;
 const H = 240;
@@ -23,18 +27,14 @@ const ROW_STRIDE = 2;
 
 export function BestResponseDemo() {
   const [b, setB] = useState(0.02);
-  const [d, setD] = useState(0.02);
 
-  // Sliders track urgently; the heatmap's best-response search (~20-80ms)
-  // recomputes against deferred values so drags stay smooth.
+  // The slider tracks urgently; the heatmap's best-response search (~20-80ms)
+  // recomputes against the deferred value so drags stay smooth.
   const bSlow = useDeferredValue(b);
-  const dSlow = useDeferredValue(d);
-
-  const dEff = Math.max(bSlow, dSlow); // defer threshold can't be tighter than the audit budget
 
   const levers: Levers = useMemo(
-    () => ({ ...DEFAULT_LEVERS, b: bSlow, d: dEff, red: { mode: "best", gStar: 0, sigma: 0 } }),
-    [bSlow, dEff],
+    () => ({ ...DEFAULT_LEVERS, b: bSlow, d: bSlow, red: { mode: "best", gStar: 0, sigma: 0 } }),
+    [bSlow],
   );
 
   const br = useMemo(() => bestResponse(levers), [levers]);
@@ -59,39 +59,21 @@ export function BestResponseDemo() {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Audit budget (b)</span>
-            <span className="font-medium tabular-nums">{(b * 100).toFixed(1)}%</span>
-          </label>
-          <input
-            type="range"
-            min={5}
-            max={80}
-            step={1}
-            value={b * 1000}
-            onChange={(e) => setB(Number(e.target.value) / 1000)}
-            className="accent-primary w-full"
-            aria-label="Audit budget"
-          />
-        </div>
-        <div>
-          <label className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Defer band (d)</span>
-            <span className="font-medium tabular-nums">{(dEff * 100).toFixed(1)}%</span>
-          </label>
-          <input
-            type="range"
-            min={5}
-            max={500}
-            step={1}
-            value={d * 1000}
-            onChange={(e) => setD(Number(e.target.value) / 1000)}
-            className="accent-primary w-full"
-            aria-label="Defer band"
-          />
-        </div>
+      <div>
+        <label className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Audit budget (b)</span>
+          <span className="font-medium tabular-nums">{(b * 100).toFixed(1)}%</span>
+        </label>
+        <input
+          type="range"
+          min={5}
+          max={80}
+          step={1}
+          value={b * 1000}
+          onChange={(e) => setB(Number(e.target.value) / 1000)}
+          className="accent-primary w-full"
+          aria-label="Audit budget"
+        />
       </div>
 
       <div className="mx-auto w-full max-w-sm">
@@ -123,14 +105,15 @@ export function BestResponseDemo() {
           )}
           {/* frame */}
           <rect x={M.left} y={M.top} width={PW} height={PH} fill="none" stroke="var(--border)" strokeWidth={1} opacity={0.6} />
-          {/* best-response marker (clamped just inside the frame so it stays fully visible at the corners) */}
+          {/* best-response marker (clamped just inside the frame so it stays fully
+              visible at the corners); white so it reads against the navy heatmap */}
           <circle
             cx={r1(clampX(M.left + (br.red.gStar / lastGStar) * PW))}
             cy={r1(clampY(M.top + PH - br.red.sigma * PH))}
             r={4.5}
             fill="none"
-            stroke="var(--foreground)"
-            strokeWidth={1.5}
+            stroke="#fff"
+            strokeWidth={2}
           />
           {/* axis labels */}
           <text x={M.left} y={H - 16} fontSize={8} fill="var(--muted-foreground)">

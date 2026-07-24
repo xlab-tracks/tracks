@@ -3,6 +3,9 @@
  * Calibrated so the headline protocol numbers approximate the paper:
  *   upfront auditing ≈ 15% safety; trusted monitoring (b=2%) ≈ 62%;
  *   + defer 10% ≈ 83%; + defer 20% ≈ 92%.
+ * Reliability uses the smooth pSucc(sigma) = p0 * (1 - sigma)^alpha (see below);
+ * alpha and subtletyVis were re-tuned to keep those pins in range with an
+ * interior best-response subtlety once the old hard reliability floor was removed.
  * Do not edit without re-running `npm run test` (calibration pins).
  */
 export const PARAMS = {
@@ -19,15 +22,20 @@ export const PARAMS = {
    * mu_base = sqrt(2) * PhiInv(q).
    */
   q: 0.97,
-  /** P(backdoor actually works) at sigma = 0. */
+  /** P(backdoor actually works) at sigma = 0 (anchors the upfront-auditing pin via pSucc(0)). */
   p0: 0.75,
-  /** p_succ(sigma) = max(pMin, p0 - pSlope * sigma). */
-  pSlope: 1.2,
-  pMin: 0.03,
+  /**
+   * Backdoor reliability decay exponent. p_succ(sigma) = p0 * (1 - sigma)^alpha:
+   * smooth, strictly decreasing, and → 0 as sigma → 1 (a maximally subtle
+   * backdoor essentially never works). Replaces the earlier piecewise-linear
+   * max(pMin, p0 - pSlope*sigma), whose hard floor at sigma = 0.6 put a spurious
+   * valley-then-rebound into the subtlety curve. alpha is set by calibration.
+   */
+  alpha: 1.3,
   /** Latent visibility reduction per unit opportunity quality g. */
   gamma: 0.3,
   /** mu(sigma,g) = mu_base * (1 - subtletyVis * sigma) - gamma * g. */
-  subtletyVis: 0.5,
+  subtletyVis: 0.4,
   /** Latent std dev of attack scores (attacks are more stereotyped than the innocent stream). */
   attackSd: 0.9,
   /** Opportunity quality distribution g ~ Beta(a, b) on [0,1]. */

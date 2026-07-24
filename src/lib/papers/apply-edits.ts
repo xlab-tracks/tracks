@@ -6,8 +6,17 @@ import {
   type PaperInsertionItem,
 } from "@/lib/content/types";
 import { anchorNum } from "./anchors";
+import {
+  applySecnumOverrides,
+  planSectionInserts,
+} from "./section-inserts";
 import { sectionStartOffset, splitAtSectionEnds } from "./split-paper";
-import { patchSectionHtml, renderBlockAddHtml, type SectionPart } from "./patch-section";
+import {
+  patchSectionHtml,
+  renderBlockAddHtml,
+  type InsertedSectionRender,
+  type SectionPart,
+} from "./patch-section";
 
 // Applies a paper's edits in two tiers:
 //   tier 1 — section-end ops (activities/adds after a toc subtree) via the
@@ -28,12 +37,26 @@ export interface AppliedPaper {
 }
 
 export function applyPaperEdits(
-  html: string,
+  sourceHtml: string,
   toc: PaperTocEntry[],
   edits: PaperEdit[] | undefined,
 ): AppliedPaper {
   const all = edits ?? [];
-  if (all.length === 0) return { parts: [{ kind: "html", html }], unmatchedEdits: [] };
+  if (all.length === 0)
+    return { parts: [{ kind: "html", html: sourceHtml }], unmatchedEdits: [] };
+
+  // Inserted-section plan: derived numbers/levels for `op: "section"` edits and
+  // the display-number shift for the paper's own later sibling subsections.
+  // The ax-secnum rewrite runs on the FULL html up front, so numbers shift even
+  // in sections that carry no block ops (the artifact JSON itself is untouched).
+  const plan = planSectionInserts(toc, all);
+  const html = applySecnumOverrides(sourceHtml, plan.numberOverrides);
+  const insertedSections = new Map<string, InsertedSectionRender>(
+    plan.sections.map((s) => [
+      s.id,
+      { number: s.number, level: s.level, title: s.title },
+    ]),
+  );
 
   const sectionEndOps = all.filter(
     (op) => op.op !== "hide" && isSectionEndRef(op.after),
@@ -122,7 +145,8 @@ export function applyPaperEdits(
   };
   const emitSectionEndOp = (op: PaperEdit) => {
     if (op.op === "activity") parts.push({ kind: "activity", items: op.items });
-    else if (op.op === "add") emitHtml(renderBlockAddHtml(op.markdown, op.label));
+    else if (op.op === "add")
+      emitHtml(renderBlockAddHtml(op.markdown, op.label, op.plain));
   };
 
   let sliceIndex = 0;
@@ -143,7 +167,11 @@ export function applyPaperEdits(
       const start = Math.max(slice.start, segStart);
       const end = Math.min(slice.end, segEnd);
       emitHtml(html.slice(cursor, start));
-      const patched = patchSectionHtml(html.slice(start, end), slice.ops);
+      const patched = patchSectionHtml(
+        html.slice(start, end),
+        slice.ops,
+        insertedSections,
+      );
       parts.push(...patched.parts);
       unmatchedEdits.push(...patched.unmatched);
       cursor = end;

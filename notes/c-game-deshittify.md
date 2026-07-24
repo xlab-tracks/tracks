@@ -101,7 +101,30 @@ they're worth taking. Untagged items are accepted grievances.
 
 ---
 
-## §2 Safety over a deployment: the race — `src/components/demos/race-demo.tsx`
+## §2 Safety over a deployment: the race — RELOCATED 2026-07-21 (with §3 Opportunities)
+
+- [x] **R9 · Race + Opportunities relocated into the walkthrough as the §3.2 subsection "Probability of Safety over Deployment"** [high]
+  Implemented per [c-race-relocation-draft.md](./c-race-relocation-draft.md): 17-op
+  splice in `papers.data.ts` at anchor b-0131 (end of §3.2 body, before §3.2.1),
+  presenting as first-class numbered subsection **3.2.1** (in body and "In this paper"
+  nav; Redwood's Qualitative Analysis / Untrusted Justification display-shift to
+  3.2.2/3.2.3 at render time, ids and text verbatim); prose renders as native paper
+  body via the new `plain: true` add flag, not note boxes. Backend comments mark the
+  cluster as XLab-authored. New pipeline mechanism (`op: "section"`) documented in
+  AUTHORING.md. (Was briefly labeled "DEMO 2" — renamed, then promoted 2026-07-22.) 7 new exercises (`c-paper-l3-race-*`,
+  `c-paper-l3-hump-*`), new pure-formula `race-paper` demo (table odds c=24/71,
+  s=13/71, "Term A — ceiling" asymptote), existing `attack-rate` demo reused. Both
+  c-game sections hidden in MDX comments (M7 pattern; no bridge sentence added —
+  writing-pass seams flagged: c-game intro line 3, Subtlety opener line 85).
+  *Open defects (all verbatim-preserved for the writing pass):* unfinished opening
+  sentence ("…computing the complement of the red team"), "An broken attack", "a an
+  attack", statement-phrased hinge prompt, "optiomal"/"indecisve" typos, lever-paragraph
+  grammar. **Renderer bug worth its own fix:** the multiple-choice renderer
+  (`choice-exercise.tsx`) does NOT typeset math — `c-paper-l3-hump-predict`'s prompt
+  shows raw `\underbrace{…}` LaTeX on the page. Either add MathText to the MC renderer
+  or rewrite that prompt in plain Unicode (as `race-predict` already is).
+
+### Pre-relocation items (historical) — `src/components/demos/race-demo.tsx`
 
 - [x] **R1 · Event factor uses a silent, visibly-wrong approximation** [high] — *implemented 2026-07-19 (exact forms in evaluateHomogeneous/evaluateGame + mdx equation + exercise text; calibration pins 15/15 incl. new k=1 identity test)*
   Term B ("any decisive event fires") is computed as `1 − e^(−k(w+c))` — the Poisson
@@ -162,6 +185,24 @@ they're worth taking. Untagged items are accepted grievances.
 
 ---
 
+## Model (`src/lib/control-model`)
+
+- [x] **MD1 · pSucc floor artifact removed + recalibration** [high] — *2026-07-22.*
+  Old reliability `max(0.03, 0.75 − 1.2σ)` had a hard floor at σ=0.6 producing a fake
+  interior MINIMUM and a rebound toward σ=1 in the subtlety demo (user: "graphs must be
+  faithful and non-bullshit"). Now smooth power decay `0.75·(1−σ)^1.3` (new param
+  `alpha=1.3`; `subtletyVis` 0.5→0.4; `q`/`attackSd`/`gamma`/betas untouched, so the
+  staged AUC numbers 47/9/47.2 are unaffected). Pins all green with no test edits
+  (upfront 11.8, TM 65.0, defer-10 81.2, defer-20 89.3); subtlety curve now has a single
+  interior max σ*=0.27 (P 35.0%), monotone decline, P(σ=1)=0; attack-rate r*=0.19%
+  stays in the "fraction of a percent" band the DEMO 2 prose asserts. Fixed the two
+  learner-visible "recovers at the subtle extreme" claims (c-game subtlety reveal +
+  `c-game-l6-subtlety-predict` explanation). **Finding for the defer cluster:** defer →
+  subtler is directionally true but saturates at σ*≈0.54 — never "maximally subtle";
+  `c-game-l7-defer-reflect` still says otherwise (fix at drafting time).
+
+---
+
 ## Housekeeping (when §2 fixes land)
 
 - [x] New/edited understanding checks need entries in `src/content/exercises.data.ts`.
@@ -176,5 +217,116 @@ they're worth taking. Untagged items are accepted grievances.
 
 ## Not yet reviewed
 
-§3 Opportunities are not equal · §4 Subtlety · §5 Best-response principle ·
-§6 Defer to trusted · §7 Full dashboard — grievances to be added as we go.
+§4 Subtlety · §5 Best-response principle · §6 Defer to trusted · §7 Full dashboard —
+grievances to be added as we go. (§3 Opportunities relocated with §2 — see R9. The
+redistribution map: subtlety → after b-0140 in displayed §3.2.2, best-response → §3.3
+(recommended as inserted subsection 3.3.1, zero renumbering) — **both drafts ready for
+Arya's edits at [c-subtlety-relocation-draft.md](./c-subtlety-relocation-draft.md)**;
+defer → §3.3; dashboard → §3.5 end. Draft against the Model spine in
+c-race-relocation-draft.md.)
+
+2026-07-23 (best-response check → two-stage): the upper-bound check is now a two-stage
+sequence per Arya — stage 1 c-paper-l3-best-response-upper-bound (Arya's prompt/answer:
+knows TM but not the budget → wrong priors play weaker strategies), stage 2 NEW
+c-paper-l3-protocol-awareness (aware vs unaware, benefits/drawbacks; sample answer covers
+tailoring/exploitation upside + the Ctrl-Z deterrence twist per Arya's sketch). Grammar
+fixes to stage-1 prompt: "that blue team" → "that the blue team", "they were unaware" →
+"was unaware" (agreement with "its"), comma before "what". Typecheck+468 tests green.
+
+2026-07-23 (minimal best response): c-game best-response passage reduced per Arya (heading
+already removed by Arya): one-sentence optimum statement → demo → new
+c-paper-l3-best-response-upper-bound check (best response = upper bound for red without
+exact priors). best-response demo: defer slider removed (d pinned to b, restore for the
+§3.3 migration story), ring recolored white. predict/reflect exercises orphaned.
+Typecheck+468 tests green.
+
+2026-07-23 (levers end-of-draft sync + heading removal): hump analysis now sits BEFORE the
+attack-rate demo (merged with the σ-fixed sentence); post-demo reveal deleted on both
+surfaces (walkthrough 3.2.1 ends at the demo); c-game's `## Subtlety: visible versus
+reliable` heading removed, so hump demo → "As aforementioned…" reads as one continuous
+section. Typecheck+468 tests green.
+
+2026-07-23 (subtlety exact-sync + Term B asymptote): c-game subtlety section now matches the
+.md exactly — opener → two-stage Predict → Arya's short demo lead-in → demo → straight to
+best response (four-paragraph reveal DELETED; lead-in's stray "_" fixed). Attack-rate demo:
+terms panel got headroom with 100% drawn as a dashed labeled asymptote (Term B never touches
+the panel edge), and both demos' Term B readout caps at ">99.9%" instead of a false
+"100.0%". Typecheck+lint+468 tests green.
+
+2026-07-23 (best-response sync): c-game's `## The best-response principle` replaced with the
+subtlety draft's Cluster 2 — response-prediction MC c-paper-l3-best-response-predict (ring
+migration, Unicode σ in explanation), best-response demo, equilibrium-artifact reveal
+(65% at defaults, honest post-MD1), reflect c-paper-l3-best-response-reflect. Old
+c-game-l3-* pair orphaned. Deviations flagged in the draft's Cluster 2 status (decision-
+factor language, "earlier section" instead of "race cluster"). Walkthrough §3.3 docking
+still pending. Typecheck+lint+468 tests green.
+
+2026-07-23 (subtlety re-embed): the subtlety draft's two notes passes are LIVE in c-game —
+one-sentence opener ("As aforementioned, the red team's other decision factor..."),
+two-averages add deleted, predict now a two-stage sequence (realigned MC + new
+c-paper-l3-sigma-terms-predict free response with NO sample answer, per "we'll show them
+the graph and its analysis"), pragmatic reveal (mechanism → bands → terms, covers the
+decreasing-effort mirror), subtlety demo chart title "Per-attack outcome probability, and
+P(red wins)", registry description "second decision factor". Also synced same day:
+cutoff-predict prompt dropped ", attacking more often" (levers draft note). Walkthrough
+b-0140 subtlety splice STILL pending structural calls. Typecheck+lint+468 tests green.
+
+2026-07-23 (Arya's writing pass re-embedded): levers-decomposition draft edits shipped to
+both surfaces verbatim (grammar/spelling fixes only, all listed in the draft's status
+header). Notables: "quality cutoff" renamed "opportunity cutoff" everywhere live (incl.
+subtlety section); unified-model paragraph rewritten in Arya's voice; annotated Term A/B
+formulas inlined in cutoff-predict prompt + reveal; subtlety-ways has NO sample answer
+(sampleAnswer now optional schema-wide, renderers handle absence); hump-reflect REMOVED
+from both surfaces (orphaned); walkthrough forward-pointer removed; calibrated-model
+disclosure paragraph replaced by a one-line lead-in — FLAGGED: the idealization-honesty
+note now exists nowhere. Typecheck+468 tests green.
+
+2026-07-22 (decomposition IMPLEMENTED): the two-routes restructure is live on BOTH surfaces
+per c-levers-decomposition-draft.md — c-game.mdx and the 3.2.1 cluster now carry Arya's
+motivation verbatim (upfront-vs-TM sneakiness), the subtlety-ways free response, the
+two-routes text, the unified $s(g,\sigma)$/$c(g,\sigma)$ averaging model, cutoff-predict
+(free response, replaces the deleted hump-predict MC), the σ-held-fixed disclosure clause,
+and the two-paragraph reveal. The c-game subtlety section was also synced to the subtlety
+draft's current text (trimmed opener, new shared MC c-paper-l3-subtlety-predict with
+Unicode-σ prompt, bands reveal); the walkthrough b-0140 subtlety splice is still pending
+Arya's structural calls. Newly orphaned: c-game-l6-subtlety-predict. Typecheck+lint+468
+tests green.
+
+2026-07-22 (attack-rate demo decomp): attack-rate-demo.tsx rebuilt around the two-term
+decomposition (renders in BOTH c-game and the walkthrough) — top panel Term A (red,
+37%→28% pool dilution) and Term B (grey, saturates ~99% by 0.16% rate) as dashed curves
+with direct labels; bottom panel P(red wins) on a tight axis; readout now mirrors the
+subtlety demo (c / s / expected attempts k tier + KaTeX equation row s/(s+c) ×
+1−(1−s−c)^k = P). Old rate/P/safety grid removed. Registry caption updated. Details in
+c-levers-decomposition-draft.md flag 7. Typecheck+lint+468 tests green.
+
+2026-07-22 (decomposition proposal): NEW draft
+[c-levers-decomposition-draft.md](./c-levers-decomposition-draft.md) — restructures the
+back half of "Probability of safety over deployment" (both surfaces) around Arya's frame:
+opportunity = inherent zero-cost subtlety, σ = purchased subtlety paid in reliability
+(verified against model math mu = muBase(1−0.4σ)−0.3g, pSucc g-free, and the paper's
+M.7/M.8/M.9 sneakiness/rarity pipeline). Arya's text verbatim; two new free-response
+exercises (subtlety-ways, cutoff-predict) replacing the hump-predict MC; subtlety-cluster
+opener knock-on included. Awaiting Arya's edits/approval.
+
+2026-07-22 (un-hide): per Arya, the walkthrough's 3.2.1 cluster was synced BACK into
+c-game.mdx and un-hidden — the old hidden race + opportunities sections are replaced by one
+live `## Probability of safety over deployment` section carrying the 3.2.1 content verbatim
+(same `c-paper-l3-*` exercise ids, `race-paper`/`attack-rate` demos; the cluster's final
+forward-pointer line dropped since the lesson's Subtlety opener plays that role). Lesson and
+walkthrough now carry this content in parallel; only the AUC block stays hidden in c-game.
+Consequences: `race` demo (race-demo.tsx) and the c-game-l4/l5 exercise definitions are now
+fully orphaned (retire or keep decision pending); the hide-vs-sync question is reopened for
+the upcoming subtlety/best-response implementations (flagged in the draft's flag 5s).
+
+2026-07-22 (post-draft): subtlety demo rebuilt in place to show HOW σ moves P(red wins).
+Final layout (Arya's pick from side-by-side mockups, then a space-fix pass): 2b full-width —
+stacked-band partition of every attack attempt's fate (caught bottom / deployed-but-broken
+middle / successfully-deployed pressed against the 100% ceiling; bands sum to exactly 100%)
+over a full-width P(red wins) panel on its own tight axis; the side bar panel was tried and
+removed (wasted space, duplicated the readout). Decomposition readout now renders the
+formula in KaTeX (s/(s+c) × 1−(1−s−c)^k = P(red wins)) via MathText instead of "Term A/B".
+"Successfully deployed" relabel; limiting best response at σ=1; reveal/MC/table rewritten
+around the verified finding that Term B stays ≥98.9% along the envelope (subtlety acts
+through Term A alone, s̄ = (1−c̄)·p_works). Details in the draft's flag 3/4/6.
+Typecheck+lint+468 tests green.

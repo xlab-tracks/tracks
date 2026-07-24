@@ -377,7 +377,7 @@ control keyed to **block anchors** and **sentences**:
   math/citations never split a sentence — when in doubt the segmenter merges,
   so trust the `--blocks` output over your own reading.
 
-The three ops, targeting the example paper (`1706.03762v7`; anchors/snippets
+The four ops, targeting the example paper (`1706.03762v7`; anchors/snippets
 below are real — see `papers.data.ts` for the live config):
 
 ```ts
@@ -401,6 +401,17 @@ edits: [
   { op: "activity",
     after: { anchor: "b-0004", s: 1, snippet: "Recurrent neural networks," },
     items: [{ kind: "exercise", id: "true-false" }] },
+
+  // SECTION — splice a first-class numbered subsection after a block. The
+  // heading renders as a native <hN> (ax-secnum number span + `id`), its
+  // number/level DERIVED from the parent section in the toc; the parent's
+  // later sibling subsections shift their DISPLAYED numbers by +1 (body AND
+  // nav), while every id/anchor/text stays verbatim. Follow it with
+  // `plain: true` adds + activities on the same block to fill the subsection.
+  { op: "section",
+    after: { anchor: "b-0005", snippet: "Recurrent models typically factor" },
+    id: "your-subsection-id",
+    title: "Your Subsection Title" },
 ]
 ```
 
@@ -418,10 +429,20 @@ edits: [
   toggle works only in the in-document footnotes section.
 - **Block add** → a navy left-accented card with an uppercase "NOTE" label
   (the op's optional `label` field overrides that eyebrow text, e.g.
-  `label: "Source"` — block/section targets only).
+  `label: "Source"` — block/section targets only). `plain: true` opts the add
+  OUT of that card, rendering the markdown as native paper body (for prose that
+  belongs to an inserted `section`, where the card/left-accent would read as a
+  "note" rather than the paper's own text).
   **Inline add** → a navy-tinted span with a dashed underline, appended right
   after the target sentence, tooltipped "Added by the course". Editorial voice
   is always navy, distinct from the paper's red links.
+- **Section** → a native-looking numbered subsection heading (same `ax-secnum`
+  markup and typography as the paper's own subsections), with a matching
+  sidebar entry nested under its parent, in document order. The number/level
+  are derived from the toc; inserting one shifts the DISPLAYED numbers of the
+  parent's later sibling subsections up by one (e.g. inserting §3.2.1 renumbers
+  the paper's own 3.2.1→3.2.2, 3.2.2→3.2.3) in both body and nav — ids,
+  anchors, and text stay verbatim, and nothing outside the parent renumbers.
 - **Mid-paragraph activity** → the paragraph ends after the target sentence
   (keeping any inline adds attached to it), the card renders, and the remainder
   continues as a normal-looking paragraph. Splitting at the last sentence just
@@ -432,9 +453,10 @@ edits: [
   abstract/references landmark sections) never split the container — the card
   renders after the whole box; a block-level add after a list item renders
   inside that item (valid list markup).
-- **Sidebar**: activity entries appear in the "In this paper" panel under their
-  containing section, in reading order; hide/add edits produce no panel
-  entries.
+- **Sidebar**: activity entries and inserted `section` headings appear in the
+  "In this paper" panel under their containing section, in reading order (an
+  inserted section's own activities nest under it); hide/add edits produce no
+  panel entries.
 
 **Add markdown capabilities**: CommonMark (emphasis, links, inline code, lists,
 fences, blockquotes) plus `$…$` / `$$…$$` KaTeX math — rendered with *vanilla*

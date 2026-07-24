@@ -614,6 +614,144 @@ export const exercises: Exercise[] = [
       "(a) Of the 71 attempts: audited, blue wins $= 24/71 = 0.338$; not audited and successful, red wins $= 13/71 = 0.183$; not audited and failed, game continues $= 34/71 = 0.479$. These sum to $24 + 13 + 34 = 71$, i.e. 1. So on a single attempt the monitor is nearly twice as likely to catch the red team (0.338) as the red team is to land a successful backdoor (0.183).\n\n(b) Trusted monitoring audits an attempt with probability 0.338; upfront auditing audits it only with the random budget probability 0.02 — about a $17\\times$ lower catch rate. The red team must land at least one successful unaudited backdoor over the whole scenario while surviving every attempt it makes, so raising the per-attempt catch probability from 0.02 to 0.338 sharply raises the chance the blue team shuts down first. That shift is what moves the blue team's win probability from 15% (upfront auditing) to 62% (trusted monitoring). The exact figures also depend on the downsampling and the multiple-attempt dynamics, so this per-attempt comparison explains the direction and rough magnitude rather than reproducing 62% precisely.",
   },
   {
+    id: "c-paper-l3-race-hinge",
+    type: "understanding-check",
+    prompt:
+      "Why is the whole deployment settled by the first decisive attempt? And why do the failed attempts before it have no effect at all on the outcome?",
+    sampleAnswer:
+      "A caught attack and a successfully deployed one each end the game immediately, so nothing after the first decisive attempt is ever played. A failed attempt leaves the game in exactly the state it was in before, and thus nothing accumulates.",
+  },
+  {
+    id: "c-paper-l3-race-terms",
+    type: "understanding-check",
+    prompt:
+      "Before reading on, interpret the formula's two terms in your own words: what event is Term B, $1 - (1-s-c)^k$, the probability of? And Term A, $s/(s+c)$, is a conditional probability of what, given what?",
+    sampleAnswer:
+      "$(1-s-c)$ is the probability that an attack attempt fails or, equally, the probability that an attack attempt *isn't* decisive. Then $(1-s-c)^k$ is the probability that all $k$ attacks aren't decisive. Thus Term B is the probability that not all attempts are indecisive or, equally, the probability that at least one attempt is decisive. Term A is the conditional probability that an attack attempt ends with a successfully deployed attack, given that the attack attempt is decisive — $P(\\text{deployed} \\mid \\text{decisive})$.",
+  },
+  {
+    id: "c-paper-l3-race-predict",
+    type: "multiple-choice",
+    prompt:
+      "To maximize their probability of winning at least once over the deployment, how often should the red team attack given the above model?",
+    options: [
+      { id: "a", label: "Once, at the single best moment" },
+      { id: "b", label: "At an interior optimal rate, as under upfront auditing" },
+      { id: "c", label: "As often as possible" },
+      { id: "d", label: "It makes no difference how often it attacks" },
+    ],
+    correctOptionIds: ["c"],
+    explanation:
+      "With identical per-attempt odds, the win probability [s/(s+c)] × [1 − (1−s−c)^k] only rises with k: each extra attempt raises the chance that some decisive event fires without changing the odds of any single one.",
+  },
+  {
+    id: "c-paper-l3-race-empirical",
+    type: "understanding-check",
+    prompt:
+      "Is the optimal strategy predicted by the model reflected in how the paper's red team actually behaved? Point to specific evidence in the paper's setup.",
+    sampleAnswer:
+      "No. The model says every extra attack only helps, so the red team should backdoor almost every problem. But the paper's red team attacked on just 71 of 1,500 problems — under 5% — and its policy was deliberate: it inserts a backdoor \"only when there is a good opportunity to do so.\" The real red team held back hard, exactly where the fixed-odds model says it never should.",
+  },
+  {
+    id: "c-paper-l3-race-discrepancy",
+    type: "understanding-check",
+    prompt:
+      "What about this model causes the discrepancy: why does the model predict constant attacking when the paper's red team attacks rarely?",
+    sampleAnswer:
+      "The assumption that every attack carries the same odds — the same catch probability $c$ and deployment probability $s$ — no matter how many attacks are made or which problems they target. Under fixed odds an extra attack is always as good as the first, so more is always better. But the attacks are not interchangeable: the red team can only attack more often by taking on problems where a backdoor has less natural cover, and those are easier for the monitor to catch. Once attacking more raises the catch probability, the odds are no longer fixed — and constant attacking stops being optimal.",
+  },
+  {
+    // No sampleAnswer by design (Arya): the two-routes prose that follows the
+    // card IS the reveal.
+    id: "c-paper-l3-subtlety-ways",
+    type: "understanding-check",
+    prompt:
+      "The red team wants its attack attempts to draw less suspicion from the monitor. What decision factors do they have for making their attacks subtler? Name at least two, and think about what each one costs.",
+  },
+  {
+    id: "c-paper-l3-cutoff-predict",
+    type: "understanding-check",
+    prompt:
+      "Suppose the red team lowers its opportunity cutoff. With $s$ and $c$ read as the average odds of its attempts, what happens to each term of $P(\\text{red wins}) = \\underbrace{\\frac{s}{s + c}}_{\\text{Term A}} \\cdot \\underbrace{\\left(1 - (1 - s - c)^k\\right)}_{\\text{Term B}}$, and to the red team's overall win probability?",
+    sampleAnswer:
+      "Term B rises: more attack attempts make it more likely that some decisive attack attempt occurs. But the added attempts are drawn from worse opportunities, where backdoors are inherently more visible, so the average $c$ rises and the average $s$ falls, and Term A, the probability that a decisive attack attempt is successfully deployed, drops. Near the rare end the Term B gain dominates and the win probability climbs; past some point the Term A decay takes over and it falls. The curve is hump-shaped, and the red team's best attack rate is low but non-zero.",
+  },
+  {
+    id: "c-paper-l3-hump-reflect",
+    type: "understanding-check",
+    prompt:
+      "The paper's red team attacks on only a small fraction of problems. Explain why this rarity is a deliberate optimization rather than caution — and why the same \"attack rarely\" conclusion arises under both upfront auditing and trusted monitoring even though the two protocols work completely differently.",
+    sampleAnswer:
+      "Attacking more often forces the red team onto worse-covered problems, where the catch probability is higher; that drags $s/(s+c)$ — the probability that a decisive attack attempt is successfully deployed — down faster than the extra attempts raise the chance of firing, so past a low rate the win probability falls. The optimum is therefore interior, at a low but non-zero rate — a calculation, not timidity. The common thread with upfront auditing is heterogeneity in the per-attempt odds: attempts are not interchangeable. Under upfront auditing the heterogeneity is positional (an attempt in the audited prefix is doomed, one after it is free); under trusted monitoring it is opportunity quality (well- vs poorly-covered problems), and it is created by the red team's own cutoff rather than by the protocol. With genuinely identical attempts — the fixed-odds idealization — there is no hump under trusted monitoring at all. Rarity is always a symptom of attempts differing from one another, never of caution.",
+  },
+  {
+    id: "c-paper-l3-subtlety-predict",
+    type: "multiple-choice",
+    prompt:
+      "The red team's other decision factor is obfuscation effort σ. A more obfuscated backdoor reads as more normal code, so the monitor catches it less often, but it is also more likely to be simply broken. As σ rises from blatant to maximally subtle, the red team's best achievable win probability (picking its best opportunity cutoff at each effort level):",
+    options: [
+      { id: "a", label: "Rises monotonically; more obfuscation is always better" },
+      { id: "b", label: "Falls monotonically; any obfuscation only hurts" },
+      { id: "c", label: "Rises to an interior peak, then falls" },
+      { id: "d", label: "Is unaffected by obfuscation effort" },
+    ],
+    correctOptionIds: ["c"],
+    explanation:
+      "Two effects oppose each other. Making a backdoor subtler lowers the monitor's catch rate (the benefit) but also lowers the chance the backdoor actually works (the cost).",
+  },
+  {
+    // Stage 2 of the subtlety predict sequence. No sampleAnswer by design
+    // (Arya): the subtlety demo and the reveal that follow are its analysis.
+    id: "c-paper-l3-sigma-terms-predict",
+    type: "understanding-check",
+    prompt:
+      "Suppose the red team decreases its obfuscation effort. With $s$ and $c$ read as the average odds of its attempts, what happens to each term of $P(\\text{red wins}) = \\underbrace{\\frac{s}{s + c}}_{\\text{Term A}} \\cdot \\underbrace{\\left(1 - (1 - s - c)^k\\right)}_{\\text{Term B}}$, and to the red team's overall win probability?",
+  },
+  {
+    // Response prediction (ring migration), not a value guess — the race
+    // cluster already reconstructs the safety number. Unicode sigma in the
+    // explanation: the MC renderer does not typeset math.
+    id: "c-paper-l3-best-response-predict",
+    type: "multiple-choice",
+    prompt:
+      "You are running trusted monitoring at a 2% audit budget, and you widen the defer band from 2% to 20% of problems. On the best-response heatmap (opportunity cutoff on one axis, subtlety on the other), how does the ring, the red team's best strategy, move?",
+    options: [
+      { id: "a", label: "Up the subtlety axis, all the way to the maximally subtle corner" },
+      { id: "b", label: "Upward to a subtler but still interior optimum, with the attack rate barely changing" },
+      { id: "c", label: "Sideways: same subtlety, but the red team now attacks far more often" },
+      { id: "d", label: "It does not move; the safety number already accounts for the red team's response" },
+    ],
+    correctOptionIds: ["b"],
+    explanation:
+      "A wider defer band silently rewrites anything whose suspicion lands in it, so to still ship, the red team has to push each backdoor's suspicion lower, which means making it subtler. The ring climbs the subtlety axis. But only partway: subtler backdoors break more often, and past a point that reliability collapse costs the red team more than ducking the band saves it, so the best subtlety saturates at an interior value. In the model it rises from σ* ≈ 0.28 at a 2% band to only ≈ 0.54 at a 20% band, never near the maximally subtle corner, while the attack rate stays about flat (roughly 0.2% to 0.3% of problems). What is certain is that the ring moves at all, and that is the whole point: the safety readout is computed against wherever it currently sits, so every blue-team change provokes a red-team re-optimization the number already reflects. Safety climbs from about 65% to about 89% precisely because the red team's best response got worse, not because any one fixed attack was blocked.",
+  },
+  {
+    // Stage 1 of the best-response sequence: best response as an upper bound.
+    id: "c-paper-l3-best-response-upper-bound",
+    type: "understanding-check",
+    prompt:
+      "If the red team knew that the blue team was using Trusted Monitoring, but was unaware of the audit budget, what would that mean for the effectiveness of its strategy?",
+    sampleAnswer:
+      "The best response is the maximum of the red team's win probability against one specific protocol, so a red team with wrong or vague priors will generally play some other strategy, which by definition wins less or just as often as the best response.",
+  },
+  {
+    // Stage 2: protocol awareness cuts both ways (tailoring vs deterrence).
+    id: "c-paper-l3-protocol-awareness",
+    type: "understanding-check",
+    prompt:
+      "Is it better for the red team to be aware that the blue team is using trusted monitoring, or unaware that the blue team is using trusted monitoring? For each case, list the benefits and drawbacks.",
+    sampleAnswer:
+      "Mostly, awareness helps the red team: knowing the protocol lets it play its best response, tuning its opportunity cutoff and obfuscation effort to the monitor it actually faces, and knowing the protocol's mechanics can make targeted obfuscation or exploitation easier. Unaware, the red team cannot tailor its strategy, so it will generally play far from the best response, for example attacking blatantly into a monitor that catches it. Awareness can also function as deterrence. If the blue team's protocol is powerful (like Ctrl-Z, a later control protocol), a red team that knows this may rationally attack very little or not at all, so exposing a strong protocol can itself deter attacks, while hiding it invites attempts the protocol then catches. But catching AIs red-handed is also a win condition, so we're inclined to keep the red team unaware even if making them more aware deters attacks that would otherwise get caught or be deployed.",
+  },
+  {
+    id: "c-paper-l3-best-response-reflect",
+    type: "understanding-check",
+    prompt:
+      "The heatmap's bright region, the red team's best strategy, moves whenever you change a blue lever. Explain why a protocol's safety must be measured against the red team's best response rather than against one fixed attack, and in what sense the paper's own contingency table is itself a product of that best response.",
+    sampleAnswer:
+      "A capable, scheming adversary adopts whatever strategy works best against the exact protocol it faces, so a safety number computed against one fixed attack only says how *that* attack fares, not how the attack the red team would actually choose fares. The control evaluation therefore grades every protocol against the maximizing red strategy, which is why the safety here is safety against the best response. Because that best response moves as the blue levers change, any single safety number is a snapshot against a responding opponent: tighten a budget or widen the defer band and the red team re-optimizes, and the number already reflects it. The paper's contingency table, a handful of attack attempts at a particular rate and subtlety, is not an arbitrary given either. It is the record of the red team playing its best response to this protocol, so the same table would look different against a different protocol. That is what it means to say the table, and the safety read off it, are artifacts of an equilibrium rather than fixed facts about the world.",
+  },
+  {
     id: "c-paper-l4-frontier-dominance",
     type: "multiple-choice",
     prompt:
@@ -882,7 +1020,7 @@ export const exercises: Exercise[] = [
     ],
     correctOptionIds: ["c"],
     explanation:
-      "Visibility falls as subtlety rises, but so does reliability — a subtler backdoor is more often simply broken. The two trade off, so the win probability has an interior optimum: it rises from the blatant end to a peak at low-but-non-zero subtlety, then falls as reliability collapses. (At this calibration the peak sits fairly close to blatant, since a 2% audit budget lets even moderately visible backdoors through, and the curve recovers slightly at the maximally-subtle extreme where invisible-but-usually-broken attacks always ship — but that stays below the peak.) The key structural fact is the interior optimum, matching the attack rate.",
+      "Visibility falls as subtlety rises, but so does reliability — a subtler backdoor is more often simply broken. The two trade off, so the win probability has an interior optimum: it rises from the blatant end to a peak at low-but-non-zero subtlety, then falls as reliability collapses. (At this calibration the peak sits fairly close to blatant, since a 2% audit budget lets even moderately visible backdoors through; past the peak the win probability declines all the way to zero, since a maximally subtle backdoor is essentially always broken.) The key structural fact is the interior optimum, matching the attack rate.",
   },
   {
     id: "c-game-l7-defer-predict",

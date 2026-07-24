@@ -33,17 +33,30 @@ export interface PatchedSection {
 
 const SENTINEL_TAG = "ax-part-break";
 
+/** Display info for an inserted `op: "section"`, resolved by section-inserts. */
+export interface InsertedSectionRender {
+  number: string;
+  level: number;
+  title: string;
+}
+
 /** Rendered html for a section-end `add` edit (used by apply-edits tier 1). */
-export function renderBlockAddHtml(markdown: string, label?: string): string {
+export function renderBlockAddHtml(
+  markdown: string,
+  label?: string,
+  plain?: boolean,
+): string {
+  const blocks = markdownBlocksToHast(markdown);
   return toHtml({
     type: "root",
-    children: [blockAddedWrapper(markdownBlocksToHast(markdown), label)],
+    children: plain ? blocks : [blockAddedWrapper(blocks, label)],
   });
 }
 
 export function patchSectionHtml(
   sectionHtml: string,
   ops: PaperEdit[],
+  insertedSections?: Map<string, InsertedSectionRender>,
 ): PatchedSection {
   const tree = fromHtmlIsomorphic(sectionHtml, { fragment: true }) as Root;
   const unmatched: PaperEdit[] = [];
@@ -120,6 +133,9 @@ export function patchSectionHtml(
     if (op.op === "hide") {
       if (ref.s) bucket.sentenceHides.push(op);
       else bucket.blockHide = bucket.blockHide ?? op;
+    } else if (op.op === "section") {
+      // Section headings are always block-level (phase C), never mid-sentence.
+      bucket.after.push(op);
     } else if (ref.s) {
       if (op.op === "add") bucket.inlineAdds.push(op);
       else bucket.splits.push(op);
@@ -267,21 +283,40 @@ export function patchSectionHtml(
   for (const anchor of anchorsAsc) {
     const block = blockByAnchor.get(anchor)!;
     let cursor: Element = tailFragment.get(anchor) ?? block;
+    // Place block-level nodes after `cursor`, advancing it to the last element
+    // placed. A block after an <li> would be a non-conforming ul/ol child, so
+    // it renders inside the list item instead (cursor stays on the li).
+    const placeAfterCursor = (nodes: ElementContent[]): void => {
+      if (cursor.tagName === "li") {
+        for (const node of nodes) {
+          cursor.children.push(node);
+          if (node.type === "element") parentOf.set(node, cursor);
+        }
+        return;
+      }
+      const parent = parentOf.get(cursor) ?? tree;
+      const at = parent.children.indexOf(cursor);
+      parent.children.splice(at + 1, 0, ...nodes);
+      for (const node of nodes) {
+        if (node.type !== "element") continue;
+        parentOf.set(node, parent);
+        cursor = node;
+      }
+    };
     for (const op of byAnchor.get(anchor)!.after) {
       if (op.op === "add") {
-        const added = blockAddedWrapper(markdownBlocksToHast(op.markdown), op.label);
-        if (cursor.tagName === "li") {
-          // A div after an li would be a non-conforming ul/ol child — the
-          // note renders inside the list item instead.
-          cursor.children.push(added);
-          parentOf.set(added, cursor);
-        } else {
-          const parent = parentOf.get(cursor) ?? tree;
-          const at = parent.children.indexOf(cursor);
-          parent.children.splice(at + 1, 0, added);
-          parentOf.set(added, parent);
-          cursor = added;
-        }
+        // `plain` adds render as native paper body (no editorial box/label);
+        // the default wraps the markdown in the navy `.ax-added` note card.
+        const blocks = markdownBlocksToHast(op.markdown);
+        placeAfterCursor(op.plain ? blocks : [blockAddedWrapper(blocks, op.label)]);
+      } else if (op.op === "section") {
+        // A native-looking numbered subsection heading (same markup as the
+        // paper's own <h4> subsections). Number/level are derived by
+        // section-inserts and passed in; fall back to a bare h4 if absent.
+        const meta = insertedSections?.get(op.id);
+        placeAfterCursor([
+          sectionHeadingElement(op.id, op.title, meta?.number ?? "", meta?.level ?? 4),
+        ]);
       } else if (op.op === "activity") {
         // Activities render as React parts, so their sentinels must sit at
         // the top level — nested cursors defer into the container's hoist
@@ -524,6 +559,35 @@ function blockAddedWrapper(children: ElementContent[], label?: string): Element 
       ...children,
     ],
   };
+}
+
+/**
+ * A native-looking numbered subsection heading for an inserted `op: "section"`:
+ * an `<hN>` (N = level, clamped to h2–h6) carrying `id` (nav anchor +
+ * scroll-spy target), a leading `ax-secnum` number span, then the title —
+ * matching the converter's own heading markup, so the paper's `.arxiv-paper`
+ * typography applies unchanged. No `data-anchor`: the heading is not an edit
+ * target and takes part in no block indexing.
+ */
+function sectionHeadingElement(
+  id: string,
+  title: string,
+  number: string,
+  level: number,
+): Element {
+  const tag = `h${Math.min(6, Math.max(2, level))}`;
+  const children: ElementContent[] = number
+    ? [
+        {
+          type: "element",
+          tagName: "span",
+          properties: { className: ["ax-secnum"] },
+          children: [text(number)],
+        },
+        text(` ${title}`),
+      ]
+    : [text(title)];
+  return { type: "element", tagName: tag, properties: { id }, children };
 }
 
 function detailsWrapper(content: ElementContent[], summaryLabel: string): Element {

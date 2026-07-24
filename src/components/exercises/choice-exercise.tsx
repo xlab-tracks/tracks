@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { MathText } from "./math-text";
 import { gradeExercise } from "@/app/actions/exercises";
 import type { GradeResult, PublicChoiceExercise } from "@/lib/content/exercise-view";
 import { EXERCISE_TYPE_LABELS } from "@/lib/content/types";
@@ -18,7 +19,7 @@ export function ChoiceExerciseCard({
       <p className="text-muted-foreground mb-1 text-xs font-medium tracking-wide uppercase">
         {EXERCISE_TYPE_LABELS[exercise.type]}
       </p>
-      <p className="font-medium">{exercise.prompt}</p>
+      <p className="font-medium"><MathText text={exercise.prompt} /></p>
       <ChoiceExerciseBody exercise={exercise} />
     </aside>
   );
@@ -102,7 +103,7 @@ export function ChoiceExerciseBody({
                   {graded && !isCorrect && isSelected && <X className="size-3" aria-hidden />}
                 </span>
                 <span className={cn(exercise.monospaceOptions && "font-mono text-sm whitespace-pre-wrap")}>
-                  {option.label}
+                  {exercise.monospaceOptions ? option.label : <MathText text={option.label} />}
                 </span>
               </button>
             </li>
@@ -119,7 +120,7 @@ export function ChoiceExerciseBody({
         >
           <p className="font-medium">{result.correct ? "Correct" : "Not quite"}</p>
           {result.explanation && (
-            <p className="text-muted-foreground mt-1">{result.explanation}</p>
+            <p className="text-muted-foreground mt-1"><MathText text={result.explanation} /></p>
           )}
         </div>
       )}

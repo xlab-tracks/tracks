@@ -27,6 +27,7 @@ import {
   type PaperNavActivity,
   type PaperNavItem,
 } from "@/lib/papers/paper-nav";
+import { planSectionInserts } from "@/lib/papers/section-inserts";
 import { getLessonSections } from "@/components/mdx/lesson-content";
 import { TrackSidebar } from "@/components/layout/track-sidebar";
 
@@ -148,7 +149,8 @@ async function buildNavForPaper(paper: Paper): Promise<PaperNavItem[]> {
     }));
   // Non-ready artifacts still get activity-only entries (empty toc) so the
   // fallback page's activities remain navigable.
-  return buildPaperNav(await tocForSource(paper.source), activities);
+  const toc = await tocForSource(paper.source);
+  return buildPaperNav(toc, activities, planSectionInserts(toc, paper.edits));
 }
 
 async function tocForSource(source: Paper["source"]): Promise<PaperTocEntry[]> {

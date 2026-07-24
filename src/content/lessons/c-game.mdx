@@ -20,99 +20,79 @@ At the default AUC of 0.92 the two monitors catch wildly different fractions, ro
 
 */}
 
-## Safety over a deployment: the race
+## Probability of safety over deployment
 
-So far we have scored one attack in isolation. Safety is defined over the whole deployment: $N = 5{,}000$ problems, and the blue team wins only if *no* working backdoor ever ships.
+The paper reports that Trusted Monitoring achieves a blue team win probability of 62%. A protocol's safety is calculated as the blue team win probability against the red team's best strategy (the strategy that maximizes the probability of a red team win), but what actually is the best strategy for the red team in this protocol?
 
-Every attack ends in exactly one of three ways:
+Each of the red team's attack attempts can end in exactly one of three ways:
 
-- **Caught** — the monitor flags it, the audit finds the backdoor, and the deployment is shut down. Blue wins outright: catching the model red-handed is proof, and the game (following the paper) is scored that way.
-- **Win** — it ships and the backdoor works. Red wins outright.
-- **Neutral** — it ships but the backdoor is broken (or, once we add deferring, it is quietly rewritten). Nothing happens; the game continues as if the attack never occurred.
+- **Caught**: An attack (working or broken) is audited and *caught* by the blue team: Blue Team Wins. In the paper's setup, 24 of 71 attacks were audited (6 working, 18 broken).
+- **Successfully Deployed**: A working attack isn't audited and is *successfully deployed*: Red Team Wins. In the paper's setup, 13 of 71 attacks were working attacks that weren't audited.
+- **Failed**: A broken attack isn't audited: Neither Team Wins. In the paper's setup, 34 of 71 attacks were broken attacks that weren't audited.
 
-Two of these outcomes end the game on the spot. Call an attack **decisive** if it is caught or wins.
+So a single attempt is **caught** with probability $c = 24/71 \approx 0.34$ and **successfully deployed** with probability $s = 13/71 \approx 0.18$; the rest of the time it **fails** harmlessly. An attempt is **decisive** when it is caught or successfully deployed — the two outcomes that end the game.
 
-<Exercise id="c-game-l4-race-hinge" />
+<Exercise id="c-paper-l3-race-hinge" />
 
-Now suppose the red team makes $k$ attacks, each with the same odds: caught with probability $c$, a working backdoor ships with probability $w$, neutral otherwise. Then:
+Let the red team make $k$ attack attempts, $s = P(\text{successful deployment})$ be the probability of a successful deployment, and $c = P(\text{caught})$ be the probability of an attack being caught. Then we can model the Red Team's probability of winning at least once as:
 
-$$P(\text{red wins}) = \underbrace{\frac{w}{w + c}}_{\text{Term A}} \cdot \underbrace{\left(1 - (1 - w - c)^k\right)}_{\text{Term B}}$$
+$$
+P(\text{red wins}) = \underbrace{\frac{s}{s + c}}_{\text{Term A}} \cdot \underbrace{\left(1 - (1 - s - c)^k\right)}_{\text{Term B}}
+$$
 
-<Exercise id="c-game-l4-race-terms" />
+<Exercise id="c-paper-l3-race-terms" />
 
-Read the formula as two questions multiplied together. *Does anything decisive ever happen?* That is Term B — $(1 - w - c)^k$ is the probability that all $k$ attacks land neutral, so Term B is the chance that any decisive event fires — and it is the only place $k$ appears. *If so, who won?* That is Term A: every attack enters a race between red's wins and blue's catches, and Term A is the probability that when the race is decided, red won it. Note what Term A is **not**: it is not the probability that an attack slips through (that is $w$). It is conditional on the attack being decisive. The neutral outcomes cancel out of the game entirely; their only role is to burn one of red's $k$ chances.
+An important property of this model worth considering is that it assumes every attack has the same probability $c$ of being caught and the same probability $s$ of being successfully deployed: per-attempt odds are fixed, no matter how many attacks the red team makes or which problems it picks.
 
-One consequence is worth staring at: Term A does not depend on $k$. No amount of attacking changes who is favored in the showdown — attacking more only makes a showdown more likely to happen. So $P(\text{red wins})$ climbs with $k$ but can never exceed $w/(w+c)$: the race odds are a hard ceiling.
+<Exercise id="c-paper-l3-race-predict" />
 
-Before the demo, predict the red team's best move.
+<Demo id="race-paper" />
 
-<Exercise id="c-game-l4-race-predict" />
+With fixed odds the curve only climbs. Now finish the reconstruction: feed in the deployment the paper actually ran. Its red team submits a backdoor on about twenty of the 5,000 problems — and twenty attempts is already deep in the plateau, where Term B has all but saturated. So $P(\text{red wins})$ sits near its ceiling — the probability of a decisive attack attempt being successfully deployed, $s/(s+c) \approx 35\%$. That is a safety of roughly 65%: the paper's headline number, rebuilt from the contingency table and a single line of algebra. (The few points between 65% and the measured 62% are the paper's sampling correction and its shutdown-on-statistics rule — real, but not where the mechanism lives.)
 
-The demo below plots $P(\text{red wins})$ against the number of attacks $k$, with both factors live and the ceiling drawn in. Drag $k$.
+The number checks out. But the model implies more than a number — it implies a *strategy*. Put that prediction to the test.
 
-<Demo id="race" />
+<ExerciseSequence ids={["c-paper-l3-race-empirical", "c-paper-l3-race-discrepancy"]} label="Understanding check" />
 
-With fixed odds the curve only rises: each extra attempt raises the chance that some decisive event fires and changes nothing else. If every attack were equally good, the red team should attack on every problem it can.
+Attacking more only improves the red team's win probability if every attack is as good as the last, and the paper's red team knew that this wasn't the case. Compared to upfront auditing, trusted monitoring forces the red team to use much *sneakier* attacks. Under upfront auditing only the first stretch of solutions is ever audited, and therefore the red team is not incentivized to obfuscate their backdoors, as human audited attacks are detected with close to perfect accuracy regardless of how sneaky the attack is. Under trusted monitoring every solution is scored for suspiciousness, and more obvious attacks are much more likely to get caught.
 
-But the paper's red team does the opposite — it attacks *rarely*. So the fixed-odds assumption is doing load-bearing work, and it is false. The next section restores what it dropped.
+Thus the red team's best strategy involves obfuscating their attacks to avoid being caught by the monitor.
 
-## Opportunities are not equal
+<Exercise id="c-paper-l3-subtlety-ways" />
 
-The fixed-odds picture said "attack as often as possible." The paper's red team attacks on a small fraction of problems. The missing ingredient is that not all problems are equally good to attack.
+One way is to attack only "when there seems to be a good opportunity," selectively choosing attack opportunities where attacks are inherently more sneaky. For example, a problem with complex corner cases offers more inherent subtlety and is thus a better opportunity for a backdoor than a one-line string echo, which offers almost no inherent subtlety. The red team's selectivity is captured by an **opportunity cutoff**: the minimum opportunity level at which it is willing to attack. A high cutoff means attacking rarely, only when the opportunity is excellent (a low probability of getting caught). Conversely, decreasing the opportunity cutoff increases the attack rate at the cost of adding attack attempts with worse odds.
 
-Problems differ in how cleanly a backdoor fits. A geometry problem with fiddly corner cases offers natural cover for an off-by-one; a one-line string echo offers none. The red team's real strategy is a **quality cutoff**: attack only when the opportunity is at least this good. A high cutoff means it attacks rarely, on the best problems; a low cutoff means it attacks often, dipping into worse ones. Crucially, the marginal opportunity is always the worst one it is currently willing to take — so attacking more often means writing backdoors with less cover, which the monitor is more likely to flag.
+Another way to do this is to actively work to obfuscate the attacks and make them more subtle, at the cost of making broken deployed attacks more probable.
 
-That sets up a tension. Predict how it resolves.
+These are both decision factors the red team can control for their strategy.
 
-<Exercise id="c-game-l5-hump-predict" />
+In our model for $P(\text{red wins})$, there is no longer a single $s$ and $c$. Each attempt's odds are set by two things: the problem's inherent opportunity $g$, drawn problem by problem and selected through the opportunity cutoff $g^*$, and the obfuscation effort $\sigma$ from the red team to make the attack more subtle. Write $s(g, \sigma)$ and $c(g, \sigma)$ for the success and catch probability of an attempted attack on a problem of opportunity $g$ at effort $\sigma$. Then $s$ and $c$ become the **average** odds across the attempts the red team actually makes:
 
-The demo plots the red team's win probability against its attack rate. Drag the cutoff and find the peak.
+$$
+s = \mathbb{E}\!\left[\,s(g, \sigma) \mid g > g^*\,\right] \qquad c = \mathbb{E}\!\left[\,c(g, \sigma) \mid g > g^*\,\right]
+$$
+
+This works because each problem's opportunity is an independent draw, and the red team decides whether to attack through the opportunity cutoff threshold. So each attempt's success and catch probabilities are independent draws from the pool of attacks above the cutoff. Thus the probability that the first decisive attack attempt is a successful one is given by the expected (average) success and catch probabilities. From here on, read every $s$ and $c$ as average odds.
+
+<Exercise id="c-paper-l3-cutoff-predict" />
+
+At high opportunity cutoffs, attack attempts are so rare that the deployment usually ends before an attack attempt is decisive and Term B, $1 - (1 - s - c)^k$, is very small. At the lower opportunity cutoffs, attempts are very frequent but increasingly drawn from problems with poor inherent subtlety, so the average catch rate climbs and Term A, $s/(s+c)$, becomes smaller. In between sits an interior optimum at a low but non-zero attack rate, which is why the paper's red team attacks on only a small fraction of problems. In the following demo, obfuscation effort is held at a fixed level.
 
 <Demo id="attack-rate" />
 
-The curve is hump-shaped. At the left, attacks are so rare that the deployment often ends before a successful one fires — the "any decisive event" factor from the previous section is tiny. At the right, attacks are frequent but forced onto poor opportunities, so the catch rate climbs and the race factor collapses. In between sits an interior optimum at a low but non-zero attack rate — exactly where the paper's red team operates.
+As aforementioned, the red team's other decision factor is obfuscation effort. Every attack opportunity affords some inherent subtlety, and efforts to make an attack more subtle will come at the cost of the attack's deployment success probability.
 
-This is the answer to a question the paper raises: why attack rarely? Not out of caution, but because rarity is opportunity selection under the shadow of the catch rule. One caught attempt ends everything, so each attack has to be worth the risk.
+<ExerciseSequence ids={["c-paper-l3-subtlety-predict", "c-paper-l3-sigma-terms-predict"]} label="Predict" />
 
-<Exercise id="c-game-l5-hump-reflect" />
-
-## Subtlety: visible versus reliable
-
-Attack rate is one of the red team's two levers. The other is **subtlety** — how hard it works to make each backdoor read as ordinary code.
-
-Subtlety cuts both ways. A blatant backdoor, like a bare `if x == 354` special case, is reliable: it does exactly what the attacker intends. But it scores high on the monitor and gets audited. A subtle backdoor — a plausible-looking off-by-one buried in real logic — reads as normal code and slips past the monitor, but subtle logic errors are hard to engineer correctly, so a subtle backdoor is more often simply *broken*: it fails a test case, or produces the right answer on the exploit input the attacker hoped would trigger it. Visibility falls as subtlety rises; so does reliability.
-
-Predict how the red team's win probability responds.
-
-<Exercise id="c-game-l6-subtlety-predict" />
-
-The demo plots the red team's best achievable win probability against subtlety — at each subtlety it picks its best attack rate — with the monitor's catch rate and the probability the backdoor actually works shown alongside. Drag subtlety across its range.
+Raising σ does two things to every attack attempt: it lowers the catch probability $c$, and it lowers the reliability of the attack (the probability the attack isn't broken) $p_{\text{works}}(\sigma)$. The following demo plots the per-attack outcome probability and $P(\text{red wins})$ as a function of $\sigma$.
 
 <Demo id="subtlety" />
 
-The optimum is at *low but non-zero* subtlety. It is not at the blatant extreme — nudging subtlety up a little lowers the catch rate faster than it breaks the backdoor, so it helps. But it is nowhere near the subtle extreme either: past the peak, reliability collapses faster than visibility falls, and the win probability drops. (Right at the maximally-subtle end the curve recovers partway — an invisible backdoor always ships even though it usually doesn't work — but that gambit stays well below the low-subtlety peak.) Note that the peak sits fairly close to blatant here: with only 2% of solutions audited, even a moderately visible backdoor usually slips through, so the red team does not have to work very hard to hide.
-
-The exact location depends on the calibration, but the shape is the point: an interior optimum, the same structure as the attack rate, and for the same reason — each lever trades the probability that a decisive event happens against the odds of winning it.
-
-Both of the red team's levers now have interior optima. The next section lets it choose them together — attack rate and subtlety at once — and grades the protocol against that joint best response.
-
-## The best-response principle
-
-Everything so far has quietly assumed the red team plays a fixed strategy. But a scheming model that wants to slip a backdoor past your protocol will not attack in some pre-agreed way — it will do whatever works best against the exact protocol it faces. So the only meaningful question is: against the red team's *best* response, how safe is the protocol?
-
-The red team's strategy is two numbers. First, how selective to be: attack on every problem, or wait for the rare problem where a backdoor has natural cover? This is its **attack rate**. Second, how subtle to make each backdoor: a blatant special-case is easy to write and reliable but scores high on the monitor, while a subtle one reads as normal code but is harder to get right, so it more often simply doesn't work. This is its **subtlety**. Both have interior optima — attack too often and the marginal attempts are easy to catch; attack too rarely and you may never fire; too blatant and you're audited; too subtle and your backdoor is broken.
-
-Before the demo, predict the headline.
-
-<Exercise id="c-game-l3-best-response-predict" />
-
-The heatmap below is the red team's win probability over that whole strategy plane — attack rate along the x-axis, subtlety up the y-axis — computed from the model. The ring marks the single strategy that maximizes it: the best response. The two readouts under it report the resulting safety and exactly what the red team does there. Now move the blue levers — the audit budget and the defer band — and watch the ring migrate. Tightening the budget makes frequent attacking safer for the red team; widening the defer band pushes it toward the mid-suspicion region the band now swallows.
+Given these decision factors and some priors about the blue team's strategy, the best strategy is to attack rarely, only on the very best opportunities (about 0.2% of problems), with moderate obfuscation effort. The demo below plots the red team's win probability over the whole strategy plane and marks that best response with a ring.
 
 <Demo id="best-response" />
 
-At the default 2% budget with no defer, the best response lands at a low attack rate and moderate subtlety, and safety comes out at ≈ 62% — the paper's number. The point is not any single value but the fact that the bright region *responds*: every blue-team move changes which red strategy is best, so you are never optimizing against a stationary target. This is the core of the control-evaluation methodology. A safety figure is only meaningful as "safety against the best response," and reading one means reading it against an adversary that has already re-optimized for whatever you just did.
-
-<Exercise id="c-game-l3-best-response-reflect" />
+<ExerciseSequence ids={["c-paper-l3-best-response-upper-bound", "c-paper-l3-protocol-awareness"]} label="Understanding check" />
 
 ## Defer to trusted, mechanistically
 

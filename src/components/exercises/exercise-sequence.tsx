@@ -15,7 +15,7 @@ import { TapRevealBody } from "./tap-reveal-exercise";
 import { ChoiceExerciseBody } from "./choice-exercise";
 
 export type SequencePart =
-  | { kind: "understanding-check"; id: string; prompt: string; sampleAnswer: string }
+  | { kind: "understanding-check"; id: string; prompt: string; sampleAnswer?: string }
   | {
       kind: "tap-reveal";
       id: string;
@@ -123,12 +123,16 @@ export function ExerciseSequenceCard({
           <Textarea
             value={answers[current]}
             onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Write your answer, then submit to compare with the sample…"
+            placeholder={
+              part.sampleAnswer
+                ? "Write your answer, then submit to compare with the sample…"
+                : "Write your answer, then submit…"
+            }
             rows={4}
             className="mt-3 resize-y"
           />
 
-          {isSubmitted && (
+          {isSubmitted && part.sampleAnswer && (
             <div className="bg-muted mt-3 space-y-2 rounded-lg p-3 text-sm">
               <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Sample answer

@@ -7,6 +7,7 @@ import { MonitorTailsDemo } from "@/components/demos/monitor-tails-demo";
 import { MonitorTailsRocDemo } from "@/components/demos/monitor-tails-roc-demo";
 import { BestResponseDemo } from "@/components/demos/best-response-demo";
 import { RaceDemo } from "@/components/demos/race-demo";
+import { RacePaperDemo } from "@/components/demos/race-paper-demo";
 import { AttackRateDemo } from "@/components/demos/attack-rate-demo";
 import { SubtletyDemo } from "@/components/demos/subtlety-demo";
 import { DeferDemo } from "@/components/demos/defer-demo";
@@ -86,11 +87,19 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     component: RaceDemo,
     tags: ["control", "control-game"],
   },
+  "race-paper": {
+    id: "race-paper",
+    title: "Safety over a deployment",
+    description:
+      "Per-attack odds compound over a whole deployment, run directly on the paper's contingency-table odds (caught 33.8%, successfully deployed 18.3%). Drag the number of attacks and watch the two factors of the red team's win probability climb toward the ceiling.",
+    component: RacePaperDemo,
+    tags: ["control", "ai-control-paper"],
+  },
   "attack-rate": {
     id: "attack-rate",
     title: "The attack-rate hump",
     description:
-      "The red team's win probability against how often it attacks. Rare attacks may never fire; frequent attacks use worse, more-visible opportunities and get caught — so the optimum is interior.",
+      "The red team's win probability against how often it attacks, decomposed into its two terms. Attack rarely and a decisive attack attempt may never occur (Term B small); attack often and the pool dilutes with worse, more-visible opportunities (Term A falls) — so the optimum is interior.",
     component: AttackRateDemo,
     tags: ["control", "control-game"],
   },
@@ -98,7 +107,7 @@ export const demoRegistry: Record<string, DemoDefinition> = {
     id: "subtlety",
     title: "Subtlety: visible vs reliable",
     description:
-      "The red team's second lever. Subtler backdoors are harder for the monitor to flag but more likely to be broken, so the win probability has an interior optimum in subtlety.",
+      "The red team's second decision factor. Subtler backdoors are harder for the monitor to flag but more likely to be broken, so the win probability has an interior optimum in subtlety.",
     component: SubtletyDemo,
     tags: ["control", "control-game"],
   },

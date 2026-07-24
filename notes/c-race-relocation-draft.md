@@ -1,7 +1,11 @@
 # Proposal — "Safety over a deployment: the race", relocated into the AI Control walkthrough
 
-Status: **proposal only, nothing implemented.** Draft of the race section as it would
-live inside the paper walkthrough (`papers.data.ts`), not the standalone c-game lesson.
+Status: **IMPLEMENTED 2026-07-21** as the subsection "Probability of Safety over
+Deployment" inside §3.2 Trusted Monitoring (papers.data.ts, 17 ops at anchor b-0131,
+marked in backend comments as XLab-authored, not Redwood's text; exercises
+`c-paper-l3-race-*`/`-hump-*`; new `race-paper` demo; c-game copies hidden). This file
+remains the content source of truth for the writing pass; grammar/spelling defects were
+fixed 2026-07-21 in both the sources and this file.
 Companion to the redistribution effort; successor in style to
 [c-game-race-redesign.md](./c-game-race-redesign.md).
 
@@ -14,12 +18,66 @@ Companion to the redistribution effort; successor in style to
 - The "Implementation flags" and "Assumptions" sections are notes to the implementer,
   not content.
 
+## Model spine (governs every cluster: race → opportunities → subtlety → best response → defer)
+
+One formula runs the whole arc, and its form never changes:
+
+$$P(\text{red wins}) = \underbrace{\frac{s}{s+c}}_{\text{Term A}} \cdot \underbrace{1-(1-s-c)^k}_{\text{Term B}}$$
+
+Term A is always referred to by its description — "the probability that a decisive
+attack attempt is successfully deployed," $P(\text{deployed} \mid \text{decisive})$ —
+or simply as Term A; its $k \to \infty$ role keeps the name "the ceiling." The informal
+"race odds" label is retired everywhere learner-facing, and no coined shorthand replaces
+it. Use "attack attempt" (not bare "attempt") when spelling out the description.
+
+The symbols $s$ (successfully deployed) and $c$ (caught) persist throughout. Exactly
+**one reinterpretation** happens, once, in the opportunities cluster: from there on, $s$
+and $c$ mean the **average** odds over the attempts the red team actually makes. This is
+exact, not an approximation — each problem's opportunity is an i.i.d. draw and the red
+team decides by threshold, so each attempt's odds are an i.i.d. draw from the pool above
+the cutoff and the first-decisive-attempt derivation goes through with the averages
+verbatim. No new notation downstream: later clusters only say *who moves the averages*.
+
+| Cluster | What $s, c$ are | Lever | Effect |
+|---|---|---|---|
+| Race | constants from the table ($13/71$, $24/71$) | none (given) | only $k$ moves → monotone; ceiling ≈ 35% |
+| Opportunities | pool averages; per-attempt odds depend on cover $g$, attack iff $g > g^*$ | red 1: cutoff $g^*$ | $g^*{\downarrow}$ → $k{\uparrow}$ (B↑) but $c{\uparrow}, s{\downarrow}$ (A↓) → hump |
+| Subtlety | odds also depend on $\sigma$: subtler → $c{\downarrow}$ but $s{\downarrow}$ (backdoors break — the paper's 52%-fail figure). Reliability is smooth power decay $0.75(1-\sigma)^{1.3}$ (2026-07-22 fix: old piecewise floor produced a fake valley + rebound) | red 2: $\sigma$, one choice for all attempts | single interior optimum $\sigma^* \approx 0.27$; monotone decline after; $P(\sigma{=}1)=0$ |
+| Best response | same functions; red picks $(g^*, \sigma)$ jointly | blue's $(b, d, q)$ shape the functions | safety $= 1 - \max$ Term A · Term B (the heatmap) |
+| Defer | fourth per-attempt outcome (deferred = neutralized, game continues); $s{\downarrow}$ with $c$ untouched | blue: $d$ | formula form unchanged — defer drains Term A's numerator without spending audits |
+
+Blend rules that follow:
+
+- The averaging contract is installed once (opportunities cluster, just before its MC);
+  everything later inherits it silently.
+- The two red levers differ in kind, and prose must keep it straight: $g^*$ selects
+  *which* attempts happen (pool composition, per-problem draws); $\sigma$ shifts the odds
+  of *every* attempt (one policy choice).
+- The race cluster's three-outcome taxonomy stays true for §3.2; the defer cluster
+  explicitly grows it by one row and notes the formula survives.
+- Best response's old "predict ≈62%" MC is dead — the race cluster reconstructs 62% up
+  front. Re-aim its predict at *response* (which way does the ring move when a blue lever
+  moves). The direction of explanation reverses: race showed the table's strategy ⇒ the
+  number; best response shows the strategy *is* the argmax — the contingency table is an
+  equilibrium artifact.
+- Demos keep Term A / Term B labels throughout; the attack-rate demo should show the
+  average odds and the sinking ceiling live.
+- **Defer-cluster drafting constraint (post pSucc fix, 2026-07-22):** widening the defer
+  band pushes the best-response subtlety up but it SATURATES interior (d 2%→20% moves
+  σ* 0.28→0.54, attack rate ~flat, nowhere near σ=1). Say "subtler, but still interior" —
+  the old c-game claim "pushes toward maximally subtle attacks" is false under the fixed
+  model, and `c-game-l7-defer-reflect`'s sample answer still contains it (fix when that
+  cluster is drafted).
+
 ## Assumptions (flag if wrong)
 
-1. Splices in as a **labeled markdown add + activity cluster** (M7 pattern), with **no
-   section heading of its own**, anchored **after the "Safety: The blue team win
-   probability is 62%" block** at the end of §3.2's body (before §3.2.1 Qualitative
-   Analysis).
+1. Splices in as a first-class **numbered subsection "3.2.1 Probability of Safety over
+   Deployment"** (new `op: "section"` + `plain: true` adds — native paper body, no note
+   boxes; Redwood's later §3.2 subsections display-shift to 3.2.2/3.2.3 at render time,
+   ids/text verbatim), anchored **after the "Safety: The blue team win probability is
+   62%" block**. Appears in the "In this paper" nav. Backend comments mark the whole
+   cluster as XLab-authored. Mechanism documented in AUTHORING.md — reuse it for the
+   subtlety / best-response / defer clusters.
 2. The "opportunities are not equal" cluster follows this one contiguously, so the
    closing bridge points "just below" rather than at a paper section.
 3. Every number here comes from the paper's own contingency table, so the
@@ -28,9 +86,12 @@ Companion to the redistribution effort; successor in style to
 
 ## Design note
 
-Skeleton is the R7 race section: rules → hinge → bare formula → terms check →
-confirmation → predict → demo → reveal. Two deliberate departures from the c-game
-version:
+Skeleton: rules → hinge → formula → terms check → assumption note → **Stage 1** predict
+(MC, "how often to attack per the model?") → demo → reconstruction reveal → **Stage 2**
+(is the model's optimal strategy what the paper's red team did? cite evidence) → **Stage
+3** (name the assumption behind the discrepancy). Stages 2–3 make the reader *derive* the
+bridge into "opportunities are not equal" rather than read it; the old reveal bridge
+paragraph is gone. Two deliberate departures from the c-game version:
 
 - **The whole cluster is framed as reconstructing the paper's 62%.** The paper reports it
   and never shows the arithmetic; the cluster rebuilds it from the contingency table and
@@ -46,88 +107,61 @@ version:
 
 ## The section
 
-**[MARKDOWN ADD — label: "Safety over a deployment: the race"]**
+> The paper reports that Trusted Monitoring achieves a blue team win probability of 62%. A protocol's safety is calculated as the blue team win probability against the red team's best strategy (the strategy that maximizes the probability of a red team win), but what actually is the best strategy for the red team in this protocol?
 
-> The paper reports that 62% as a measured result and moves on; it never shows the
-> arithmetic. But the contingency table holds everything the number is made of, and
-> rebuilding it is the fastest way to see what "safety" even means here. Safety is not a
-> property of any one attempt. It is a property of the whole 5,000-problem deployment,
-> across which the blue team wins if it *ever* audits a backdoor and the red team wins if
-> a working one *ever* ships. So work up to it: start with a single attempt, then compound
-> over the run.
+[Opening rewritten by Arya 2026-07-23 to avoid misleading: the old "how is this actually
+computed?" implied the section recomputes the paper's 62%, but the paper's number is an
+empirical simulation over executed red-team runs (importance sampling + 1/12 backdoor
+downsampling), while this section reconstructs it from the contingency table through a
+model. The new frame poses the section's real question: what is red's best strategy.
+Grammar fixes applied: "the strategy the maximize" → "that maximizes"; final period →
+question mark. Shipped to c-game.mdx + papers.data.ts same day.]
+
+> Each of the red team's attack attempts can end in exactly one of three ways:
 >
-> Each of the red team's 71 attempts ended in exactly one of three ways:
+> - **Caught**: An attack (working or broken) is audited and *caught* by the blue team: Blue Team Wins. In the paper's setup, 24 of 71 attacks were audited (6 working, 18 broken).
+> - **Successfully Deployed**: A working attack isn't audited and is *successfully deployed*: Red Team Wins. In the paper's setup, 13 of 71 attacks were working attacks that weren't audited.
+> - **Failed**: A broken attack isn't audited: Neither Team Wins. In the paper's setup, 34 of 71 attacks were broken attacks that weren't audited.
 >
-> - **Caught** — 24 of them (6 working, 18 broken) were audited. An audit that turns up a
->   backdoor — working or not — shuts the deployment down: blue wins outright.
-> - **Win** — 13 shipped a working exploit: red wins outright.
-> - **Neutral** — 34 shipped broken. No exploit, no audit, no consequence; the game
->   simply continues.
->
-> So a single attempt is caught with probability $c = 24/71 \approx 0.34$ and lands a
-> working backdoor with probability $w = 13/71 \approx 0.18$; the rest of the time it does
-> nothing. Two of the three outcomes end the game on the spot — call an attempt
-> **decisive** when it is caught or wins.
+> So a single attempt is **caught** with probability $c = 24/71 \approx 0.34$ and
+> **successfully deployed** with probability $s = 13/71 \approx 0.18$; the rest of the
+> time it **fails** harmlessly. An attempt is **decisive** when it is caught or
+> successfully deployed — the two outcomes that end the game.
 
 **[EXERCISE — understanding-check `c-paper-l3-race-hinge`]**
 
-> **Prompt:** The whole deployment is settled by the first decisive attempt, whenever it
-> comes. Why? And why do the neutral attempts before it have no effect at all on the
+> **Prompt:** Why is the whole deployment settled by the first decisive attempt? And why do the failed attempts before it have no effect at all on the
 > outcome?
 >
-> **Sample answer:** A catch and a win each end the game immediately, so nothing after
-> the first decisive attempt is ever played. A neutral attempt leaves the game in
-> exactly the state it was in before — nothing accumulates — so any number of neutrals
-> before the first decisive one changes nothing. The asymmetry this creates is the heart
-> of the game: the red team must survive every audit it triggers across the whole run,
-> while the blue team only needs to win once.
+> **Sample answer:** A caught attack and a successfully deployed one each end the game
+> immediately, so nothing after the first decisive attempt is ever played. A failed
+> attempt leaves the game in exactly the state it was in before, and thus nothing
+> accumulates.
 
 **[MARKDOWN ADD — continuation]**
 
-> That first-decisive-attempt logic is exactly what makes the deployment tractable: only
-> one moment ever matters, so the whole run collapses to a single question about that
-> moment. Let the red team make $k$ attempts, each with the table's odds. Its probability
-> of winning at least once factors cleanly:
+> Let the red team make $k$ attack attempts, $s = P(\text{successful deployment})$ be the probability of a successful deployment, and $c = P(\text{caught})$ be the probability of an attack being caught. Then we can model the Red Team's probability of winning at least once as:
 >
-> $$P(\text{red wins}) = \underbrace{\frac{w}{w + c}}_{\text{Term A}} \cdot \underbrace{\left(1 - (1 - w - c)^k\right)}_{\text{Term B}}$$
+> $$
+> P(\text{red wins}) = \underbrace{\frac{s}{s + c}}_{\text{Term A}} \cdot \underbrace{\left(1 - (1 - s - c)^k\right)}_{\text{Term B}}
+> $$
 
 **[EXERCISE — understanding-check `c-paper-l3-race-terms`]**
 
 > **Prompt:** Before reading on, interpret the formula's two terms in your own words:
-> what event is Term B, 1 − (1−w−c)^k, the probability of? And Term A, w/(w+c), is a
-> conditional probability — of what, given what? (Check your answers at k = 1, where the
-> formula must reduce to something obvious.)
+> what event is Term B, $1 - (1-s-c)^k$, the probability of? And Term A, $s/(s+c)$, is a
+> conditional probability of what, given what?
 >
-> **Sample answer:** (1−w−c) is the probability that a single attempt lands neutral, so
-> (1−w−c)^k is the probability that all k do — Term B is the probability that at least
-> one attempt is decisive. Term A is the probability that a decisive attempt is a win
-> rather than a catch: given that the race gets decided at all, it is the chance red won
-> it. At k = 1 the product is (w+c) · w/(w+c) = w, exactly the table's probability that a
-> single attempt ships a working exploit.
+> **Sample answer:** $(1-s-c)$ is the probability that an attack attempt fails or, equally, the probability that an attack attempt *isn't* decisive. Then $(1-s-c)^k$ is the probability that all $k$ attacks aren't decisive. Thus Term B is the probability that not all attempts are indecisive or, equally, the probability that at least one attempt is decisive. Term A is the conditional probability that an attack attempt ends with a successfully deployed attack, given that the attack attempt is decisive — $P(\text{deployed} \mid \text{decisive})$.
 
 **[MARKDOWN ADD — continuation]**
 
-> Read the formula as two questions multiplied together. *Does anything decisive ever
-> happen?* That is Term B — and it is the only place $k$ appears. *If so, who won?* That
-> is Term A: every attempt enters a race between red's wins and blue's catches, and Term
-> A is the probability that when the race is decided, red won it. Note what Term A is
-> **not**: it is not the probability that an attempt slips through (that is $w$). It is
-> conditional on the attempt being decisive. The neutral outcomes cancel out of the game
-> entirely; their only role is to burn one of red's $k$ chances.
->
-> One consequence is worth staring at: Term A does not depend on $k$. With the table's
-> odds it is $13/37 \approx 35\%$ — and no amount of attacking changes it. Attacking more
-> only makes the showdown more likely to happen, so $P(\text{red wins})$ climbs with $k$
-> but can never exceed 35%: the race odds are a hard ceiling.
->
-> You have seen a question shaped like this before. Predict the answer for *this*
-> protocol.
+> An important property of this model worth considering is that it assumes every attack has the same probability $c$ of being caught and the same
+> probability $s$ of being successfully deployed: per-attempt odds are fixed, no matter how many attacks the red team makes or which problems it picks.
 
-**[EXERCISE — multiple-choice `c-paper-l3-race-predict`]**
+**[EXERCISE — multiple-choice `c-paper-l3-race-predict`] — Stage 1**
 
-> **Prompt:** Every attempt the red team makes carries the table's fixed odds — the same
-> chance of being caught, the same chance of a working backdoor. To maximize its
-> probability of winning at least once over the deployment, how often should it attack?
+> **Prompt:** To maximize their probability of winning at least once over the deployment, how often should the red team attack given the above model?
 >
 > **Options:**
 > - Once, at the single best moment
@@ -135,42 +169,60 @@ version:
 > - As often as possible ✓
 > - It makes no difference how often it attacks
 >
-> **Explanation:** With identical per-attempt odds, the win probability [w/(w+c)] × [1 −
-> (1−w−c)^k] only rises with k: each extra attempt raises the chance that some decisive
-> event fires without changing the odds of any single one. The interior-optimum instinct
-> is imported from upfront auditing — but that optimum existed because attempts there had
-> *different* odds depending on position: an attempt inside the audited window was
-> certain death, an attempt after it was free. Trusted monitoring has no window. Every
-> attempt faces the same monitor at the same threshold, so with genuinely identical
-> attempts, more is strictly better. What actually restores the interior optimum — and it
-> is not the audit budget — is the subject just below.
+> **Explanation:** With identical per-attempt odds, the win probability [s/(s+c)] × [1 −
+> (1−s−c)^k] only rises with k: each extra attempt raises the chance that some decisive
+> event fires without changing the odds of any single one.
+
+
 
 **[DEMO — `race`, paper-odds variant]**
 
-**[MARKDOWN ADD — reveal + bridge]**
+**[MARKDOWN ADD — reveal: reconstruction payoff]**
 
 > With fixed odds the curve only climbs. Now finish the reconstruction: feed in the
 > deployment the paper actually ran. Its red team submits a backdoor on about twenty of
 > the 5,000 problems — and twenty attempts is already deep in the plateau, where Term B
-> has all but saturated. So $P(\text{red wins})$ sits near its ceiling, the race odds
-> $w/(w+c) \approx 35\%$. That is a safety of roughly 65%: the paper's headline number,
+> has all but saturated. So $P(\text{red wins})$ sits near its ceiling — the probability of a decisive attack attempt being successfully deployed,
+> $s/(s+c) \approx 35\%$. That is a safety of roughly 65%: the paper's headline number,
 > rebuilt from the contingency table and a single line of algebra. (The few points
 > between 65% and the measured 62% are the paper's sampling correction and its
 > shutdown-on-statistics rule — real, but not where the mechanism lives.)
 >
-> The reconstruction leaves one thing unexplained. If attacking more is strictly better,
-> why did the red team stop at twenty — a bare fraction of a percent of the problems it
-> saw? Its policy is explicit: attack only "when there is a good opportunity to do so."
-> That restraint can only pay off if waiting for good opportunities changes the odds
-> themselves — the one thing the fixed-odds formula holds constant, and so the one thing
-> it cannot see.
+> The number checks out. But the model implies more than a number — it implies a
+> *strategy*. Put that prediction to the test.
+
+**[EXERCISE — understanding-check `c-paper-l3-race-empirical`] — Stage 2**
+
+> **Prompt:** Is the optimal strategy predicted by the model reflected in how the paper's red team actually behaved? Point to specific evidence in the
+> paper's setup.
+>
+> **Sample answer:** No. The model says every extra attack only helps, so the red team
+> should backdoor almost every problem. But the paper's red team attacked on just 71 of
+> 1,500 problems — under 5% — and its policy was deliberate: it inserts a backdoor "only
+> when there is a good opportunity to do so." The real red team held back hard, exactly
+> where the fixed-odds model says it never should.
+
+**[EXERCISE — understanding-check `c-paper-l3-race-discrepancy`] — Stage 3**
+
+> **Prompt:** What about this model causes the discrepancy: why does the model predict constant
+> attacking when the paper's red team attacks rarely?
+>
+> **Sample answer:** The assumption that every attack carries the same odds — the same
+> catch probability $c$ and deployment probability $s$ — no matter how many attacks are
+> made or which problems they target. Under fixed odds an extra attack is always as good
+> as the first, so more is always better. But the attacks are not interchangeable: the
+> red team can only attack more often by taking on problems where a backdoor has less
+> natural cover, and those are easier for the monitor to catch. Once attacking more raises
+> the catch probability, the odds are no longer fixed — and constant attacking stops being
+> optimal.
 
 ---
 
 ## Implementation flags (not learner-facing)
 
-1. **Demo variant.** The `race` demo takes literal odds c = 0.338, w = 0.183 instead of
-   deriving them from the calibrated model — the formula panel, ceiling asymptote, and
+1. **Demo variant.** The `race` demo takes literal odds c = 0.338, s = 0.183 instead of
+   deriving them from the calibrated model — rename the demo's asymptote label from
+   "race odds — ceiling" to "Term A — ceiling" (the "race odds" name is retired); the formula panel, ceiling asymptote, and
    k-slider all work unchanged, and `K_MAX = 20` now coincides with the paper's actual
    regime. Per-attempt readout line becomes "from the table: caught 33.8% · working
    backdoor ships 18.3%". Resolves tracker item R5 (magic numbers) for free.
@@ -183,6 +235,12 @@ version:
    the priors paragraph to "a fraction of a percent" or 0.4%.
 4. **Ids / cleanup.** Exercise ids follow the walkthrough convention (`c-paper-l3-race-*`).
    The c-game race section gets hidden in an MDX comment (M7 pattern) once this lands.
+5. **Staged bridge spans the demo.** The three "stages" are not one contiguous widget:
+   Stage 1 is the predict-MC (must precede the demo), then the demo + reconstruction
+   reveal, then Stages 2–3 (two understanding-checks). Implement Stages 2–3 as a labeled
+   sequence (e.g. "Model vs. reality") so they read as a unit. If you'd rather have all
+   three back-to-back, the demo would have to move before Stage 1 (spoiling the predict)
+   or after Stage 3 (anticlimactic) — the split is deliberate.
 
 ## Open questions (race cluster)
 
@@ -202,10 +260,10 @@ deliberately-false setup; here the hump comes back, for the real reason.
 
 ## Assumptions (flag if wrong)
 
-1. Splices in **immediately after the race cluster's reveal/bridge** — the bridge already
-   ended on "waiting for good opportunities changes the odds themselves — the one thing
-   the fixed-odds formula holds constant, and so the one thing it cannot see," so this
-   cluster opens by explaining *how*.
+1. Splices in **immediately after the race cluster** — whose Stage 3 understanding-check
+   already had the reader identify the fixed-odds assumption as the cause of the
+   model-vs-empirics discrepancy, so this cluster opens by *confirming* that answer and
+   mechanizing it, not by re-revealing it.
 2. This is the **first cluster to use the calibrated model** (opportunity-quality
    distribution isn't in the paper's table), so the model-disclosure note lives here.
 3. The cluster that follows is **subtlety** (the red team's second lever), but its exact
@@ -226,6 +284,14 @@ deliberately-false setup; here the hump comes back, for the real reason.
 - **The old `c-game-l5-hump-predict` (a shape question — "rises then falls?") is
   dropped.** Shape recall is exactly what the upfront-auditing prior spoils; the
   quantitative question can't be answered by remembering a curve.
+- **The hump MC is asked under the averaging contract.** Without it the question is
+  malformed — once opportunities differ there is no single $s$ and $c$; each attempt has
+  its own odds, and lowering the cutoff changes the *pool*, not any existing attempt
+  (Arya's catch). The contract block precedes the MC and redefines $s, c$ as pool
+  averages — the one-time notational investment the subtlety, best-response, and defer
+  clusters all inherit (see Model spine). The lever paragraph's old conclusion sentence
+  ("attacking more adds attempts with worse odds…") moved into the MC explanation so the
+  prediction isn't answered one line before it's asked.
 
 ---
 
@@ -233,19 +299,47 @@ deliberately-false setup; here the hump comes back, for the real reason.
 
 **[MARKDOWN ADD — label: "Opportunities are not equal"]**
 
-> The fixed-odds picture treated every attempt as interchangeable. The red team's own
-> policy already told you they are not: it injects a backdoor only "when there is a good
-> opportunity to do so." Problems differ in how cleanly a backdoor fits. A geometry
-> problem with fiddly corner cases offers natural cover for an off-by-one; a one-line
-> string echo offers none.
+> Attacking more only improves the red team's win probability if every attack is as good as the last, and the paper's red team knew that this wasn't the case. That is exactly why they attacked only "when there seems to be a good opportunity." For example, a problem with complex corner cases offers more "cover" and is thus a better opportunity for a backdoor than a one-line string echo, which offers almost no cover.
 >
-> So the red team's real lever is not "how many attempts" but a **quality cutoff**:
-> attack only when the opportunity is at least this good. A high cutoff means it attacks
-> rarely, on the best-covered problems; a low cutoff means it attacks often, dipping into
-> worse ones. Here is the hinge: the marginal opportunity — the worst one it is currently
-> willing to take — is always less covered than the ones above it. So attacking more
-> often does not just add attempts at the same odds; it adds attempts with *worse* odds,
-> on backdoors the monitor is more likely to flag.
+> Thus a better decision variable than attack frequency for controlling how many attack attempts the red team makes is a **quality cutoff**: the minimum opportunity level at which it is willing to attack. A high cutoff means attacking rarely, only when the opportunity is excellent (a low probability of getting caught). Conversely, decreasing the quality cutoff increases the attack rate at the cost of adding attack attempts with *worse* odds.
+
+**[MARKDOWN ADD — the averaging contract]**
+
+> With unequal opportunities there is no longer a single $s$ and $c$, as every attempt has its own odds set by properties of the problem itself. Write $g$ for how good an opportunity a problem offers, $s(g)$ and $c(g)$ for the odds of an attempt made on it, and $g^*$ for the red team's quality cutoff. Then $s$ and $c$ become the **average** odds across the attempts the red team actually makes:
+>
+> $$
+> s = \mathbb{E}\!\left[\,s(g) \mid g > g^*\,\right] \qquad c = \mathbb{E}\!\left[\,c(g) \mid g > g^*\,\right]
+> $$
+>
+> (Why the two-term formula survives with these: each problem's opportunity is an independent
+> draw, and the red team decides by threshold. So each attempt's odds are an independent
+> draw from the pool above the cutoff, and the first-decisive-attempt argument goes
+> through with the averages, exactly.) From here on, read every $s$ and $c$ as average odds.
+
+**[MARKDOWN ADD — continuation]**
+
+> Now the arithmetic of the previous section changes. Predict how.
+
+**[EXERCISE — multiple-choice with written understanding check in the same question `c-paper-l3-hump-predict`]** [Note: Claude fix this]
+
+> **Prompt:** Suppose the red team lowers its quality cutoff, attacking more often. With
+> $s$ and $c$ read as the average odds of its attempts, what happens to the two terms of
+> $P(\text{red wins}) = \underbrace{s/(s+c)}_{\text{Term A}} \cdot \underbrace{1 - (1-s-c)^k}_{\text{Term B}}$ and why?
+>
+> **Options:**
+> - Both terms rise
+> - Term B rises; Term A stays fixed
+> - Term B rises; Term A falls ✓
+> - Both terms fall
+>
+> **Explanation:** The attempts a lower cutoff unlocks are, by construction, exactly the
+> ones the old cutoff rejected — less cover, easier to catch. The attempts already above
+> the bar are untouched; what changes is the *mix*. Mixing worse attempts into the pool
+> moves the averages — $c$ up, $s$ down — so Term A, the probability that a decisive attack attempt is successfully deployed, falls. Term B still
+> rises: more attempts always make it more likely that *something* decisive fires, and
+> that half of the fixed-odds picture survives intact. The red team is now climbing
+> toward a ceiling that sinks as it climbs. Which effect wins, the rising Term B or the
+> sinking Term A, is exactly what the demo below shows.
 
 **[MARKDOWN ADD — model disclosure, first use of the calibrated model]**
 
@@ -253,42 +347,19 @@ deliberately-false setup; here the hump comes back, for the real reason.
 > runs a small calibrated model of this setup — the same $N = 5{,}000$ problems, the same
 > $U$ and $T$ correctness rates, the same 2% audit budget — tuned so its headline numbers
 > reproduce the paper's within a few points. It is an idealization, not a re-run of the
-> experiment; but it is honest, and if you push a lever to a pathological value the plot
+> experiment, but it is honest, and if you push a lever to a pathological value the plot
 > shows the pathological truth.
-
-**[MARKDOWN ADD — continuation]**
-
-> That changes the arithmetic of the previous section. Predict how.
-
-**[EXERCISE — multiple-choice `c-paper-l3-hump-predict`]**
-
-> **Prompt:** Lowering the quality cutoff lets the red team attack more often, on problems
-> with less cover. In $P(\text{red wins}) = \text{Term A} \cdot \text{Term B}$, which
-> factor moves against the red team?
->
-> **Options:**
-> - Term B — more attempts make a decisive event less likely
-> - Neither — only the attempt count k rises
-> - Both factors fall
-> - Term A — the race odds fall ✓
->
-> **Explanation:** Term B — the chance any decisive event fires — still rises with more
-> attempts; that part is unchanged. What changes is Term A. Each marginal attempt is on a
-> worse-covered problem, so its catch probability c is higher, and a higher c pulls the
-> race odds w/(w+c) down. The red team is now climbing toward a ceiling that sinks as it
-> climbs. Whether the rising Term B or the sinking Term A wins out is exactly what the
-> demo shows.
 
 **[DEMO — `attack-rate`]**
 
 **[MARKDOWN ADD — reveal]**
 
-> The curve is hump-shaped, and the two factors explain the two ends. At the left,
+> The curve is hump-shaped, and the two terms explain the two ends. At the left,
 > attempts are so rare that the deployment usually ends before a successful one fires —
-> Term B is tiny. At the right, attempts are frequent but forced onto poorly-covered
-> problems, so the catch rate climbs and the race odds — Term A — collapse. In between
-> sits an interior optimum at a low but non-zero attack rate: roughly where the paper's
-> red team operates, on a fraction of a percent of problems.
+> Term B is tiny. At the right, attempts are frequent but increasingly drawn from
+> poorly-covered problems, so the average catch rate climbs and Term A — the probability
+> that a decisive attack attempt is successfully deployed — collapses. In between sits an interior optimum at a low but non-zero attack rate:
+> roughly where the paper's red team operates, on a fraction of a percent of problems.
 >
 > This is the answer to a question the paper raises but does not dwell on: why does the
 > red team attack so rarely? Not out of caution. Rarity is opportunity selection under
@@ -310,7 +381,7 @@ deliberately-false setup; here the hump comes back, for the real reason.
 > even though the two protocols work completely differently.
 >
 > **Sample answer:** Attacking more often forces the red team onto worse-covered
-> problems, where the catch probability is higher; that drags the race odds w/(w+c) down
+> problems, where the catch probability is higher; that drags $s/(s+c)$ — the probability that a decisive attack attempt is successfully deployed — down
 > faster than the extra attempts raise the chance of firing, so past a low rate the win
 > probability falls. The optimum is therefore interior, at a low but non-zero rate — a
 > calculation, not timidity. The common thread with upfront auditing is heterogeneity in
@@ -325,8 +396,7 @@ deliberately-false setup; here the hump comes back, for the real reason.
 **[MARKDOWN ADD — forward pointer (adjacency-dependent; see flags)]**
 
 > Opportunity quality is one of the red team's two levers. The other is how *subtle* to
-> make each backdoor — and the paper already hinted at its cost when it noted that
-> sneakier backdoors fail their own test cases more than half the time.
+> make each backdoor and the following text from the paper highlights why this is relevant.
 
 ---
 
